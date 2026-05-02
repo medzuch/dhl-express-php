@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .docker/
+    volumes:
+      - .:/var/www/html
+    environment:
+      - XDEBUG_MODE=debug
+      - XDEBUG_CLIENT_HOST=host.docker.internal
+      - XDEBUG_CLIENT_PORT=9003
+    working_dir: /var/www/html
+    command: sleep infinity
