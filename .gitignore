@@ -1,6 +1,8 @@
+.idea/
 /vendor/
 /.env
 /.phpunit.cache
+/.php-cs-fixer.cache
 /var/
 *.log
 .DS_Store
