@@ -32,11 +32,12 @@
 ```bash
 make up             # start containers
 make install        # composer install
-make test           # phpunit
-make analyse        # phpstan analyse src/ (level 8)
-make analyse-tests  # phpstan analyse tests/ (level 6)
-make analyse-all    # phpstan analyse src/ + tests/
-make check          # test + analyse-all + cs-check
+make test               # phpunit unit suite only (integration excluded by default)
+make test-integration   # phpunit integration suite (requires DHL_API_KEY)
+make analyse            # phpstan analyse src/ (level 8)
+make analyse-tests      # phpstan analyse tests/ (level 6)
+make analyse-all        # phpstan analyse src/ + tests/
+make check              # test + analyse-all + cs-check
 make shell          # enter container
 make down           # stop
 ```

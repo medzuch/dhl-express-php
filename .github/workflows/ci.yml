@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php: ['8.3']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: xdebug
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: PHPUnit (Unit suite)
+        run: ./vendor/bin/phpunit --testsuite Unit
+
+      - name: PHPStan (src)
+        run: ./vendor/bin/phpstan analyse --configuration phpstan.neon --no-progress
+
+      - name: PHPStan (tests)
+        run: ./vendor/bin/phpstan analyse --configuration phpstan-tests.neon --no-progress
+
+      - name: PHP CS Fixer (dry-run)
+        run: ./vendor/bin/php-cs-fixer fix src/ tests/ --dry-run --diff

@@ -67,8 +67,9 @@ make up             # start containers
 make down           # stop containers
 make build          # rebuild image
 make install        # composer install
-make test           # phpunit
-make analyse        # phpstan analyse src/ (level 8)
+make test               # phpunit unit suite only (integration excluded by default)
+make test-integration   # phpunit integration suite (requires DHL_API_KEY)
+make analyse            # phpstan analyse src/ (level 8)
 make analyse-tests  # phpstan analyse tests/ (level 6)
 make analyse-all    # phpstan analyse src/ + tests/
 make cs-fix         # fix code style via php-cs-fixer

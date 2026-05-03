@@ -1,4 +1,4 @@
-.PHONY: help install verify test analyse analyse-tests analyse-all check cs-fix cs-check shell down up build
+.PHONY: help install verify test test-integration analyse analyse-tests analyse-all check cs-fix cs-check shell down up build
 
 .DEFAULT_GOAL := help
 
@@ -10,7 +10,8 @@ help:
 	@echo "  make down           Stop containers"
 	@echo "  make install        Run composer install"
 	@echo "  make verify         Check PHP version"
-	@echo "  make test           Run PHPUnit test suite"
+	@echo "  make test           Run PHPUnit unit suite (integration excluded)"
+	@echo "  make test-integration Run integration tests (requires DHL_API_KEY)"
 	@echo "  make analyse        Run PHPStan on src/"
 	@echo "  make analyse-tests  Run PHPStan on tests/"
 	@echo "  make analyse-all    Run PHPStan on src/ and tests/"
@@ -35,7 +36,10 @@ verify:
 	docker compose exec app php -v
 
 test:
-	docker compose exec app ./vendor/bin/phpunit
+	docker compose exec app ./vendor/bin/phpunit --testsuite Unit
+
+test-integration:
+	docker compose exec app ./vendor/bin/phpunit --testsuite Integration
 
 cs-fix:
 	docker compose exec app ./vendor/bin/php-cs-fixer fix src/ tests/

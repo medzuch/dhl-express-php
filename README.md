@@ -39,7 +39,8 @@ make install
 | `make down` | Stop containers |
 | `make install` | Run composer install |
 | `make verify` | Check PHP version |
-| `make test` | Run PHPUnit test suite |
+| `make test` | Run PHPUnit unit suite |
+| `make test-integration` | Run integration tests (requires `DHL_API_KEY`) |
 | `make analyse` | Run PHPStan on `src/` |
 | `make analyse-tests` | Run PHPStan on `tests/` |
 | `make analyse-all` | Run PHPStan on `src/` and `tests/` |
