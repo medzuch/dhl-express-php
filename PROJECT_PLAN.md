@@ -456,14 +456,15 @@ No instance methods, no chains, no fluent API — utility static asserts only. T
 ### Phase 1 — Foundation (week 1)
 **Goal:** Working scaffolding, first happy-path call.
 
-- [ ] Initialize composer.json, autoloading, basic CI
-- [ ] `ClientConfig`, `Credentials`, `ApiEnvironment` enum
+- [x] Initialize composer.json, autoloading, basic CI
+- [x] `ClientConfig`, `Credentials`, `ApiEnvironment` enum
+- [x] `MessageReference`, `TrackingNumber` value objects
+- [x] Base `DhlException` hierarchy (`DhlNetworkException` + `DhlApiException` with status-specific subclasses)
 - [ ] `HttpClientInterface` + `GuzzleHttpClient`
 - [ ] `RequestBuilder` — standard headers (Message-Reference, x-version, Accept-Language)
 - [ ] `ResponseParser` — JSON decode + error detection
-- [ ] Base `DhlException` hierarchy
-- [ ] `DhlErrorCode` enum (all 200+ error codes from PDF)
-- [ ] `DhlErrorMapper` — HTTP status + DHL error code → exception
+- [ ] `DhlErrorMapper` — HTTP status → exception subclass; raw DHL `$dhlErrorCode` carried on `DhlApiException`
+- [ ] `DhlErrorCode` enum — **deferred**: cases added on demand, only when caller code wants to branch on a specific code (e.g., `9001` invalid x-version, `7012` PLT not allowed). Empty enum not created today; the raw string field is sufficient for now.
 - [ ] `DhlClient` facade skeleton
 - [ ] **First end-to-end test:** `TrackingApi::getStatus()` against sandbox
 
