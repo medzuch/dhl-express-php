@@ -22,7 +22,7 @@
 |---|---|---|
 | PHP | 8.3 | `^8.3` constraint in composer.json |
 | Composer | latest | Inside container |
-| HTTP client | Guzzle 7.9 | `guzzlehttp/guzzle` + `guzzlehttp/psr7` |
+| HTTP client | PSR-18 + Guzzle 7.9 | `psr/http-client` + `psr/http-factory` interfaces; Guzzle as default implementation |
 | Testing | PHPUnit 11 | Unit + Integration suites |
 | Static analysis | PHPStan 2.x (^2.1, level 8) | Strictest level; separate config for tests at level 6 |
 | Code style | php-cs-fixer 3.x | PSR-12 + PHP 8.3 migration rules |
@@ -93,7 +93,7 @@ make down           # stop
 5. **Builder pattern** — for complex requests (CreateShipmentRequest has deep nesting)
 6. **Repository-style API classes** — one class per DHL domain
 7. **Custom exception hierarchy** — never leak Guzzle exceptions to consumers
-8. **HTTP client interface** — abstraction over Guzzle for testability
+8. **PSR-18 HTTP client** — code against `Psr\Http\Client\ClientInterface` and `Psr\Http\Message\RequestFactoryInterface`; Guzzle ships as the default but users can inject any PSR-18 compliant client
 9. **Ubiquitous Language** — mirror DHL's own terminology (Shipment, Piece, Waybill, ServicePoint, Pickup)
 
 ### Anti-patterns to AVOID
@@ -102,7 +102,7 @@ make down           # stop
 - ❌ Leaking Guzzle exceptions
 - ❌ Hardcoded URLs/timeouts/credentials
 - ❌ Static methods (untestable, can't mock)
-- ❌ Premature abstraction (PSR-18 layer can wait)
+- ❌ Leaking Guzzle types — always type-hint against PSR-18 interfaces, never concrete Guzzle classes
 - ❌ Ignoring HTTP status codes
 
 ### Methodology
@@ -128,7 +128,7 @@ dhl-express-php/
 │   ├── Auth/
 │   │   └── Credentials.php                     # Basic auth value object
 │   ├── Http/
-│   │   ├── HttpClientInterface.php             # PSR-18-style abstraction
+│   │   ├── HttpClientInterface.php             # Thin wrapper — accepts Psr\Http\Client\ClientInterface
 │   │   ├── GuzzleHttpClient.php                # Guzzle implementation
 │   │   ├── RequestBuilder.php                  # Builds requests with required headers
 │   │   ├── ResponseParser.php                  # Parses JSON + error responses
@@ -507,7 +507,7 @@ final readonly class CreateShipmentRequest {
 
 ## 10. Future Considerations (post v1.0)
 
-- **PSR-18 HTTP adapter** — let consumers swap Guzzle for any PSR-18 client
+- **PSR-3 logger integration** — optional logger injection for request/response logging (PSR-18 is already in place)
 - **PSR-3 logger integration** — optional logger injection for request/response logging
 - **PSR-6/PSR-16 cache** — cache reference data lookups
 - **Async/promises** — Guzzle async for parallel requests (multi-rates)
@@ -570,7 +570,7 @@ When generating enums, ALWAYS cross-reference both files to ensure values are co
 |---|---|---|
 | 2026-05-03 | PHP 8.3 (not 8.5) | 8.3 is stable, EOL Dec 2027 |
 | 2026-05-03 | No framework, pure library | Maximum reusability across Symfony/Laravel/standalone |
-| 2026-05-03 | Guzzle over PSR-18 adapter | Simpler for v1, can abstract later |
+| 2026-05-03 | PSR-18 as core abstraction from day 1 | Guzzle ships as default implementation; users can inject any PSR-18 client without library changes |
 | 2026-05-03 | Debian-based PHP image | Better toolchain compatibility than Alpine |
 | 2026-05-03 | Symfony 8.1 deferred | Will be used in app layer later, not the library |
 | 2026-05-03 | DHL Express API 3.2.2 | Latest published version (Apr 2026) |

@@ -38,7 +38,7 @@ ALWAYS cross-reference these two files when generating enums, DTOs, or error map
 - **No framework dependencies** — pure library, usable from Symfony/Laravel/standalone
 - `DhlClient` is a facade that delegates — never implements business logic
 - One `*Api` class per DHL domain (TrackingApi, ShipmentApi, PickupApi, etc.)
-- Code against `HttpClientInterface`, not Guzzle directly
+- Code against `Psr\Http\Client\ClientInterface` (PSR-18) and `Psr\Http\Message\RequestFactoryInterface` (PSR-17) — never Guzzle types directly; Guzzle is the default implementation only
 - Builders for deeply-nested requests (CreateShipmentBuilder, RateRequestBuilder)
 
 ### Error handling
