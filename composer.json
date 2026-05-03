@@ -3,6 +3,7 @@
     "description": "DHL Express API connector library",
     "type": "library",
     "license": "MIT",
+    "keywords": ["dhl", "dhl-express", "mydhl", "mydhl-api", "shipping", "logistics", "api"],
     "require": {
         "php": "^8.3",
         "guzzlehttp/guzzle": "^7.9",
