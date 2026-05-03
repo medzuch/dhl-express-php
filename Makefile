@@ -36,16 +36,16 @@ verify:
 	docker compose exec app php -v
 
 test:
-	docker compose exec app ./vendor/bin/phpunit --testsuite Unit
+	docker compose exec app ./vendor/bin/phpunit --testsuite Unit --no-coverage
 
 test-integration:
-	docker compose exec app ./vendor/bin/phpunit --testsuite Integration
+	docker compose exec app ./vendor/bin/phpunit --testsuite Integration --no-coverage
 
 cs-fix:
-	docker compose exec app ./vendor/bin/php-cs-fixer fix src/ tests/
+	docker compose exec app ./vendor/bin/php-cs-fixer fix
 
 cs-check:
-	docker compose exec app ./vendor/bin/php-cs-fixer fix src/ tests/ --dry-run --diff
+	docker compose exec app ./vendor/bin/php-cs-fixer fix --dry-run --diff
 
 analyse:
 	docker compose exec app ./vendor/bin/phpstan analyse --configuration phpstan.neon
