@@ -38,9 +38,14 @@ make install
 | `make up` | Start containers |
 | `make down` | Stop containers |
 | `make install` | Run composer install |
+| `make verify` | Check PHP version |
 | `make test` | Run PHPUnit test suite |
-| `make analyse` | Run PHPStan static analysis |
-| `make check` | Run tests and analysis together |
+| `make analyse` | Run PHPStan on `src/` |
+| `make analyse-tests` | Run PHPStan on `tests/` |
+| `make analyse-all` | Run PHPStan on `src/` and `tests/` |
+| `make check` | Run tests, full analysis, and code style check |
+| `make cs-fix` | Fix code style issues |
+| `make cs-check` | Check code style without making changes |
 | `make shell` | Open shell inside container |
 
 ## Environment

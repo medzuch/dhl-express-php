@@ -1,4 +1,34 @@
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+
 parameters:
-  level: 8
-  paths:
-    - src
+    level: 8
+    phpVersion: 80300
+
+    paths:
+        - src
+
+    excludePaths:
+        - src/Support/Hydrator.php  # may need dynamic typing, revisit
+
+    # Allow our own exception hierarchy to be thrown anywhere
+    exceptions:
+        check:
+            missingCheckedExceptionInThrows: false
+        implicitThrows: false
+
+    # Strict type coverage
+    checkMissingIterableValueType: true
+    checkGenericClassInNonGenericObjectType: true
+    checkUninitializedProperties: true
+    checkBenevolentUnionTypes: true
+    checkImplicitMixed: true
+    checkTooWideReturnStatements: true
+
+    # Treat all phpDoc types as authoritative
+    treatPhpDocTypesAsCertain: true
+
+    # Report unmatched ignored errors (keeps neon clean)
+    reportUnmatchedIgnoredErrors: true
+
+    ignoreErrors: []

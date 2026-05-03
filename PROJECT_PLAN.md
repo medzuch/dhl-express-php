@@ -24,19 +24,21 @@
 | Composer | latest | Inside container |
 | HTTP client | Guzzle 7.9 | `guzzlehttp/guzzle` + `guzzlehttp/psr7` |
 | Testing | PHPUnit 11 | Unit + Integration suites |
-| Static analysis | PHPStan 2.0 (level 8) | Strictest level |
+| Static analysis | PHPStan 2.x (^2.1, level 8) | Strictest level; separate config for tests at level 6 |
 | Code style | php-cs-fixer 3.x | PSR-12 + PHP 8.3 migration rules |
 | HTTP mocking | `php-http/mock-client` + `nyholm/psr7` | For unit tests |
 
 ### Daily Workflow
 ```bash
-make up         # start containers
-make install    # composer install
-make test       # phpunit
-make analyse    # phpstan
-make check      # test + analyse
-make shell      # enter container
-make down       # stop
+make up             # start containers
+make install        # composer install
+make test           # phpunit
+make analyse        # phpstan analyse src/ (level 8)
+make analyse-tests  # phpstan analyse tests/ (level 6)
+make analyse-all    # phpstan analyse src/ + tests/
+make check          # test + analyse-all + cs-check
+make shell          # enter container
+make down           # stop
 ```
 
 ---
