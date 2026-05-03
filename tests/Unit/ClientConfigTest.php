@@ -8,6 +8,8 @@ use InvalidArgumentException;
 use Medzuch\DhlExpress\Auth\Credentials;
 use Medzuch\DhlExpress\ClientConfig;
 use Medzuch\DhlExpress\Enum\ApiEnvironment;
+use Medzuch\DhlExpress\ValueObject\IntegrationProfile;
+use Medzuch\DhlExpress\ValueObject\PlatformIdentifier;
 use PHPUnit\Framework\TestCase;
 
 final class ClientConfigTest extends TestCase
@@ -34,6 +36,21 @@ final class ClientConfigTest extends TestCase
         self::assertSame(30.0, $config->timeout);
         self::assertSame('eng', $config->acceptLanguage);
         self::assertSame('3.2.0', $config->xVersion);
+        self::assertNull($config->integrationProfile);
+    }
+
+    public function testAcceptsIntegrationProfile(): void
+    {
+        $profile = new IntegrationProfile(
+            plugin: new PlatformIdentifier(name: 'AcmePlugin', version: '1.0'),
+        );
+        $config = new ClientConfig(
+            environment: ApiEnvironment::Sandbox,
+            credentials: new Credentials('user', 'pass'),
+            integrationProfile: $profile,
+        );
+
+        self::assertSame($profile, $config->integrationProfile);
     }
 
     public function testCustomValuesAreRespected(): void
