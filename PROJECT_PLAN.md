@@ -460,13 +460,13 @@ No instance methods, no chains, no fluent API — utility static asserts only. T
 - [x] `ClientConfig`, `Credentials`, `ApiEnvironment` enum
 - [x] `MessageReference`, `TrackingNumber` value objects
 - [x] Base `DhlException` hierarchy (`DhlNetworkException` + `DhlApiException` with status-specific subclasses)
-- [ ] `HttpClientInterface` + `GuzzleHttpClient`
-- [ ] `RequestBuilder` — standard headers (Message-Reference, x-version, Accept-Language)
-- [ ] `ResponseParser` — JSON decode + error detection
-- [ ] `DhlErrorMapper` — HTTP status → exception subclass; raw DHL `$dhlErrorCode` carried on `DhlApiException`
+- [x] PSR-18 client default (Guzzle) injected through `DhlClient`; no bespoke `HttpClientInterface` — code targets `Psr\Http\Client\ClientInterface` directly via `HttpTransport`
+- [x] `RequestBuilder` — standard headers (Authorization, Accept, Accept-Language, Message-Reference, x-version, optional 3PV plugin/shippingSystem/webstore)
+- [x] `ResponseParser` — JSON decode + error detection (2xx → array; non-2xx routed through `DhlErrorMapper`)
+- [x] `DhlErrorMapper` — HTTP status → exception subclass; raw DHL `$dhlErrorCode` carried on `DhlApiException`
 - [ ] `DhlErrorCode` enum — **deferred**: cases added on demand, only when caller code wants to branch on a specific code (e.g., `9001` invalid x-version, `7012` PLT not allowed). Empty enum not created today; the raw string field is sufficient for now.
-- [ ] `DhlClient` facade skeleton
-- [ ] **First end-to-end test:** `TrackingApi::getStatus()` against sandbox
+- [x] `DhlClient` facade skeleton with `tracking()` accessor
+- [x] **First end-to-end test:** `TrackingApi::getByTrackingNumber()` — unit (mock client) + integration (DHL sandbox, env-gated)
 
 ### Phase 2 — Value Objects & Enums (week 1-2)
 **Goal:** All foundational types in place.
