@@ -28,13 +28,13 @@ jobs:
         run: composer install --prefer-dist --no-progress --no-interaction
 
       - name: PHPUnit (Unit suite)
-        run: ./vendor/bin/phpunit --testsuite Unit
+        run: ./vendor/bin/phpunit --testsuite Unit --exclude-group integration
 
       - name: PHPStan (src)
-        run: ./vendor/bin/phpstan analyse --configuration phpstan.neon --no-progress
+        run: ./vendor/bin/phpstan analyse --configuration phpstan.neon --memory-limit=512M --no-progress
 
       - name: PHPStan (tests)
-        run: ./vendor/bin/phpstan analyse --configuration phpstan-tests.neon --no-progress
+        run: ./vendor/bin/phpstan analyse --configuration phpstan-tests.neon --memory-limit=512M --no-progress
 
       - name: PHP CS Fixer (dry-run)
-        run: ./vendor/bin/php-cs-fixer fix src/ tests/ --dry-run --diff
+        run: ./vendor/bin/php-cs-fixer fix --dry-run --diff

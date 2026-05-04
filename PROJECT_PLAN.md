@@ -395,21 +395,78 @@ final readonly class CreateShipmentRequest {
 
 ---
 
-## 7. Implementation Roadmap
+## 7. Validation Strategy
+
+Validation is layered. Each layer has a single responsibility, and we add complexity only when a real DHL constraint requires it.
+
+### Layer 1 — Self-validating types (constructor enforcement)
+- **Where:** Value Objects and DTOs validate in the constructor and throw `\InvalidArgumentException` on bad input.
+- **Why:** Once an instance exists it is provably valid. Functions that accept `CountryCode` instead of `string` cannot receive malformed input — the type is the proof.
+- **What gets validated here:**
+    - VO format rules: `TrackingNumber` (non-empty), `Weight` (positive value), `Money` (currency consistency), `CountryCode` (ISO 3166-1 alpha-2), `CurrencyCode` (ISO 4217), `PostalCode`, `EmailAddress`, `PhoneNumber`, `HsCode`, `MessageReference` (1-36 chars).
+    - DTO single-field length / range / enum constraints from `docs/dhl/dhl_openapi.yaml`.
+- **No external validator framework.** PHP 8.3 type system + the constructor is the schema.
+
+### Layer 2 — Builder-time cross-field rules
+- **Where:** `CreateShipmentBuilder`, `RateRequestBuilder`, `PickupRequestBuilder`. The `build()` method runs cross-field checks after all setters have been called, then either returns a valid DTO or throws.
+- **Why:** Some rules involve multiple fields and the OpenAPI spec under-specifies them. Catching these client-side avoids a network round-trip and gives the caller a clearer error than a generic DHL 400.
+- **Error model:** errors are **accumulated** during `build()` and thrown together as a single `InvalidRequestException extends DhlException` carrying a list of `{field, message}` entries. (Decision: accumulate + throw once, not fail-fast — better DX when several fields are wrong.)
+- **Examples of rules that live here:**
+    - `isCustomsDeclarable=true` ⇒ `exportDeclaration` required.
+    - Shipper country ≠ recipient country ⇒ customs data needed (with EU intra-zone exemption — list pulled from `docs/dhl/dhl_reference.pdf`).
+    - Dangerous-goods VAS code present ⇒ `DangerousGoods` block required.
+    - Insurance VAS (II) ⇒ declared `Money` value required.
+    - DDP incoterm ⇒ payer details required.
+    - All packages within one shipment share the same `WeightUnit` and `DimensionUnit`.
+    - Pickup `readyByTime < closeTime`, both today-or-future.
+    - Customs invoice line items sum equals shipment declared value (within tolerance).
+
+### Layer 3 — Server-side validation (DHL)
+- **Where:** DHL's API. We do not pre-empt.
+- **Why:** Things like "is this account valid", "does this postal code resolve", "is this service available on this lane", "is this HS code accepted" require DHL's own data. Replicating them client-side guarantees drift and false negatives.
+- **How surfaced:** `DhlErrorMapper` translates 400 / 422 responses into `DhlValidationException` (or a subclass) carrying the DHL field paths and error codes from the response body. Consumers catch and react.
+
+### Shared helpers — `src/Support/Assert.php`
+A tiny internal helper, **not** a framework. Created lazily once we have ≥3 places repeating the same check. Expected surface (string-typed, throw `InvalidArgumentException`):
+- `Assert::lengthBetween(string $value, int $min, int $max, string $fieldName): void`
+- `Assert::notEmpty(string $value, string $fieldName): void`
+- `Assert::oneOf(string $value, array $allowed, string $fieldName): void`
+- `Assert::iso3166Alpha2(string $value, string $fieldName): void`
+- `Assert::iso4217(string $value, string $fieldName): void`
+
+No instance methods, no chains, no fluent API — utility static asserts only. This is one of the rare exceptions to the "no static methods" rule because there is no behavior to mock; these are pure functions.
+
+### What we explicitly avoid
+- ❌ JSON Schema runtime validators. The OpenAPI spec drives our PHP types directly; schema enforcement happens at compile time via PHPStan.
+- ❌ A monolithic `ValidatorService` that every DTO or builder consults. Constructors and `build()` are already the validators.
+- ❌ A separate "validate-only" mode. If you can construct the request, it passes our checks. Server-side outcome is the only further validation.
+- ❌ Replicating server-side rules client-side just because we can. Speed of failure is rarely worth the maintenance cost of mirroring DHL's rules.
+
+### Roadmap impact
+- Phase 1 keeps doing constructor validation in VOs.
+- Phase 2 introduces `Support/Assert.php` once we have repeated checks across VOs.
+- Phase 3 adds `RateRequestBuilder` with cross-field rules and `InvalidRequestException`.
+- Phase 4 adds `CreateShipmentBuilder` — the heaviest cross-field surface (customs, DG, VAS, weight unit consistency).
+- Phase 5 adds `PickupRequestBuilder` cross-field rules (time windows).
+
+---
+
+## 8. Implementation Roadmap
 
 ### Phase 1 — Foundation (week 1)
 **Goal:** Working scaffolding, first happy-path call.
 
-- [ ] Initialize composer.json, autoloading, basic CI
-- [ ] `ClientConfig`, `Credentials`, `ApiEnvironment` enum
-- [ ] `HttpClientInterface` + `GuzzleHttpClient`
-- [ ] `RequestBuilder` — standard headers (Message-Reference, x-version, Accept-Language)
-- [ ] `ResponseParser` — JSON decode + error detection
-- [ ] Base `DhlException` hierarchy
-- [ ] `DhlErrorCode` enum (all 200+ error codes from PDF)
-- [ ] `DhlErrorMapper` — HTTP status + DHL error code → exception
-- [ ] `DhlClient` facade skeleton
-- [ ] **First end-to-end test:** `TrackingApi::getStatus()` against sandbox
+- [x] Initialize composer.json, autoloading, basic CI
+- [x] `ClientConfig`, `Credentials`, `ApiEnvironment` enum
+- [x] `MessageReference`, `TrackingNumber` value objects
+- [x] Base `DhlException` hierarchy (`DhlNetworkException` + `DhlApiException` with status-specific subclasses)
+- [x] PSR-18 client default (Guzzle) injected through `DhlClient`; no bespoke `HttpClientInterface` — code targets `Psr\Http\Client\ClientInterface` directly via `HttpTransport`
+- [x] `RequestBuilder` — standard headers (Authorization, Accept, Accept-Language, Message-Reference, x-version, optional 3PV plugin/shippingSystem/webstore)
+- [x] `ResponseParser` — JSON decode + error detection (2xx → array; non-2xx routed through `DhlErrorMapper`)
+- [x] `DhlErrorMapper` — HTTP status → exception subclass; raw DHL `$dhlErrorCode` carried on `DhlApiException`
+- [ ] `DhlErrorCode` enum — **deferred**: cases added on demand, only when caller code wants to branch on a specific code (e.g., `9001` invalid x-version, `7012` PLT not allowed). Empty enum not created today; the raw string field is sufficient for now.
+- [x] `DhlClient` facade skeleton with `tracking()` accessor
+- [x] **First end-to-end test:** `TrackingApi::getByTrackingNumber()` — unit (mock client) + integration (DHL sandbox, env-gated)
 
 ### Phase 2 — Value Objects & Enums (week 1-2)
 **Goal:** All foundational types in place.
@@ -465,7 +522,7 @@ final readonly class CreateShipmentRequest {
 
 ---
 
-## 8. Testing Strategy
+## 9. Testing Strategy
 
 ### Unit tests
 - Run on every commit, every PR
@@ -491,7 +548,7 @@ final readonly class CreateShipmentRequest {
 
 ---
 
-## 9. Coding Conventions
+## 10. Coding Conventions
 
 - **PSR-12** code style enforced via `php-cs-fixer` (config: `.php-cs-fixer.php`)
 - **PHPStan level 8** — no `mixed`, all return types declared
@@ -506,7 +563,7 @@ final readonly class CreateShipmentRequest {
 
 ---
 
-## 10. Future Considerations (post v1.0)
+## 11. Future Considerations (post v1.0)
 
 - **PSR-3 logger integration** — optional logger injection for request/response logging (PSR-18 is already in place)
 - **PSR-3 logger integration** — optional logger injection for request/response logging
@@ -519,7 +576,7 @@ final readonly class CreateShipmentRequest {
 
 ---
 
-## 11. CI/CD & Deployment (later phase)
+## 12. CI/CD & Deployment (later phase)
 
 When the library matures, the user has plans to build an app on top of it. That app will use:
 - **GitHub Actions** for CI
@@ -534,7 +591,7 @@ The library itself only needs:
 
 ---
 
-## 12. Reference Materials Stored Locally
+## 13. Reference Materials Stored Locally
 
 Place these in the project's `docs/dhl/` folder for offline reference:
 - `dhl_reference.pdf` — All reference data codes (incoterms, packages, errors, etc.)
@@ -544,7 +601,7 @@ When generating enums, ALWAYS cross-reference both files to ensure values are co
 
 ---
 
-## 13. Key DHL Concepts Glossary
+## 14. Key DHL Concepts Glossary
 
 | DHL Term | Meaning |
 |---|---|
@@ -565,7 +622,7 @@ When generating enums, ALWAYS cross-reference both files to ensure values are co
 
 ---
 
-## 14. Status & Decisions Log
+## 15. Status & Decisions Log
 
 | Date | Decision | Rationale |
 |---|---|---|
@@ -575,6 +632,7 @@ When generating enums, ALWAYS cross-reference both files to ensure values are co
 | 2026-05-03 | Debian-based PHP image | Better toolchain compatibility than Alpine |
 | 2026-05-03 | Symfony 8.1 deferred | Will be used in app layer later, not the library |
 | 2026-05-03 | DHL Express API 3.2.2 | Latest published version (Apr 2026) |
+| 2026-05-03 | Three-layer validation (constructors / builders / DHL) | Constructors prove type validity, builders enforce cross-field rules with accumulated errors, server-side rules stay on DHL — no JSON Schema runtime, no monolithic validator service |
 
 ---
 

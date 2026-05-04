@@ -36,22 +36,22 @@ verify:
 	docker compose exec app php -v
 
 test:
-	docker compose exec app ./vendor/bin/phpunit --testsuite Unit
+	docker compose exec app ./vendor/bin/phpunit --testsuite Unit --exclude-group integration --no-coverage
 
 test-integration:
-	docker compose exec app ./vendor/bin/phpunit --testsuite Integration
+	docker compose exec app ./vendor/bin/phpunit --testsuite Integration --group integration --no-coverage
 
 cs-fix:
-	docker compose exec app ./vendor/bin/php-cs-fixer fix src/ tests/
+	docker compose exec app ./vendor/bin/php-cs-fixer fix
 
 cs-check:
-	docker compose exec app ./vendor/bin/php-cs-fixer fix src/ tests/ --dry-run --diff
+	docker compose exec app ./vendor/bin/php-cs-fixer fix --dry-run --diff
 
 analyse:
-	docker compose exec app ./vendor/bin/phpstan analyse --configuration phpstan.neon
+	docker compose exec app ./vendor/bin/phpstan analyse --configuration phpstan.neon --memory-limit=512M
 
 analyse-tests:
-	docker compose exec app ./vendor/bin/phpstan analyse --configuration phpstan-tests.neon
+	docker compose exec app ./vendor/bin/phpstan analyse --configuration phpstan-tests.neon --memory-limit=512M
 
 analyse-all: analyse analyse-tests
 

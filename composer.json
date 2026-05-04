@@ -31,22 +31,31 @@
         }
     },
     "scripts": {
-        "test": "phpunit",
-        "analyse": "phpstan analyse src/",
-        "cs-fix": "php-cs-fixer fix src/ tests/",
-        "cs-check": "php-cs-fixer fix src/ tests/ --dry-run --diff",
+        "test": "phpunit --testsuite Unit --no-coverage",
+        "test-integration": "phpunit --testsuite Integration --no-coverage",
+        "analyse": "phpstan analyse --configuration phpstan.neon",
+        "analyse-tests": "phpstan analyse --configuration phpstan-tests.neon",
+        "analyse-all": [
+            "@analyse",
+            "@analyse-tests"
+        ],
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
         "check": [
             "@test",
-            "@analyse",
+            "@analyse-all",
             "@cs-check"
         ]
     },
     "scripts-descriptions": {
-        "test": "Run PHPUnit test suite",
-        "analyse": "Run PHPStan static analysis",
+        "test": "Run PHPUnit unit suite (integration excluded)",
+        "test-integration": "Run PHPUnit integration suite (requires DHL_API_KEY)",
+        "analyse": "Run PHPStan on src/ (level 8)",
+        "analyse-tests": "Run PHPStan on tests/ (level 6)",
+        "analyse-all": "Run PHPStan on src/ and tests/",
         "cs-fix": "Fix code style issues",
         "cs-check": "Check code style without making changes",
-        "check": "Run tests, static analysis, and code style check"
+        "check": "Run tests, full static analysis, and code style check"
     },
     "config": {
         "allow-plugins": {

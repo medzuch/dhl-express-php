@@ -9,7 +9,7 @@ parameters:
         - src
 
     excludePaths:
-        - src/Support/Hydrator.php  # may need dynamic typing, revisit
+        - src/Support/Hydrator.php (?)  # may need dynamic typing, revisit; optional until file exists
 
     # Allow our own exception hierarchy to be thrown anywhere
     exceptions:
@@ -17,13 +17,12 @@ parameters:
             missingCheckedExceptionInThrows: false
         implicitThrows: false
 
-    # Strict type coverage
-    checkMissingIterableValueType: true
-    checkGenericClassInNonGenericObjectType: true
+    # Strict type coverage (only options still valid in PHPStan 2.x;
+    # iterable value type, generic class, and too-wide-return checks
+    # are now enforced automatically at level 8).
     checkUninitializedProperties: true
     checkBenevolentUnionTypes: true
     checkImplicitMixed: true
-    checkTooWideReturnStatements: true
 
     # Treat all phpDoc types as authoritative
     treatPhpDocTypesAsCertain: true
