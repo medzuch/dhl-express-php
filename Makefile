@@ -48,10 +48,10 @@ cs-check:
 	docker compose exec app ./vendor/bin/php-cs-fixer fix --dry-run --diff
 
 analyse:
-	docker compose exec app ./vendor/bin/phpstan analyse --configuration phpstan.neon
+	docker compose exec app ./vendor/bin/phpstan analyse --configuration phpstan.neon --memory-limit=512M
 
 analyse-tests:
-	docker compose exec app ./vendor/bin/phpstan analyse --configuration phpstan-tests.neon
+	docker compose exec app ./vendor/bin/phpstan analyse --configuration phpstan-tests.neon --memory-limit=512M
 
 analyse-all: analyse analyse-tests
 

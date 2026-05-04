@@ -158,7 +158,9 @@ final class RequestBuilderTest extends TestCase
             /**
              * @param list<MessageReference> $queue
              */
-            public function __construct(private array $queue) {}
+            public function __construct(private array $queue)
+            {
+            }
 
             public function generate(): MessageReference
             {
@@ -194,7 +196,7 @@ final class RequestBuilderTest extends TestCase
     private function buildBuilder(?IntegrationProfile $profile = null): RequestBuilder
     {
         $factory = new Psr17Factory();
-        $generator = new class implements MessageReferenceGenerator {
+        $generator = new class () implements MessageReferenceGenerator {
             public function generate(): MessageReference
             {
                 return new MessageReference(RequestBuilderTest::FIXED_REFERENCE);
