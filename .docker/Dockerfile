@@ -3,6 +3,7 @@ FROM php:8.3-cli
 RUN apt-get update && apt-get install -y \
     curl \
     libxml2-dev \
+    poppler-utils \
     unzip \
   && docker-php-ext-install xml \
   && pecl install xdebug \
