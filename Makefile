@@ -36,10 +36,10 @@ verify:
 	docker compose exec app php -v
 
 test:
-	docker compose exec app ./vendor/bin/phpunit --testsuite Unit --no-coverage
+	docker compose exec app ./vendor/bin/phpunit --testsuite Unit --exclude-group integration --no-coverage
 
 test-integration:
-	docker compose exec app ./vendor/bin/phpunit --testsuite Integration --no-coverage
+	docker compose exec app ./vendor/bin/phpunit --testsuite Integration --group integration --no-coverage
 
 cs-fix:
 	docker compose exec app ./vendor/bin/php-cs-fixer fix
