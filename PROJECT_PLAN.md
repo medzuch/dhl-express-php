@@ -228,8 +228,9 @@ dhl-express-php/
 │   ├── Enum/                                   # PHP 8.1+ backed enums (string-backed)
 │   │   ├── Incoterm.php                        # EXW, FCA, CPT, CIP, DPU, DAP, DDP, etc.
 │   │   ├── PackageTypeCode.php                 # TBS, 1CE, CE1, 2BC, XPD, etc.
-│   │   ├── WeightUnit.php                      # KG, LB
-│   │   ├── DimensionUnit.php                   # CM, IN
+│   │   ├── UnitSystem.php                      # metric, imperial (DHL wire format)
+│   │   ├── WeightUnit.php                      # KG, LB (with ->system() helper)
+│   │   ├── DimensionUnit.php                   # CM, IN (with ->system() helper)
 │   │   ├── ProductCode.php                     # P, D, K, T, etc.
 │   │   ├── ServiceCode.php                     # WY, PK, PT, PU, etc. (from VAS list)
 │   │   ├── BusinessPartyTypeCode.php           # BU, DC, GV, OT, PR, RE
@@ -364,9 +365,21 @@ enum Incoterm: string {
     public function description(): string { /* return human-readable */ }
 }
 
+enum UnitSystem: string {
+    case Metric = 'metric';     // DHL wire format
+    case Imperial = 'imperial';
+}
+
 enum WeightUnit: string {
-    case KG = 'metric';   // KG in DHL API
-    case LB = 'imperial'; // LB in DHL API
+    case KG = 'KG';
+    case LB = 'LB';
+
+    public function system(): UnitSystem {
+        return match ($this) {
+            self::KG => UnitSystem::Metric,
+            self::LB => UnitSystem::Imperial,
+        };
+    }
 }
 ```
 
@@ -469,12 +482,20 @@ No instance methods, no chains, no fluent API — utility static asserts only. T
 - [x] **First end-to-end test:** `TrackingApi::getByTrackingNumber()` — unit (mock client) + integration (DHL sandbox, env-gated)
 
 ### Phase 2 — Value Objects & Enums (week 1-2)
-**Goal:** All foundational types in place.
+**Goal:** All foundational types in place. Split into two PRs to keep the review surface manageable.
 
-- [ ] All `Enum/` classes (Incoterm, PackageTypeCode, WeightUnit, etc. — ~25 enums)
-- [ ] All `ValueObject/` classes with validation
-- [ ] PHPStan-level-8 clean
-- [ ] 100% test coverage on VOs and Enums
+#### Phase 2A — value objects + unit enums
+- [x] Unit enums: `UnitSystem`, `WeightUnit`, `DimensionUnit`
+- [x] Format-only VOs: `CountryCode` (ISO 3166-1 alpha-2), `CurrencyCode` (ISO 4217)
+- [x] Measurement VOs: `Weight`, `Dimensions`, `Money`
+- [x] Identity VOs: `EmailAddress`, `PhoneNumber`, `AccountNumber`, `PostalCode`, `ServiceAreaCode`, `HsCode`
+- [x] PHPStan-level-8 clean on src/, level-6 clean on tests/
+
+#### Phase 2B — DHL business enums (~20 enums driven by `dhl_reference.pdf`)
+- [ ] `Incoterm`, `PackageTypeCode`, `ProductCode`, `ServiceCode`, `BusinessPartyTypeCode`, `ShippingRole`, `PaymentTerm`, `ContentTypeCode`, `ExportReasonType`, `TransportMode`
+- [ ] `ImageOptionTypeCode`, `ImageEncodingFormat`, `OtherChargeTypeCode`, `LandedCostRateType`, `PickupReason`
+- [ ] `RegistrationNumberTypeCode`, `InvoiceReferenceTypeCode`, `InvoiceCustomsDocumentTypeCode`, `LineItemReferenceTypeCode`, `LineItemCustomsDocumentTypeCode`
+- [ ] `DangerousGoodsContentId`, `DangerousGoodsServiceCode`, `HttpStatusCode`
 
 ### Phase 3 — Read-Only APIs (week 2-3)
 **Goal:** All GET-style operations working.
@@ -633,6 +654,8 @@ When generating enums, ALWAYS cross-reference both files to ensure values are co
 | 2026-05-03 | Symfony 8.1 deferred | Will be used in app layer later, not the library |
 | 2026-05-03 | DHL Express API 3.2.2 | Latest published version (Apr 2026) |
 | 2026-05-03 | Three-layer validation (constructors / builders / DHL) | Constructors prove type validity, builders enforce cross-field rules with accumulated errors, server-side rules stay on DHL — no JSON Schema runtime, no monolithic validator service |
+| 2026-05-04 | Three-enum split for unit handling: `UnitSystem` + `WeightUnit` + `DimensionUnit` | DHL's wire format only carries `unitOfMeasurement: metric\|imperial` at the shipment level. The earlier sketch `enum WeightUnit { case KG = 'metric' }` conflated unit symbol and system. Splitting them keeps backing values matching their semantic meaning (`WeightUnit::KG->value === 'KG'`) and lets the future `CreateShipmentBuilder` enforce shipment-wide consistency by reading `->system()` on each value, with one source of truth per concept. |
+| 2026-05-04 | Format-only validation for `CountryCode` / `CurrencyCode` | Maintaining ~250 ISO 3166 / ~180 ISO 4217 codes client-side is its own engineering problem and DHL already rejects unknown codes with a 400 → `DhlValidationException`. Format check (regex) plus server-side validation is sufficient. |
 
 ---
 
