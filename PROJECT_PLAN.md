@@ -569,7 +569,7 @@ Avoid front-loading. Ship these alongside the DTOs that use them, so we have a c
 #### Cross-cutting
 - [ ] DTOs for all responses (per sub-phase)
 - [ ] Unit tests per API (mocked HTTP)
-- [ ] Integration tests against sandbox (env-gated, per sub-phase)
+- [x] Integration tests against sandbox — covers Tracking (single + multi), Address, ReferenceData, Products, Identifier. Shared `IntegrationTestCase` base with env-gated `makeClient()` and `requireAccountNumber()` helpers; new sub-phase tests slot in alongside.
 
 ### Phase 4 — Shipment Creation (week 3-4) — biggest feature
 **Goal:** Create a real shipment end to end.
