@@ -38,8 +38,8 @@ final class RequestBuilder
     }
 
     /**
-     * @param array<string, scalar>|null $queryParams
-     * @param array<string, mixed>|null  $jsonBody
+     * @param array<string, scalar|list<scalar>>|null $queryParams
+     * @param array<string, mixed>|null               $jsonBody
      */
     public function build(
         string $method,
@@ -61,7 +61,7 @@ final class RequestBuilder
     }
 
     /**
-     * @param array<string, scalar>|null $queryParams
+     * @param array<string, scalar|list<scalar>>|null $queryParams
      */
     private function buildUrl(string $path, ?array $queryParams): string
     {
@@ -71,7 +71,19 @@ final class RequestBuilder
             return $url;
         }
 
-        return $url . '?' . http_build_query($queryParams, '', '&', PHP_QUERY_RFC3986);
+        $parts = [];
+        foreach ($queryParams as $key => $value) {
+            $encodedKey = rawurlencode($key);
+            if (is_array($value)) {
+                foreach ($value as $item) {
+                    $parts[] = $encodedKey . '=' . rawurlencode((string) $item);
+                }
+            } else {
+                $parts[] = $encodedKey . '=' . rawurlencode((string) $value);
+            }
+        }
+
+        return $url . '?' . implode('&', $parts);
     }
 
     private function applyStandardHeaders(RequestInterface $request): RequestInterface

@@ -122,6 +122,25 @@ final class RequestBuilderTest extends TestCase
         self::assertStringContainsString('postalCode=NY%2010001', (string) $request->getUri());
     }
 
+    public function testRepeatsQueryParameterPerListItem(): void
+    {
+        $request = $this->buildBuilder()->build(
+            'GET',
+            '/tracking',
+            queryParams: [
+                'shipmentTrackingNumber' => ['9356579890', '4818240420', '5584773180'],
+                'trackingView' => 'all-checkpoints',
+            ],
+        );
+
+        $uri = (string) $request->getUri();
+        self::assertStringContainsString('shipmentTrackingNumber=9356579890', $uri);
+        self::assertStringContainsString('shipmentTrackingNumber=4818240420', $uri);
+        self::assertStringContainsString('shipmentTrackingNumber=5584773180', $uri);
+        self::assertStringContainsString('trackingView=all-checkpoints', $uri);
+        self::assertStringNotContainsString('shipmentTrackingNumber%5B', $uri);
+    }
+
     public function testAttachesJsonBodyForPostRequests(): void
     {
         $body = ['plannedShippingDateAndTime' => '2026-05-04T12:00:00 GMT+00:00'];
