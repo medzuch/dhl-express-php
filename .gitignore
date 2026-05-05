@@ -7,3 +7,4 @@
 /var/
 *.log
 .DS_Store
+/docs/dhl/dhl_reference.txt

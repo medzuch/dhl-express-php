@@ -226,33 +226,26 @@ dhl-express-php/
 │   │   ├── HsCode.php                          # Harmonized System code
 │   │   └── MessageReference.php                # UUID-style request reference
 │   ├── Enum/                                   # PHP 8.1+ backed enums (string-backed)
-│   │   ├── Incoterm.php                        # EXW, FCA, CPT, CIP, DPU, DAP, DDP, etc.
-│   │   ├── PackageTypeCode.php                 # TBS, 1CE, CE1, 2BC, XPD, etc.
+│   │   ├── ApiEnvironment.php                  # Sandbox, Production
 │   │   ├── UnitSystem.php                      # metric, imperial (DHL wire format)
 │   │   ├── WeightUnit.php                      # KG, LB (with ->system() helper)
 │   │   ├── DimensionUnit.php                   # CM, IN (with ->system() helper)
-│   │   ├── ProductCode.php                     # P, D, K, T, etc.
-│   │   ├── ServiceCode.php                     # WY, PK, PT, PU, etc. (from VAS list)
+│   │   ├── DistanceUnit.php                    # km, mi (Service Point distance)
+│   │   ├── DayOfWeek.php                       # MONDAY..SUNDAY + HOLIDAY
+│   │   ├── ServicePointType.php                # CITY, STATION, PARTNER, TWENTYFOURSEVEN
+│   │   ├── LabelEncodingFormat.php             # pdf, zpl, lp2, epl
+│   │   ├── Incoterm.php                        # EXW, FCA, CPT, CIP, DPU, DAP, DDP + 9 legacy
+│   │   ├── PackageTypeCode.php                 # 18 DHL-supplied global package types
 │   │   ├── BusinessPartyTypeCode.php           # BU, DC, GV, OT, PR, RE
-│   │   ├── DangerousGoodsContentId.php         # 650, A01, 651, etc.
-│   │   ├── DangerousGoodsServiceCode.php       # HY, HL, HN, etc.
-│   │   ├── RegistrationNumberTypeCode.php      # CNP, DAN, EOR, VAT, EIN, etc.
-│   │   ├── InvoiceReferenceTypeCode.php        # ACL, CID, CN, CU, ITN, MRN, etc.
-│   │   ├── InvoiceCustomsDocumentTypeCode.php  # 972, AHC, ATA, ATR, etc.
-│   │   ├── LineItemReferenceTypeCode.php       # AFE, AAJ, ABW, ALX, etc.
-│   │   ├── LineItemCustomsDocumentTypeCode.php # Same as invoice + variants
-│   │   ├── OtherChargeTypeCode.php             # ADMIN, DELIV, DOCUM, etc.
-│   │   ├── LandedCostRateType.php              # default_rate, derived_rate, etc.
-│   │   ├── ExportReasonType.php                # PERSONAL, COMMERCIAL, GIFT
-│   │   ├── TransportMode.php                   # AIR, OCEAN, LAND
-│   │   ├── ShippingRole.php                    # shipper, receiver, payer, buyer, seller, importer, exporter, broker
-│   │   ├── PaymentTerm.php                     # S, R, T (shipper, receiver, third party)
-│   │   ├── PickupReason.php                    # closed, late, etc.
-│   │   ├── ImageOptionTypeCode.php             # invoice, label, receipt, shipmentReceipt, etc.
-│   │   ├── ImageEncodingFormat.php             # PDF, ZPL, EPL, LP2, TIFF, PNG, JPEG
-│   │   ├── ContentTypeCode.php                 # NON_DOCUMENTS, DOCUMENTS
-│   │   ├── ApiEnvironment.php                  # SANDBOX, PRODUCTION
-│   │   └── HttpStatusCode.php                  # 200, 201, 400, 401, 403, 404, 422, 500
+│   │   ├── OtherChargeTypeCode.php             # ADMIN, DELIV, DOCUM, ... (15 codes)
+│   │   ├── LandedCostRateType.php              # default_rate, derived_rate, ... (6 codes)
+│   │   ├── RegistrationNumberTypeCode.php      # VAT, EIN, EOR, CNP, ... (29 codes)
+│   │   ├── PackageReferenceTypeCode.php        # CU, AAO, FF, FN, ... (14 codes)
+│   │   ├── InvoiceReferenceTypeCode.php        # ACL, CID, CN, CU, ITN, MRN, ... (41 codes)
+│   │   ├── LineItemReferenceTypeCode.php       # AFE, AAJ, ABW, ALX, ... (43 codes)
+│   │   ├── CustomsDocumentTypeCode.php         # Single enum used at invoice + line-item level (54 codes incl. 972 → T2LFDispense)
+│   │   ├── DangerousGoodsContentId.php         # 20 content classifications
+│   │   └── DangerousGoodsServiceCode.php       # 13 unique service codes (HY, HL, HN, HU, …)
 │   ├── Exception/                              # Custom exception hierarchy
 │   │   ├── DhlException.php                    # Base exception (abstract)
 │   │   ├── DhlNetworkException.php             # Connection/timeout failures
@@ -491,11 +484,23 @@ No instance methods, no chains, no fluent API — utility static asserts only. T
 - [x] Identity VOs: `EmailAddress`, `PhoneNumber`, `AccountNumber`, `PostalCode`, `ServiceAreaCode`, `HsCode`
 - [x] PHPStan-level-8 clean on src/, level-6 clean on tests/
 
-#### Phase 2B — DHL business enums (~20 enums driven by `dhl_reference.pdf`)
-- [ ] `Incoterm`, `PackageTypeCode`, `ProductCode`, `ServiceCode`, `BusinessPartyTypeCode`, `ShippingRole`, `PaymentTerm`, `ContentTypeCode`, `ExportReasonType`, `TransportMode`
-- [ ] `ImageOptionTypeCode`, `ImageEncodingFormat`, `OtherChargeTypeCode`, `LandedCostRateType`, `PickupReason`
-- [ ] `RegistrationNumberTypeCode`, `InvoiceReferenceTypeCode`, `InvoiceCustomsDocumentTypeCode`, `LineItemReferenceTypeCode`, `LineItemCustomsDocumentTypeCode`
-- [ ] `DangerousGoodsContentId`, `DangerousGoodsServiceCode`, `HttpStatusCode`
+#### Phase 2B — DHL business enums (driven by `dhl_reference.pdf` + OpenAPI inline enums)
+
+Shipped:
+- [x] Shipment essentials: `Incoterm` (16), `PackageTypeCode` (18)
+- [x] Operational: `BusinessPartyTypeCode` (6), `OtherChargeTypeCode` (15), `LandedCostRateType` (6)
+- [x] Service Point / output: `DistanceUnit` (2), `ServicePointType` (4), `DayOfWeek` (8), `LabelEncodingFormat` (4)
+- [x] Customs / reference: `InvoiceReferenceTypeCode` (41), `LineItemReferenceTypeCode` (43), `CustomsDocumentTypeCode` (54, single enum used at both invoice and line-item level), `RegistrationNumberTypeCode` (29), `PackageReferenceTypeCode` (14)
+- [x] Dangerous goods: `DangerousGoodsContentId` (20), `DangerousGoodsServiceCode` (13)
+
+Deferred — no authoritative source in `docs/dhl/`:
+- `ContentTypeCode` (DOCUMENTS / NON_DOCUMENTS) — DHL conveys this via the boolean `isCustomsDeclarable` field, not a separate enum.
+- `ProductCode`, `ServiceCode` — OpenAPI types both as free `string`; the canonical lists are not in either reference doc and must not be invented.
+- `ShippingRole`, `ExportReasonType`, `TransportMode`, `PickupReason` — referenced by name in the original plan but no enumerated list found in `docs/dhl/`. Free-text fields per the OpenAPI schemas.
+- `PaymentTerm` — PROJECT_PLAN sketch said `S, R, T`; OpenAPI uses `shipper, payer, duties-taxes`. Mismatched authoritative sources — keep as free string until a concrete need clarifies which one DHL actually accepts.
+- `ImageOptionTypeCode` — OpenAPI has `imageOptions` as an object structure, not an enumerated type code; the `typeCode` inside is a free string.
+- `HttpStatusCode` — making this an enum would brittlely constrain `DhlApiException::$httpStatus` when DHL can return any HTTP status. Raw `int` is sufficient.
+- `DhlErrorCode` — already deferred in Phase 1 for the same reason (curated list added on demand).
 
 ### Phase 3 — Read-Only APIs (week 2-3)
 **Goal:** All GET-style operations working.
@@ -656,6 +661,8 @@ When generating enums, ALWAYS cross-reference both files to ensure values are co
 | 2026-05-03 | Three-layer validation (constructors / builders / DHL) | Constructors prove type validity, builders enforce cross-field rules with accumulated errors, server-side rules stay on DHL — no JSON Schema runtime, no monolithic validator service |
 | 2026-05-04 | Three-enum split for unit handling: `UnitSystem` + `WeightUnit` + `DimensionUnit` | DHL's wire format only carries `unitOfMeasurement: metric\|imperial` at the shipment level. The earlier sketch `enum WeightUnit { case KG = 'metric' }` conflated unit symbol and system. Splitting them keeps backing values matching their semantic meaning (`WeightUnit::KG->value === 'KG'`) and lets the future `CreateShipmentBuilder` enforce shipment-wide consistency by reading `->system()` on each value, with one source of truth per concept. |
 | 2026-05-04 | Format-only validation for `CountryCode` / `CurrencyCode` | Maintaining ~250 ISO 3166 / ~180 ISO 4217 codes client-side is its own engineering problem and DHL already rejects unknown codes with a 400 → `DhlValidationException`. Format check (regex) plus server-side validation is sufficient. |
+| 2026-05-04 | Single `CustomsDocumentTypeCode` instead of separate invoice/line-item enums | OpenAPI uses identical value spaces for the customs-document field at both invoice level (Reference Data Guide section 10) and line-item level (section 12); a single enum is the simpler model. Original PROJECT_PLAN sketched two separate enums but that would have duplicated 54 cases for no observable benefit. |
+| 2026-05-04 | Defer enums without authoritative source: `ContentTypeCode`, `ProductCode`, `ServiceCode`, `ShippingRole`, `ExportReasonType`, `TransportMode`, `PaymentTerm`, `PickupReason`, `ImageOptionTypeCode`, `HttpStatusCode` | CLAUDE.md is unambiguous: do not invent values. These names appeared in early planning but their value lists are not in either `dhl_openapi.yaml` (typed as free `string`) or `dhl_reference.pdf` (no section). `HttpStatusCode` is a separate case — making it an enum would brittlely constrain the existing `int $httpStatus` field on `DhlApiException`. All remain free strings or raw types until a concrete consumer surfaces with a definitive source. |
 
 ---
 
