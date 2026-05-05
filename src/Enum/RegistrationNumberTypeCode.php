@@ -7,12 +7,12 @@ namespace Medzuch\DhlExpress\Enum;
 /**
  * Type of registration number that identifies a shipping party.
  *
- * Twenty-nine codes drawn from the OpenAPI inline enum and
- * Reference Data Guide section 7. Each code carries country and
+ * 25 codes drawn from the `registrationNumberTypeCode` sheet of
+ * `dhl_reference_data.xlsx`. Each code carries country and
  * shipping-role applicability constraints (e.g. CNP is BR-only,
- * SDT is shipper-only) — those constraints belong in the
- * shipment builder, not the enum, since they depend on the wider
- * request context.
+ * SDT is shipper-only, SUB is DE-only) — those constraints belong
+ * in the shipment builder, not the enum, since they depend on the
+ * wider request context.
  */
 enum RegistrationNumberTypeCode: string
 {
@@ -24,17 +24,12 @@ enum RegistrationNumberTypeCode: string
     case FED = 'FED';
     case STA = 'STA';
     case CNP = 'CNP';
-    case IE = 'IE';
-    case INN = 'INN';
-    case KPP = 'KPP';
-    case OGR = 'OGR';
-    case OKP = 'OKP';
-    case MRN = 'MRN';
     case SDT = 'SDT';
     case FTZ = 'FTZ';
     case DAN = 'DAN';
     case TAN = 'TAN';
     case DTF = 'DTF';
+    case DUT = 'DUT';
     case RGP = 'RGP';
     case NID = 'NID';
     case PAS = 'PAS';
@@ -45,4 +40,5 @@ enum RegistrationNumberTypeCode: string
     case CIC = 'CIC';
     case PEP = 'PEP';
     case FII = 'FII';
+    case SUB = 'SUB';
 }
