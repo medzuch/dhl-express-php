@@ -9,9 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class CustomsDocumentTypeCodeTest extends TestCase
 {
-    public function testCoversFiftyFourUniqueCustomsDocumentCodes(): void
+    public function testCoversFiftyFiveUniqueCustomsDocumentCodes(): void
     {
-        self::assertCount(54, CustomsDocumentTypeCode::cases());
+        self::assertCount(55, CustomsDocumentTypeCode::cases());
     }
 
     public function testRepresentativeCodesResolveToTheirBackingValues(): void
@@ -20,6 +20,8 @@ final class CustomsDocumentTypeCodeTest extends TestCase
         self::assertSame('COO', CustomsDocumentTypeCode::COO->value);
         self::assertSame('PAS', CustomsDocumentTypeCode::PAS->value);
         self::assertSame('DGD', CustomsDocumentTypeCode::DGD->value);
+        self::assertSame('IMP', CustomsDocumentTypeCode::IMP->value);
+        self::assertSame('PPY', CustomsDocumentTypeCode::PPY->value);
     }
 
     public function testDigitPrefixedWireCodeMapsToDescriptiveCaseName(): void

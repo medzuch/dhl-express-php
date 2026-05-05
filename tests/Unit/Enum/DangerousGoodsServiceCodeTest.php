@@ -9,9 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class DangerousGoodsServiceCodeTest extends TestCase
 {
-    public function testCoversThirteenServiceCodes(): void
+    public function testCoversSixteenServiceCodes(): void
     {
-        self::assertCount(13, DangerousGoodsServiceCode::cases());
+        self::assertCount(16, DangerousGoodsServiceCode::cases());
     }
 
     public function testRepresentativeCodesResolveToTheirBackingValues(): void
@@ -19,6 +19,9 @@ final class DangerousGoodsServiceCodeTest extends TestCase
         self::assertSame('HY', DangerousGoodsServiceCode::HY->value);
         self::assertSame('HU', DangerousGoodsServiceCode::HU->value);
         self::assertSame('HE', DangerousGoodsServiceCode::HE->value);
+        self::assertSame('HA', DangerousGoodsServiceCode::HA->value);
+        self::assertSame('HB', DangerousGoodsServiceCode::HB->value);
+        self::assertSame('YN', DangerousGoodsServiceCode::YN->value);
     }
 
     public function testFromCanResolveKnownCode(): void
@@ -26,10 +29,10 @@ final class DangerousGoodsServiceCodeTest extends TestCase
         self::assertSame(DangerousGoodsServiceCode::HY, DangerousGoodsServiceCode::from('HY'));
     }
 
-    public function testEachBackingValueIsTwoUppercaseLettersStartingWithH(): void
+    public function testEachBackingValueIsTwoUppercaseLetters(): void
     {
         foreach (DangerousGoodsServiceCode::cases() as $case) {
-            self::assertMatchesRegularExpression('/^H[A-Z]$/', $case->value);
+            self::assertMatchesRegularExpression('/^[A-Z]{2}$/', $case->value);
         }
     }
 }

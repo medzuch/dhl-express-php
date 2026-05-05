@@ -7,12 +7,11 @@ namespace Medzuch\DhlExpress\Enum;
 /**
  * Reference type code allowed at the line-item level.
  *
- * Mirrors the OpenAPI line-item-reference enum and Reference Data
- * Guide section 11 — 43 codes covering ECCN, DDTC fields, brand /
- * model / part-number identifiers, and various tariff and origin
- * references. Distinct value space from
- * {@see InvoiceReferenceTypeCode} despite some overlap (PON, AAM,
- * TAR, TCO appear in both).
+ * 41 codes drawn from the `invoiceItemReferenceType` sheet of
+ * `dhl_reference_data.xlsx` — ECCN, DDTC fields, brand / model /
+ * part-number identifiers, and various tariff and origin references.
+ * Distinct value space from {@see InvoiceReferenceTypeCode} despite
+ * some overlap (PON, TAR, TCO appear in both).
  */
 enum LineItemReferenceTypeCode: string
 {
@@ -26,7 +25,6 @@ enum LineItemReferenceTypeCode: string
     case DTM = 'DTM';
     case DTQ = 'DTQ';
     case DTR = 'DTR';
-    case INB = 'INB';
     case ITR = 'ITR';
     case MAK = 'MAK';
     case MID = 'MID';
@@ -40,7 +38,6 @@ enum LineItemReferenceTypeCode: string
     case SON = 'SON';
     case SME = 'SME';
     case USM = 'USM';
-    case AAM = 'AAM';
     case CFR = 'CFR';
     case DOM = 'DOM';
     case FOR = 'FOR';

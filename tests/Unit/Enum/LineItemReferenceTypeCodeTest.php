@@ -9,9 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class LineItemReferenceTypeCodeTest extends TestCase
 {
-    public function testCoversAllFortyThreeLineItemCodes(): void
+    public function testCoversAllFortyOneLineItemCodes(): void
     {
-        self::assertCount(43, LineItemReferenceTypeCode::cases());
+        self::assertCount(41, LineItemReferenceTypeCode::cases());
     }
 
     public function testRepresentativeCodesResolveToTheirBackingValues(): void

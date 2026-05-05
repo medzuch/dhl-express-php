@@ -9,9 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class RegistrationNumberTypeCodeTest extends TestCase
 {
-    public function testCoversTwentyNineRegistrationCodes(): void
+    public function testCoversTwentyFiveRegistrationCodes(): void
     {
-        self::assertCount(29, RegistrationNumberTypeCode::cases());
+        self::assertCount(25, RegistrationNumberTypeCode::cases());
     }
 
     public function testRepresentativeCodesResolveToTheirBackingValues(): void
@@ -20,6 +20,8 @@ final class RegistrationNumberTypeCodeTest extends TestCase
         self::assertSame('EIN', RegistrationNumberTypeCode::EIN->value);
         self::assertSame('EOR', RegistrationNumberTypeCode::EOR->value);
         self::assertSame('CNP', RegistrationNumberTypeCode::CNP->value);
+        self::assertSame('DUT', RegistrationNumberTypeCode::DUT->value);
+        self::assertSame('SUB', RegistrationNumberTypeCode::SUB->value);
     }
 
     public function testFromCanResolveKnownCode(): void
@@ -27,10 +29,10 @@ final class RegistrationNumberTypeCodeTest extends TestCase
         self::assertSame(RegistrationNumberTypeCode::VAT, RegistrationNumberTypeCode::from('VAT'));
     }
 
-    public function testEachBackingValueIsTwoToThreeUppercaseLetters(): void
+    public function testEachBackingValueIsThreeUppercaseLetters(): void
     {
         foreach (RegistrationNumberTypeCode::cases() as $case) {
-            self::assertMatchesRegularExpression('/^[A-Z]{2,3}$/', $case->value);
+            self::assertMatchesRegularExpression('/^[A-Z]{3}$/', $case->value);
         }
     }
 }

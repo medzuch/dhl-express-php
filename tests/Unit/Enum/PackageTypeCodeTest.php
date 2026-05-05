@@ -26,6 +26,10 @@ final class PackageTypeCodeTest extends TestCase
         yield 'WB2' => [PackageTypeCode::WB2, 'WB2'];
         yield 'WB3' => [PackageTypeCode::WB3, 'WB3'];
         yield 'WB6' => [PackageTypeCode::WB6, 'WB6'];
+        yield 'BB1' => [PackageTypeCode::BB1, 'BB1'];
+        yield 'BB2' => [PackageTypeCode::BB2, 'BB2'];
+        yield 'BB3' => [PackageTypeCode::BB3, 'BB3'];
+        yield 'BB6' => [PackageTypeCode::BB6, 'BB6'];
         yield '2BX' => [PackageTypeCode::Box2Shoe, '2BX'];
         yield '3BX' => [PackageTypeCode::Box3, '3BX'];
         yield '4BX' => [PackageTypeCode::Box4, '4BX'];
@@ -41,9 +45,9 @@ final class PackageTypeCodeTest extends TestCase
         self::assertSame($expected, $case->value);
     }
 
-    public function testCoversAllEighteenGlobalPackageTypes(): void
+    public function testCoversAllTwentyTwoGlobalPackageTypes(): void
     {
-        self::assertCount(18, PackageTypeCode::cases());
+        self::assertCount(22, PackageTypeCode::cases());
     }
 
     public function testFromCanResolveByDhlCode(): void

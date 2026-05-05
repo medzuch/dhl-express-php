@@ -9,9 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class DangerousGoodsContentIdTest extends TestCase
 {
-    public function testCoversTwentyContentIds(): void
+    public function testCoversTwentyThreeContentIds(): void
     {
-        self::assertCount(20, DangerousGoodsContentId::cases());
+        self::assertCount(23, DangerousGoodsContentId::cases());
     }
 
     public function testRepresentativeCodesResolveToTheirBackingValues(): void
@@ -20,6 +20,9 @@ final class DangerousGoodsContentIdTest extends TestCase
         self::assertSame('901', DangerousGoodsContentId::DryIceUN1845->value);
         self::assertSame('A01', DangerousGoodsContentId::A01->value);
         self::assertSame('970', DangerousGoodsContentId::LithiumMetalPI970->value);
+        self::assertSame('977', DangerousGoodsContentId::SodiumIonPI977->value);
+        self::assertSame('978', DangerousGoodsContentId::SodiumIonPI978->value);
+        self::assertSame('YN1', DangerousGoodsContentId::YN1->value);
     }
 
     public function testFromCanResolveDigitPrefixedWireCode(): void
