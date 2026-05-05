@@ -12,11 +12,12 @@ A standalone, framework-agnostic PHP 8.3 library wrapping the DHL Express MyDHL 
 Full architecture, folder structure, and implementation roadmap:
 @PROJECT_PLAN.md
 
-DHL official documentation:
-- OpenAPI spec: `docs/dhl/dhl_openapi.yaml`
-- Reference data PDF: `docs/dhl/dhl_reference.pdf`
+DHL official documentation (precedence order — primary first):
+1. **Reference data workbook:** `docs/dhl/dhl_reference_data.xlsx` — machine-readable dump from DHL's Reference Data API. **Authoritative source for value lists** (enums, codes, error messages).
+2. OpenAPI spec: `docs/dhl/dhl_openapi.yaml` — authoritative for request/response shapes and field constraints.
+3. Reference data PDF: `docs/dhl/dhl_reference.pdf` — narrative reference; useful for context, but treated as secondary because it contains legacy/deprecated codes the live API no longer accepts.
 
-ALWAYS cross-reference these two files when generating enums, DTOs, or error mappings.
+ALWAYS cross-reference these files when generating enums, DTOs, or error mappings. When the xlsx and the PDF disagree, the xlsx wins.
 
 ## Hard rules — apply to every change
 
@@ -44,7 +45,7 @@ ALWAYS cross-reference these two files when generating enums, DTOs, or error map
 ### Error handling
 - **Never leak Guzzle exceptions** — always wrap in `DhlException` hierarchy
 - Map both HTTP status codes AND DHL error codes to specific exceptions
-- All 200+ error codes from the reference PDF go in `DhlErrorCode` enum
+- The raw DHL error code is always carried on `DhlApiException::$dhlErrorCode`. The full canonical list (~780 entries) lives in `dhl_reference_data.xlsx#returnStatusMessage`; we curate a `DhlErrorCode` enum on demand for codes callers want to branch on (e.g. `9001`, `7012`, `422`)
 
 ### Naming
 - Mirror DHL's own terminology exactly — `Shipment`, `Piece`, `Waybill`, `ServicePoint`, `Pickup`, `Incoterm`, `EPOD`
