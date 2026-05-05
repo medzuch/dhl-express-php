@@ -9,17 +9,19 @@ use PHPUnit\Framework\TestCase;
 
 final class InvoiceReferenceTypeCodeTest extends TestCase
 {
-    public function testCoversAllFortyOneInvoiceReferenceCodes(): void
+    public function testCoversAllNineteenInvoiceReferenceCodes(): void
     {
-        self::assertCount(41, InvoiceReferenceTypeCode::cases());
+        self::assertCount(19, InvoiceReferenceTypeCode::cases());
     }
 
     public function testRepresentativeCodesResolveToTheirBackingValues(): void
     {
         self::assertSame('PON', InvoiceReferenceTypeCode::PON->value);
-        self::assertSame('HWB', InvoiceReferenceTypeCode::HWB->value);
         self::assertSame('MRN', InvoiceReferenceTypeCode::MRN->value);
         self::assertSame('ITN', InvoiceReferenceTypeCode::ITN->value);
+        self::assertSame('INB', InvoiceReferenceTypeCode::INB->value);
+        self::assertSame('SME', InvoiceReferenceTypeCode::SME->value);
+        self::assertSame('USM', InvoiceReferenceTypeCode::USM->value);
     }
 
     public function testFromCanResolveKnownCode(): void
