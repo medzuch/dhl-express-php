@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Tests\Integration\ReferenceData;
 
-use Medzuch\DhlExpress\Dto\ReferenceData\ReferenceDataAttribute;
 use Medzuch\DhlExpress\Enum\ComparisonOperator;
 use Medzuch\DhlExpress\Enum\ReferenceDataset;
 use Medzuch\DhlExpress\Tests\Integration\IntegrationTestCase;
@@ -65,9 +64,7 @@ final class ReferenceDataApiIntegrationTest extends IntegrationTestCase
             $rows,
             static function (array $row): bool {
                 foreach ($row as $attribute) {
-                    if ($attribute instanceof ReferenceDataAttribute
-                        && $attribute->attribute === 'incoterm'
-                        && $attribute->value === 'DAP') {
+                    if ($attribute->attribute === 'incoterm' && $attribute->value === 'DAP') {
                         return true;
                     }
                 }
