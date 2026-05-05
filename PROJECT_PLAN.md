@@ -50,7 +50,10 @@ make down           # stop
 **Spec:** OpenAPI 3.0.0
 **Authentication:** HTTP Basic Auth (username + password)
 **Content type:** `application/json`
-**Reference docs:** Both the OpenAPI YAML and the Reference Data PDF (3.2.2) are stored in `/docs/dhl/` for reference.
+**Reference docs (precedence — primary first):**
+1. `docs/dhl/dhl_reference_data.xlsx` — machine-readable workbook from DHL's Reference Data API (19 sheets: countries, productCode, serviceCode, packageTypeCode, documentTypeCode, registrationNumberTypeCode, trackingEventCode, returnStatusMessage, etc.). **Authoritative source for value lists.**
+2. `docs/dhl/dhl_openapi.yaml` — authoritative for request/response shapes and field constraints.
+3. `docs/dhl/dhl_reference.pdf` — narrative reference; secondary because it contains legacy codes the live API no longer accepts.
 
 ### Environments
 - **Sandbox/Test:** `https://express.api.dhl.com/mydhlapi/test`
@@ -502,6 +505,41 @@ Deferred — no authoritative source in `docs/dhl/`:
 - `HttpStatusCode` — making this an enum would brittlely constrain `DhlApiException::$httpStatus` when DHL can return any HTTP status. Raw `int` is sufficient.
 - `DhlErrorCode` — already deferred in Phase 1 for the same reason (curated list added on demand).
 
+### Phase 2C — Reference workbook reconciliation (week 2)
+**Goal:** Realign the Phase 2B enums with the new authoritative source (`dhl_reference_data.xlsx`) and unblock the small set of deferred enums that now have a canonical list. **No new domain functionality** — this phase is type-system maintenance.
+
+#### 2C.1 — Reconcile shipped enums vs xlsx
+For each enum below, diff the cases against the matching xlsx sheet and ship a focused commit. Each diff is its own commit so the history shows exactly what the xlsx changed.
+
+- [ ] `CustomsDocumentTypeCode` ↔ `documentTypeCode` sheet (54 → 55, +1 missing)
+- [ ] `InvoiceReferenceTypeCode` ↔ `invoiceReferenceType` sheet (41 → 19; PDF source carried legacy/deprecated codes; prune to xlsx canon)
+- [ ] `LineItemReferenceTypeCode` ↔ `invoiceItemReferenceType` sheet (43 → 41; small delta)
+- [ ] `PackageReferenceTypeCode` ↔ `customerPackageReferenceType` sheet (14 → ~30-40 unique after deduping `applicableCountryCode`; xlsx is much richer)
+- [ ] `RegistrationNumberTypeCode` ↔ `registrationNumberTypeCode` sheet (29 → 26; small delta)
+- [ ] `PackageTypeCode` ↔ `packageTypeCode` sheet (18 → 22; xlsx adds a few)
+- [ ] `DangerousGoodsContentId` ↔ `dangerousGoods` sheet (20 → 23 contentIds; minor reconciliation)
+
+#### 2C.2 — Ship newly-unlocked enums
+The xlsx provides the authoritative list these were previously waiting on.
+
+- [ ] `ProductCode` (~36 cases from `productCode` sheet) — small, clean, immediately useful
+- [ ] `TrackingEventCode` (~65 cases from `trackingEventCode` sheet) — needed by Phase 3 TrackingApi response parsing; ship now to avoid a free-string field
+- [ ] `LanguageCode` (~46 unique 3-letter codes from `languageCode` sheet) — improves invoice/document language fields and the `Accept-Language` header default
+- [ ] `UnitOfMeasurement` (~59 codes from `unitOfMeasurement` sheet) — distinct from our `WeightUnit`/`DimensionUnit`; covers customs line-item quantity units (DOZ, M3, PCS, …)
+
+#### 2C.3 — Defer to the phase that actually consumes them
+Avoid front-loading. Ship these alongside the DTOs that use them, so we have a concrete consumer to size the enum against.
+
+- `ServiceCode` (~384 codes, grouped by `serviceGroupCode`) → **Phase 4 Shipment** (used in `ValueAddedService` payloads). Decide at that point whether to ship as one large enum or split per `serviceGroupCode` (W=Customs, H=DG, U=Temperature, etc.).
+- `OutputImageTemplate` (~66 templates from `outputImageTemplate` sheet) → **Phase 4** (label generation `OutputImageProperties`).
+- `CommodityCategory` (~108 codes from `commodityCategory` sheet) → **Phase 4** (export declarations).
+- `ShipmentReferenceTypeCode` (~63 codes from `customerShipmentReferenceType` sheet) → **Phase 4** if `CreateShipmentBuilder` needs it; otherwise leave as free string.
+- `DhlErrorCode` → still on demand, but the canonical list (`returnStatusMessage`, ~780 codes) now exists. Curated subset added when first caller wants to branch on a specific code (`9001`, `7012`, `422`, …).
+
+#### 2C.4 — No new code for these — data, not types
+- `country` (235 rows) — already covered by ISO 3166 + format-only `CountryCode` validation. Maintaining a country list is its own engineering problem (see Phase 2A decision).
+- `countryPostalcodeFormat` (161 rows) — could enrich `PostalCode` with country-aware regex, but Phase 2A decision is format-only validation. If we ever revisit, this is the source.
+
 ### Phase 3 — Read-Only APIs (week 2-3)
 **Goal:** All GET-style operations working.
 
@@ -663,6 +701,9 @@ When generating enums, ALWAYS cross-reference both files to ensure values are co
 | 2026-05-04 | Format-only validation for `CountryCode` / `CurrencyCode` | Maintaining ~250 ISO 3166 / ~180 ISO 4217 codes client-side is its own engineering problem and DHL already rejects unknown codes with a 400 → `DhlValidationException`. Format check (regex) plus server-side validation is sufficient. |
 | 2026-05-04 | Single `CustomsDocumentTypeCode` instead of separate invoice/line-item enums | OpenAPI uses identical value spaces for the customs-document field at both invoice level (Reference Data Guide section 10) and line-item level (section 12); a single enum is the simpler model. Original PROJECT_PLAN sketched two separate enums but that would have duplicated 54 cases for no observable benefit. |
 | 2026-05-04 | Defer enums without authoritative source: `ContentTypeCode`, `ProductCode`, `ServiceCode`, `ShippingRole`, `ExportReasonType`, `TransportMode`, `PaymentTerm`, `PickupReason`, `ImageOptionTypeCode`, `HttpStatusCode` | CLAUDE.md is unambiguous: do not invent values. These names appeared in early planning but their value lists are not in either `dhl_openapi.yaml` (typed as free `string`) or `dhl_reference.pdf` (no section). `HttpStatusCode` is a separate case — making it an enum would brittlely constrain the existing `int $httpStatus` field on `DhlApiException`. All remain free strings or raw types until a concrete consumer surfaces with a definitive source. |
+| 2026-05-05 | Adopt `dhl_reference_data.xlsx` as the **primary** authoritative source for value lists; PDF demoted to secondary | The xlsx is a direct dump of DHL's Reference Data API across 19 sheets and is more current than the PDF (which carries legacy/deprecated codes the live API no longer accepts). When the two disagree, xlsx wins. PDF stays around for narrative context and as a secondary sanity check. |
+| 2026-05-05 | Insert Phase 2C (workbook reconciliation) before Phase 3 | The xlsx changes the source of truth for several already-shipped enums (notably `InvoiceReferenceTypeCode` 41→19 and `PackageReferenceTypeCode` 14→~30 unique). Reconciling now keeps Phase 3+ DTOs from being built on enums that disagree with the live API, and unblocks `ProductCode`, `TrackingEventCode`, `LanguageCode`, `UnitOfMeasurement` which were deferred for lack of a canonical list. Larger lists (`ServiceCode` ~384, `OutputImageTemplate`, `CommodityCategory`) stay deferred to the phase that consumes them so we have a concrete sizing target. |
+| 2026-05-05 | Keep `DhlErrorCode` deferred even though canonical list now exists (~780 entries in `returnStatusMessage`) | The original deferral rationale was "no source"; with a canonical list, the rationale shifts to "no caller yet branches on a specific code". Raw `$dhlErrorCode` string on `DhlApiException` remains sufficient. We curate the enum incrementally as concrete error-handling needs surface. Encoding 780 cases speculatively would be expensive maintenance for unclear benefit. |
 
 ---
 
