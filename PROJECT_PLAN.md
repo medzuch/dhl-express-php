@@ -554,9 +554,9 @@ Avoid front-loading. Ship these alongside the DTOs that use them, so we have a c
 - [x] `RequestBuilder` upgrade: list-valued query params expand into repeated `?key=v1&key=v2` pairs
 
 #### Phase 3b — Address + Products + ReferenceData (simple GETs)
-- [ ] `AddressApi::validate()` for `POST /address-validate`
-- [ ] `ProductsApi::list()` for `GET /products`
-- [ ] `ReferenceDataApi::lookup()` for `GET /reference-data`
+- [x] `AddressApi::validate()` for `GET /address-validate` (with `AddressValidationType` enum, `ValidatedAddress` + `ServiceArea` DTOs)
+- [x] `ProductsApi::list()` for `GET /products` (minimal product DTO; breakdown / VAS tables deferred to Phase 3d alongside the rating consumers)
+- [x] `ReferenceDataApi::lookup()` for `GET /reference-data` (with `ReferenceDataset` and `ComparisonOperator` enums)
 
 #### Phase 3c — ServicePoint + Epod (medium)
 - [ ] `ServicePointApi::find()` for `GET /servicepoints` (geo + opening hours DTOs)

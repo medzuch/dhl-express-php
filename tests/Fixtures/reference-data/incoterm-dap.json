@@ -1,0 +1,14 @@
+{
+  "referenceData": [
+    {
+      "datasetName": "incoterm",
+      "data": [
+        [
+          {"attribute": "incoterm", "value": "DAP"},
+          {"attribute": "incotermName", "value": "Delivered at Place"}
+        ]
+      ]
+    }
+  ],
+  "warnings": []
+}

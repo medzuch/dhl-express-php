@@ -1,0 +1,28 @@
+{
+  "products": [
+    {
+      "productName": "EXPRESS WORLDWIDE",
+      "productCode": "P",
+      "localProductCode": "P",
+      "localProductCountryCode": "CZ",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": false
+    },
+    {
+      "productName": "EXPRESS 12:00",
+      "productCode": "T",
+      "localProductCode": "T",
+      "localProductCountryCode": "CZ",
+      "networkTypeCode": "TD",
+      "isCustomerAgreement": false
+    },
+    {
+      "productName": "ECONOMY SELECT",
+      "productCode": "H",
+      "localProductCode": "H",
+      "localProductCountryCode": "CZ",
+      "networkTypeCode": "DD",
+      "isCustomerAgreement": true
+    }
+  ]
+}
