@@ -6,6 +6,7 @@ namespace Medzuch\DhlExpress;
 
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\HttpFactory;
+use Medzuch\DhlExpress\Api\AddressApi;
 use Medzuch\DhlExpress\Api\IdentifierApi;
 use Medzuch\DhlExpress\Api\TrackingApi;
 use Medzuch\DhlExpress\Exception\DhlErrorMapper;
@@ -33,6 +34,7 @@ final class DhlClient
 {
     private readonly TrackingApi $tracking;
     private readonly IdentifierApi $identifier;
+    private readonly AddressApi $address;
 
     public function __construct(
         ClientConfig $config,
@@ -57,6 +59,7 @@ final class DhlClient
 
         $this->tracking = new TrackingApi($requestBuilder, $transport);
         $this->identifier = new IdentifierApi($requestBuilder, $transport);
+        $this->address = new AddressApi($requestBuilder, $transport);
     }
 
     public function tracking(): TrackingApi
@@ -67,5 +70,10 @@ final class DhlClient
     public function identifier(): IdentifierApi
     {
         return $this->identifier;
+    }
+
+    public function address(): AddressApi
+    {
+        return $this->address;
     }
 }
