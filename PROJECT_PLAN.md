@@ -238,17 +238,21 @@ dhl-express-php/
 │   │   ├── ServicePointType.php                # CITY, STATION, PARTNER, TWENTYFOURSEVEN
 │   │   ├── LabelEncodingFormat.php             # pdf, zpl, lp2, epl
 │   │   ├── Incoterm.php                        # EXW, FCA, CPT, CIP, DPU, DAP, DDP + 9 legacy
-│   │   ├── PackageTypeCode.php                 # 18 DHL-supplied global package types
+│   │   ├── PackageTypeCode.php                 # 22 DHL-supplied global package types (incl. BB1-BB6 bottle boxes)
 │   │   ├── BusinessPartyTypeCode.php           # BU, DC, GV, OT, PR, RE
 │   │   ├── OtherChargeTypeCode.php             # ADMIN, DELIV, DOCUM, ... (15 codes)
 │   │   ├── LandedCostRateType.php              # default_rate, derived_rate, ... (6 codes)
-│   │   ├── RegistrationNumberTypeCode.php      # VAT, EIN, EOR, CNP, ... (29 codes)
-│   │   ├── PackageReferenceTypeCode.php        # CU, AAO, FF, FN, ... (14 codes)
-│   │   ├── InvoiceReferenceTypeCode.php        # ACL, CID, CN, CU, ITN, MRN, ... (41 codes)
-│   │   ├── LineItemReferenceTypeCode.php       # AFE, AAJ, ABW, ALX, ... (43 codes)
-│   │   ├── CustomsDocumentTypeCode.php         # Single enum used at invoice + line-item level (54 codes incl. 972 → T2LFDispense)
-│   │   ├── DangerousGoodsContentId.php         # 20 content classifications
-│   │   └── DangerousGoodsServiceCode.php       # 13 unique service codes (HY, HL, HN, HU, …)
+│   │   ├── RegistrationNumberTypeCode.php      # VAT, EIN, EOR, CNP, ... (25 codes)
+│   │   ├── PackageReferenceTypeCode.php        # CU, AAO, MRN, HWB, ... (81 codes)
+│   │   ├── InvoiceReferenceTypeCode.php        # ACL, CID, CN, CU, ITN, MRN, ... (19 codes)
+│   │   ├── LineItemReferenceTypeCode.php       # AFE, AAJ, ABW, ALX, ... (41 codes)
+│   │   ├── CustomsDocumentTypeCode.php         # Single enum used at invoice + line-item level (55 codes incl. 972 → T2LFDispense)
+│   │   ├── DangerousGoodsContentId.php         # 23 content classifications
+│   │   ├── DangerousGoodsServiceCode.php       # 16 unique service codes (HY, HL, HN, HU, HA, HB, YN, …)
+│   │   ├── ProductCode.php                     # 36 single-char DHL Express product codes (DOX, ECX, WPX, …)
+│   │   ├── TrackingEventCode.php               # 65 two-letter tracking event codes (OK, PU, CR, RT, …)
+│   │   ├── LanguageCode.php                    # 46 lowercase 3-letter language codes (eng default)
+│   │   └── UnitOfMeasurement.php               # 59 customs line-item quantity units (DOZ, PCS, M3, …)
 │   ├── Exception/                              # Custom exception hierarchy
 │   │   ├── DhlException.php                    # Base exception (abstract)
 │   │   ├── DhlNetworkException.php             # Connection/timeout failures
@@ -511,21 +515,21 @@ Deferred — no authoritative source in `docs/dhl/`:
 #### 2C.1 — Reconcile shipped enums vs xlsx
 For each enum below, diff the cases against the matching xlsx sheet and ship a focused commit. Each diff is its own commit so the history shows exactly what the xlsx changed.
 
-- [ ] `CustomsDocumentTypeCode` ↔ `documentTypeCode` sheet (54 → 55, +1 missing)
-- [ ] `InvoiceReferenceTypeCode` ↔ `invoiceReferenceType` sheet (41 → 19; PDF source carried legacy/deprecated codes; prune to xlsx canon)
-- [ ] `LineItemReferenceTypeCode` ↔ `invoiceItemReferenceType` sheet (43 → 41; small delta)
-- [ ] `PackageReferenceTypeCode` ↔ `customerPackageReferenceType` sheet (14 → ~30-40 unique after deduping `applicableCountryCode`; xlsx is much richer)
-- [ ] `RegistrationNumberTypeCode` ↔ `registrationNumberTypeCode` sheet (29 → 26; small delta)
-- [ ] `PackageTypeCode` ↔ `packageTypeCode` sheet (18 → 22; xlsx adds a few)
-- [ ] `DangerousGoodsContentId` ↔ `dangerousGoods` sheet (20 → 23 contentIds; minor reconciliation)
+- [x] `CustomsDocumentTypeCode` ↔ `documentTypeCode` sheet (54 → 55: +APP, EDC, FSP, IMP, MFD, PPY; −ATR, CHD, CHP, CP2, HLC)
+- [x] `InvoiceReferenceTypeCode` ↔ `invoiceReferenceType` sheet (41 → 19; PDF source carried codes that actually live at other reference levels; pruned to xlsx canon and added INB, SME, USM)
+- [x] `LineItemReferenceTypeCode` ↔ `invoiceItemReferenceType` sheet (43 → 41; pruned AAM, INB)
+- [x] `PackageReferenceTypeCode` ↔ `customerPackageReferenceType` sheet (14 → 81 unique typeCodes; per-country applicability is a builder/runtime concern, not encoded here)
+- [x] `RegistrationNumberTypeCode` ↔ `registrationNumberTypeCode` sheet (29 → 25: +DUT, SUB; −IE, INN, KPP, MRN, OGR, OKP)
+- [x] `PackageTypeCode` ↔ `packageTypeCode` sheet (18 → 22: +BB1, BB2, BB3, BB6 — bottle-box variants)
+- [x] `DangerousGoodsContentId` ↔ `dangerousGoods` sheet (20 → 23 contentIds: +977, 978 sodium-ion, +YN1 tail-lift truck) and `DangerousGoodsServiceCode` (13 → 16: +HA, HB, YN)
 
 #### 2C.2 — Ship newly-unlocked enums
 The xlsx provides the authoritative list these were previously waiting on.
 
-- [ ] `ProductCode` (~36 cases from `productCode` sheet) — small, clean, immediately useful
-- [ ] `TrackingEventCode` (~65 cases from `trackingEventCode` sheet) — needed by Phase 3 TrackingApi response parsing; ship now to avoid a free-string field
-- [ ] `LanguageCode` (~46 unique 3-letter codes from `languageCode` sheet) — improves invoice/document language fields and the `Accept-Language` header default
-- [ ] `UnitOfMeasurement` (~59 codes from `unitOfMeasurement` sheet) — distinct from our `WeightUnit`/`DimensionUnit`; covers customs line-item quantity units (DOZ, M3, PCS, …)
+- [x] `ProductCode` (36 cases from `productCode` sheet)
+- [x] `TrackingEventCode` (65 cases from `trackingEventCode` sheet) — will back the Phase 3 TrackingApi response DTOs
+- [x] `LanguageCode` (46 unique 3-letter codes from `languageCode` sheet)
+- [x] `UnitOfMeasurement` (59 codes from `unitOfMeasurement` sheet) — distinct from `WeightUnit`/`DimensionUnit`; covers customs line-item quantity units (DOZ, M3, PCS, …)
 
 #### 2C.3 — Defer to the phase that actually consumes them
 Avoid front-loading. Ship these alongside the DTOs that use them, so we have a concrete consumer to size the enum against.
