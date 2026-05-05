@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Api;
 
+use InvalidArgumentException;
 use Medzuch\DhlExpress\Dto\Tracking\ShipmentEvent;
 use Medzuch\DhlExpress\Dto\Tracking\TrackingResponse;
 use Medzuch\DhlExpress\Exception\DhlApiException;
@@ -16,12 +17,17 @@ use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 /**
  * Tracking domain endpoints.
  *
- * Phase 1 only ships {@see self::getByTrackingNumber()} which targets
- * `GET /shipments/{shipmentTrackingNumber}/tracking`. The multi-shipment
- * `/tracking` endpoint and the richer DTO surface land in Phase 3.
+ * Two operations: {@see self::getByTrackingNumber()} for the single
+ * `GET /shipments/{shipmentTrackingNumber}/tracking` lookup and
+ * {@see self::getMany()} for the multi-shipment `GET /tracking`
+ * endpoint (up to 200 tracking numbers per call). The richer DTO
+ * surface — shipper/receiver details, piece events, etc. — lands
+ * in Phase 3b.
  */
 final class TrackingApi
 {
+    private const MULTI_TRACKING_LIMIT = 200;
+
     public function __construct(
         private readonly RequestBuilder $requestBuilder,
         private readonly HttpTransport $transport,
@@ -44,27 +50,76 @@ final class TrackingApi
 
         $body = $this->transport->send($request);
 
-        return $this->hydrateFirstShipment($body);
+        return $this->hydrateShipments($body)[0] ?? new TrackingResponse(
+            shipmentTrackingNumber: '',
+            status: '',
+            description: '',
+            events: [],
+        );
+    }
+
+    /**
+     * Fetches tracking histories for up to 200 shipments in a single call.
+     *
+     * @return list<TrackingResponse>
+     *
+     * @throws InvalidArgumentException when called with no tracking numbers or more than 200
+     * @throws DhlApiException for DHL-side errors
+     * @throws DhlNetworkException for transport-level failures
+     */
+    public function getMany(TrackingNumber ...$trackingNumbers): array
+    {
+        if ($trackingNumbers === []) {
+            throw new InvalidArgumentException('getMany() requires at least one tracking number.');
+        }
+
+        if (count($trackingNumbers) > self::MULTI_TRACKING_LIMIT) {
+            throw new InvalidArgumentException(
+                'getMany() supports at most ' . self::MULTI_TRACKING_LIMIT . ' tracking numbers per call.',
+            );
+        }
+
+        $values = array_values(array_map(static fn (TrackingNumber $n): string => $n->value, $trackingNumbers));
+
+        $request = $this->requestBuilder->build(
+            'GET',
+            '/tracking',
+            queryParams: ['shipmentTrackingNumber' => $values],
+        );
+
+        $body = $this->transport->send($request);
+
+        return $this->hydrateShipments($body);
     }
 
     /**
      * @param array<string, mixed> $body
+     *
+     * @return list<TrackingResponse>
      */
-    private function hydrateFirstShipment(array $body): TrackingResponse
+    private function hydrateShipments(array $body): array
     {
         $shipments = $body['shipments'] ?? null;
-        $shipment = [];
-        if (is_array($shipments) && isset($shipments[0]) && is_array($shipments[0])) {
-            /** @var array<string, mixed> $shipment */
-            $shipment = $shipments[0];
+        if (!is_array($shipments)) {
+            return [];
         }
 
-        return new TrackingResponse(
-            shipmentTrackingNumber: $this->stringField($shipment, 'shipmentTrackingNumber'),
-            status: $this->stringField($shipment, 'status'),
-            description: $this->stringField($shipment, 'description'),
-            events: $this->hydrateEvents($shipment['events'] ?? null),
-        );
+        $results = [];
+        foreach ($shipments as $shipment) {
+            if (!is_array($shipment)) {
+                continue;
+            }
+
+            /** @var array<string, mixed> $shipment */
+            $results[] = new TrackingResponse(
+                shipmentTrackingNumber: $this->stringField($shipment, 'shipmentTrackingNumber'),
+                status: $this->stringField($shipment, 'status'),
+                description: $this->stringField($shipment, 'description'),
+                events: $this->hydrateEvents($shipment['events'] ?? null),
+            );
+        }
+
+        return $results;
     }
 
     /**

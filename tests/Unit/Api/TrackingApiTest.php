@@ -111,6 +111,71 @@ final class TrackingApiTest extends TestCase
         self::assertSame([], $result->events);
     }
 
+    public function testGetManyHydratesEachShipmentInResponse(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('multi-shipment.json')),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+
+        $results = $api->getMany(
+            new TrackingNumber('9356579890'),
+            new TrackingNumber('4818240420'),
+            new TrackingNumber('5584773180'),
+        );
+
+        self::assertCount(3, $results);
+        self::assertSame('9356579890', $results[0]->shipmentTrackingNumber);
+        self::assertSame('Success', $results[0]->status);
+        self::assertCount(2, $results[0]->events);
+        self::assertSame('4818240420', $results[1]->shipmentTrackingNumber);
+        self::assertSame('OK', $results[1]->events[1]->typeCode);
+        self::assertSame('5584773180', $results[2]->shipmentTrackingNumber);
+        self::assertSame('Failure', $results[2]->status);
+        self::assertSame([], $results[2]->events);
+    }
+
+    public function testGetManyEmitsRepeatedShipmentTrackingNumberQueryParameters(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('multi-shipment.json')),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+        $api->getMany(
+            new TrackingNumber('9356579890'),
+            new TrackingNumber('4818240420'),
+        );
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        self::assertSame('GET', $sent->getMethod());
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('/tracking?', $uri);
+        self::assertStringContainsString('shipmentTrackingNumber=9356579890', $uri);
+        self::assertStringContainsString('shipmentTrackingNumber=4818240420', $uri);
+        self::assertStringNotContainsString('shipmentTrackingNumber%5B', $uri);
+    }
+
+    public function testGetManyRequiresAtLeastOneTrackingNumber(): void
+    {
+        $factory = new Psr17Factory();
+        $api = $this->makeApi(new MockClient(), $factory);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        $api->getMany();
+    }
+
     private function makeApi(MockClient $mockClient, Psr17Factory $factory): TrackingApi
     {
         $config = new ClientConfig(
