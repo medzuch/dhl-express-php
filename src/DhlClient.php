@@ -6,6 +6,7 @@ namespace Medzuch\DhlExpress;
 
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\HttpFactory;
+use Medzuch\DhlExpress\Api\IdentifierApi;
 use Medzuch\DhlExpress\Api\TrackingApi;
 use Medzuch\DhlExpress\Exception\DhlErrorMapper;
 use Medzuch\DhlExpress\Http\HttpTransport;
@@ -21,8 +22,7 @@ use Psr\Http\Message\StreamFactoryInterface;
  * Top-level entry point for the DHL Express API.
  *
  * The facade is purely compositional — it owns no business logic of
- * its own, only delegating to one `*Api` per DHL domain (Phase 1 ships
- * tracking; the rest land in later phases).
+ * its own, only delegating to one `*Api` per DHL domain.
  *
  * The PSR-18 client and PSR-17 factories are optional constructor
  * parameters — Guzzle is used by default, but any compliant
@@ -32,6 +32,7 @@ use Psr\Http\Message\StreamFactoryInterface;
 final class DhlClient
 {
     private readonly TrackingApi $tracking;
+    private readonly IdentifierApi $identifier;
 
     public function __construct(
         ClientConfig $config,
@@ -55,10 +56,16 @@ final class DhlClient
         $transport = new HttpTransport($resolvedHttpClient, new ResponseParser(new DhlErrorMapper()));
 
         $this->tracking = new TrackingApi($requestBuilder, $transport);
+        $this->identifier = new IdentifierApi($requestBuilder, $transport);
     }
 
     public function tracking(): TrackingApi
     {
         return $this->tracking;
+    }
+
+    public function identifier(): IdentifierApi
+    {
+        return $this->identifier;
     }
 }

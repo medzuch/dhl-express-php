@@ -545,18 +545,31 @@ Avoid front-loading. Ship these alongside the DTOs that use them, so we have a c
 - `countryPostalcodeFormat` (161 rows) — could enrich `PostalCode` with country-aware regex, but Phase 2A decision is format-only validation. If we ever revisit, this is the source.
 
 ### Phase 3 — Read-Only APIs (week 2-3)
-**Goal:** All GET-style operations working.
+**Goal:** All GET-style operations working. Sliced into ~4 sub-phases by complexity to keep PRs reviewable.
 
-- [ ] `TrackingApi` (single + multi tracking)
-- [ ] `IdentifierApi`
-- [ ] `AddressApi` (validate)
-- [ ] `ProductsApi`
-- [ ] `RatesApi` + `LandedCostApi`
-- [ ] `EpodApi`
-- [ ] `ServicePointApi`
-- [ ] `ReferenceDataApi`
-- [ ] DTOs for all responses
-- [ ] Unit tests per API + integration tests against sandbox
+#### Phase 3a — Tracking + Identifier (smallest delta)
+- [x] `TrackingApi::getMany()` for `GET /tracking` (multi-shipment, up to 200 numbers per call)
+- [x] `IdentifierApi::allocate()` for `GET /identifiers` (SID / PID / HUID / ASID3..24)
+- [x] `IdentifierType` enum (7 codes from OpenAPI inline enum)
+- [x] `RequestBuilder` upgrade: list-valued query params expand into repeated `?key=v1&key=v2` pairs
+
+#### Phase 3b — Address + Products + ReferenceData (simple GETs)
+- [ ] `AddressApi::validate()` for `POST /address-validate`
+- [ ] `ProductsApi::list()` for `GET /products`
+- [ ] `ReferenceDataApi::lookup()` for `GET /reference-data`
+
+#### Phase 3c — ServicePoint + Epod (medium)
+- [ ] `ServicePointApi::find()` for `GET /servicepoints` (geo + opening hours DTOs)
+- [ ] `EpodApi::get()` for `GET /shipments/{id}/proof-of-delivery` (binary response handling)
+
+#### Phase 3d — Rates + LandedCost (complex)
+- [ ] `RatesApi::quote()` and `RatesApi::quoteMany()` for `POST /rates`, `POST /rates-many`
+- [ ] `LandedCostApi::estimate()` for `POST /landed-cost`
+
+#### Cross-cutting
+- [ ] DTOs for all responses (per sub-phase)
+- [ ] Unit tests per API (mocked HTTP)
+- [ ] Integration tests against sandbox (env-gated, per sub-phase)
 
 ### Phase 4 — Shipment Creation (week 3-4) — biggest feature
 **Goal:** Create a real shipment end to end.
