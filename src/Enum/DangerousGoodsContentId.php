@@ -7,15 +7,16 @@ namespace Medzuch\DhlExpress\Enum;
 /**
  * Dangerous-goods content identifier.
  *
- * The 20 content classifications listed in Reference Data Guide
- * section 5, ranging from biological substances and dry ice to the
- * various lithium battery packaging instructions. Wire codes that
- * start with a digit get descriptive PascalCase case names (PHP
- * does not allow case names to start with a digit); alpha-prefixed
- * codes keep their wire identifiers.
+ * The 23 content classifications listed in the `dangerousGoods`
+ * sheet of `dhl_reference_data.xlsx`, ranging from biological
+ * substances and dry ice to the various lithium and sodium battery
+ * packaging instructions. Wire codes that start with a digit get
+ * descriptive PascalCase case names (PHP does not allow case names
+ * to start with a digit); alpha-prefixed codes keep their wire
+ * identifiers.
  *
  * Each content id is paired with a {@see DangerousGoodsServiceCode}
- * — that mapping lives in the reference PDF table, not here.
+ * — that mapping lives in the workbook, not here.
  */
 enum DangerousGoodsContentId: string
 {
@@ -37,6 +38,9 @@ enum DangerousGoodsContentId: string
     case LithiumMetalPI969 = '969';
     case LithiumIonPI966 = '966';
     case LithiumIonPI967 = '967';
+    case SodiumIonPI977 = '977';
+    case SodiumIonPI978 = '978';
     case HU2 = 'HU2';
     case HU6 = 'HU6';
+    case YN1 = 'YN1';
 }
