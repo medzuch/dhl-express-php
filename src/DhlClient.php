@@ -20,6 +20,7 @@ use Medzuch\DhlExpress\Http\ResponseParser;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Top-level entry point for the DHL Express API.
@@ -31,6 +32,10 @@ use Psr\Http\Message\StreamFactoryInterface;
  * parameters — Guzzle is used by default, but any compliant
  * implementation can be injected. The same applies to
  * {@see MessageReferenceGenerator}, exposed primarily as a test seam.
+ *
+ * Pass a PSR-3 logger to capture request and response payloads at
+ * `debug` level (Authorization header redacted). Without a logger
+ * the transport stays silent.
  */
 final class DhlClient
 {
@@ -46,6 +51,7 @@ final class DhlClient
         ?RequestFactoryInterface $requestFactory = null,
         ?StreamFactoryInterface $streamFactory = null,
         ?MessageReferenceGenerator $messageReferenceGenerator = null,
+        ?LoggerInterface $logger = null,
     ) {
         $guzzleFactory = new HttpFactory();
         $resolvedRequestFactory = $requestFactory ?? $guzzleFactory;
@@ -59,7 +65,11 @@ final class DhlClient
             $resolvedGenerator,
             $config,
         );
-        $transport = new HttpTransport($resolvedHttpClient, new ResponseParser(new DhlErrorMapper()));
+        $transport = new HttpTransport(
+            $resolvedHttpClient,
+            new ResponseParser(new DhlErrorMapper()),
+            $logger,
+        );
 
         $this->tracking = new TrackingApi($requestBuilder, $transport);
         $this->identifier = new IdentifierApi($requestBuilder, $transport);
