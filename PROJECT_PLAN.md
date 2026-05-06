@@ -23,6 +23,7 @@
 | PHP | 8.3 | `^8.3` constraint in composer.json |
 | Composer | latest | Inside container |
 | HTTP client | PSR-18 + Guzzle 7.9 | `psr/http-client` + `psr/http-factory` interfaces; Guzzle as default implementation |
+| Logging | PSR-3 (`psr/log` ^3.0) | Optional `LoggerInterface` injected through `DhlClient` → `HttpTransport`; `NullLogger` default |
 | Testing | PHPUnit 11 | Unit + Integration suites |
 | Static analysis | PHPStan 2.x (^2.1, level 8) | Strictest level; separate config for tests at level 6 |
 | Code style | php-cs-fixer 3.x | PSR-12 + PHP 8.3 migration rules |
@@ -646,8 +647,6 @@ Avoid front-loading. Ship these alongside the DTOs that use them, so we have a c
 
 ## 11. Future Considerations (post v1.0)
 
-- **PSR-3 logger integration** — optional logger injection for request/response logging (PSR-18 is already in place)
-- **PSR-3 logger integration** — optional logger injection for request/response logging
 - **PSR-6/PSR-16 cache** — cache reference data lookups
 - **Async/promises** — Guzzle async for parallel requests (multi-rates)
 - **Webhook receiver helpers** — DHL ODD callbacks
@@ -674,11 +673,12 @@ The library itself only needs:
 
 ## 13. Reference Materials Stored Locally
 
-Place these in the project's `docs/dhl/` folder for offline reference:
-- `dhl_reference.pdf` — All reference data codes (incoterms, packages, errors, etc.)
-- `dhl_openapi.yaml` — Full OpenAPI spec
+Place these in the project's `docs/dhl/` folder for offline reference (precedence — primary first):
+- `dhl_reference_data.xlsx` — Machine-readable workbook from DHL's Reference Data API. **Authoritative source for value lists.**
+- `dhl_openapi.yaml` — Full OpenAPI spec (request/response shapes and field constraints).
+- `dhl_reference.pdf` — Narrative reference; secondary because it carries legacy codes the live API no longer accepts.
 
-When generating enums, ALWAYS cross-reference both files to ensure values are correct and complete.
+When generating enums, ALWAYS cross-reference these files. When the xlsx and the PDF disagree, the xlsx wins.
 
 ---
 
@@ -721,6 +721,9 @@ When generating enums, ALWAYS cross-reference both files to ensure values are co
 | 2026-05-05 | Adopt `dhl_reference_data.xlsx` as the **primary** authoritative source for value lists; PDF demoted to secondary | The xlsx is a direct dump of DHL's Reference Data API across 19 sheets and is more current than the PDF (which carries legacy/deprecated codes the live API no longer accepts). When the two disagree, xlsx wins. PDF stays around for narrative context and as a secondary sanity check. |
 | 2026-05-05 | Insert Phase 2C (workbook reconciliation) before Phase 3 | The xlsx changes the source of truth for several already-shipped enums (notably `InvoiceReferenceTypeCode` 41→19 and `PackageReferenceTypeCode` 14→~30 unique). Reconciling now keeps Phase 3+ DTOs from being built on enums that disagree with the live API, and unblocks `ProductCode`, `TrackingEventCode`, `LanguageCode`, `UnitOfMeasurement` which were deferred for lack of a canonical list. Larger lists (`ServiceCode` ~384, `OutputImageTemplate`, `CommodityCategory`) stay deferred to the phase that consumes them so we have a concrete sizing target. |
 | 2026-05-05 | Keep `DhlErrorCode` deferred even though canonical list now exists (~780 entries in `returnStatusMessage`) | The original deferral rationale was "no source"; with a canonical list, the rationale shifts to "no caller yet branches on a specific code". Raw `$dhlErrorCode` string on `DhlApiException` remains sufficient. We curate the enum incrementally as concrete error-handling needs surface. Encoding 780 cases speculatively would be expensive maintenance for unclear benefit. |
+| 2026-05-06 | PSR-3 logger wired through `HttpTransport`, surfaced via `DhlClient` constructor | Added `psr/log` ^3.0 as a runtime dep so callers can plug a logger to see request/response payloads. Defaults to `NullLogger` (zero cost when absent). `Authorization` header is redacted before logging so basic-auth credentials never leak. Picked `HttpTransport` as the single chokepoint instead of per-`*Api` instrumentation or a PSR-18 decorator — minimum surface, maximum coverage. |
+| 2026-05-06 | Wire `.env` into the container via `env_file:` and add `make setup` bootstrap | `docker compose` reads `.env` for compose-file substitution but does **not** pass it into the container without `env_file:`. Adding it makes integration tests (and any in-container script) pick up `DHL_API_KEY` etc. via `getenv()` the canonical way. `make setup` chains `cp -n .env.example .env` + build + composer install so onboarding is one command. `cp -n` keeps re-runs idempotent. `.env.example` carries a top-of-file note that values must not be quoted — `env_file:` passes quote characters through verbatim. |
+| 2026-05-06 | Integration tests log request/response payloads to `var/integration-logs/` | Hand-rolled `JsonLineFileLogger` in `tests/Integration/Logging/` (extends `Psr\Log\AbstractLogger`, ~50 lines) wired into `IntegrationTestCase::makeClient()`. One file per test method, JSONL format, truncated on first write per run. Hand-rolled instead of pulling in monolog because: zero new dev deps, the library's "no framework" ethos, and the requirement is just append-only file output for sandbox debugging. |
 
 ---
 

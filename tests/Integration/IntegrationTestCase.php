@@ -9,6 +9,7 @@ use Medzuch\DhlExpress\Auth\Credentials;
 use Medzuch\DhlExpress\ClientConfig;
 use Medzuch\DhlExpress\DhlClient;
 use Medzuch\DhlExpress\Enum\ApiEnvironment;
+use Medzuch\DhlExpress\Tests\Integration\Logging\JsonLineFileLogger;
 use Medzuch\DhlExpress\ValueObject\AccountNumber;
 use PHPUnit\Framework\TestCase;
 
@@ -39,7 +40,25 @@ abstract class IntegrationTestCase extends TestCase
             credentials: new Credentials($username, $password),
         );
 
-        return new DhlClient($config);
+        return new DhlClient($config, logger: $this->makeIntegrationLogger());
+    }
+
+    private function makeIntegrationLogger(): JsonLineFileLogger
+    {
+        $reflection = new \ReflectionClass(static::class);
+        $shortName = $reflection->getShortName();
+        $namespaceTail = basename(str_replace('\\', '/', $reflection->getNamespaceName()));
+        $testName = $this->name();
+
+        $path = sprintf(
+            '%s/var/integration-logs/%s/%s/%s.log',
+            dirname(__DIR__, 2),
+            $namespaceTail,
+            $shortName,
+            $testName,
+        );
+
+        return new JsonLineFileLogger($path);
     }
 
     final protected function requireAccountNumber(): AccountNumber

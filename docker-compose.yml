@@ -3,6 +3,8 @@ services:
     build: .docker/
     volumes:
       - .:/var/www/html
+    env_file:
+      - .env
     environment:
       - XDEBUG_MODE=debug
       - XDEBUG_CLIENT_HOST=host.docker.internal

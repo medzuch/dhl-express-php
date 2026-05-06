@@ -1,10 +1,11 @@
-.PHONY: help install verify test test-integration analyse analyse-tests analyse-all check cs-fix cs-check shell down up build
+.PHONY: help setup install verify test test-integration analyse analyse-tests analyse-all check cs-fix cs-check shell down up build
 
 .DEFAULT_GOAL := help
 
 help:
 	@echo ""
 	@echo "Available commands:"
+	@echo "  make setup          One-time bootstrap: create .env, build image, install deps"
 	@echo "  make build          Build and start Docker containers"
 	@echo "  make up             Start containers"
 	@echo "  make down           Stop containers"
@@ -19,6 +20,14 @@ help:
 	@echo "  make cs-fix         Fix code style issues"
 	@echo "  make cs-check       Check code style without making changes"
 	@echo "  make shell          Open shell inside container"
+
+setup: .env build install
+	@echo ""
+	@echo "Setup complete. Edit .env with your DHL credentials, then run: make test"
+
+.env: .env.example
+	@cp -n .env.example .env
+	@echo ".env created from .env.example — fill in DHL_API_KEY / DHL_API_SECRET / DHL_ACCOUNT_NUMBER."
 
 up:
 	docker compose up -d
