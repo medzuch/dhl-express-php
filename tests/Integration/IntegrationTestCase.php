@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Tests\Integration;
 
+use DateTimeImmutable;
 use Medzuch\DhlExpress\Auth\Credentials;
 use Medzuch\DhlExpress\ClientConfig;
 use Medzuch\DhlExpress\DhlClient;
@@ -50,5 +51,25 @@ abstract class IntegrationTestCase extends TestCase
         }
 
         return new AccountNumber($value);
+    }
+
+    /**
+     * Returns a date at least `$minDaysAhead` days from today, shifted
+     * forward to the next Monday whenever it falls on a Saturday or
+     * Sunday. Public DHL holidays still slip through, but Mon–Fri is
+     * enough to keep `+5 days`-style tests off the weekend cliff that
+     * would otherwise return a 996 ("products not available for pickup
+     * date") on roughly two days a week.
+     */
+    final protected function nextBusinessDay(int $minDaysAhead): DateTimeImmutable
+    {
+        $date = new DateTimeImmutable('+' . $minDaysAhead . ' days');
+        $dow = (int) $date->format('N');
+
+        return match ($dow) {
+            6 => $date->modify('+2 days'),
+            7 => $date->modify('+1 day'),
+            default => $date,
+        };
     }
 }

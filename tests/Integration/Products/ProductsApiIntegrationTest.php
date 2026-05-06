@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Tests\Integration\Products;
 
-use DateTimeImmutable;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Enum\WeightUnit;
@@ -36,7 +35,7 @@ final class ProductsApiIntegrationTest extends IntegrationTestCase
             destinationCountryCode: new CountryCode('US'),
             weight: new Weight(5.0, WeightUnit::KG),
             dimensions: new Dimensions(30.0, 20.0, 15.0, DimensionUnit::CM),
-            plannedShippingDate: new DateTimeImmutable('+5 days'),
+            plannedShippingDate: $this->nextBusinessDay(5),
             isCustomsDeclarable: true,
             unitOfMeasurement: UnitSystem::Metric,
             originPostalCode: new PostalCode('14800'),
