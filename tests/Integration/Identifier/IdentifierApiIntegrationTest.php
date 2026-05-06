@@ -30,8 +30,12 @@ final class IdentifierApiIntegrationTest extends IntegrationTestCase
         try {
             $response = $client->identifier()->allocate($account, IdentifierType::SID, 1);
         } catch (DhlApiException $exception) {
-            // 3501: account not authorized for breakbulk identifier reservation.
-            self::assertSame('3501', $exception->dhlErrorCode);
+            // DHL signals "account not authorized for breakbulk identifier
+            // reservation" as HTTP 400 with `status: "400"` in the body and
+            // `3501` embedded in the `detail` message — so we match on the
+            // human-readable message rather than `dhlErrorCode`.
+            self::assertNotNull($exception->dhlMessage);
+            self::assertStringContainsString('3501', $exception->dhlMessage);
 
             return;
         }
