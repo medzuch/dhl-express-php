@@ -6,6 +6,7 @@ namespace Medzuch\DhlExpress\Tests\Integration\Address;
 
 use Medzuch\DhlExpress\Dto\Address\AddressValidateResponse;
 use Medzuch\DhlExpress\Enum\AddressValidationType;
+use Medzuch\DhlExpress\Exception\DhlValidationException;
 use Medzuch\DhlExpress\Tests\Integration\IntegrationTestCase;
 use Medzuch\DhlExpress\ValueObject\CountryCode;
 use Medzuch\DhlExpress\ValueObject\PostalCode;
@@ -54,17 +55,23 @@ final class AddressApiIntegrationTest extends IntegrationTestCase
         self::assertSame('PRG', $response->addresses[0]->serviceArea->code);
     }
 
-    public function testStrictValidationReturnsNoMatchesForUnresolvablePostalCode(): void
+    public function testStrictValidationRejectsUnresolvablePostalCode(): void
     {
         $client = $this->makeClient();
 
-        $response = $client->address()->validate(
-            AddressValidationType::Pickup,
-            new CountryCode('CZ'),
-            new PostalCode('00000'),
-            strictValidation: true,
-        );
-
-        self::assertSame([], $response->addresses);
+        try {
+            $client->address()->validate(
+                AddressValidationType::Pickup,
+                new CountryCode('CZ'),
+                new PostalCode('00000'),
+                strictValidation: true,
+            );
+            self::fail('Expected DhlValidationException');
+        } catch (DhlValidationException $exception) {
+            // 3007: The origin location is invalid.
+            self::assertSame(400, $exception->httpStatus);
+            self::assertNotNull($exception->dhlMessage);
+            self::assertStringContainsString('3007', $exception->dhlMessage);
+        }
     }
 }
