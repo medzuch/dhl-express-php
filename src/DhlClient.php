@@ -7,6 +7,7 @@ namespace Medzuch\DhlExpress;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\HttpFactory;
 use Medzuch\DhlExpress\Api\AddressApi;
+use Medzuch\DhlExpress\Api\EpodApi;
 use Medzuch\DhlExpress\Api\IdentifierApi;
 use Medzuch\DhlExpress\Api\ProductsApi;
 use Medzuch\DhlExpress\Api\ReferenceDataApi;
@@ -44,6 +45,7 @@ final class DhlClient
     private readonly AddressApi $address;
     private readonly ProductsApi $products;
     private readonly ReferenceDataApi $referenceData;
+    private readonly EpodApi $epod;
 
     public function __construct(
         ClientConfig $config,
@@ -76,6 +78,7 @@ final class DhlClient
         $this->address = new AddressApi($requestBuilder, $transport);
         $this->products = new ProductsApi($requestBuilder, $transport);
         $this->referenceData = new ReferenceDataApi($requestBuilder, $transport);
+        $this->epod = new EpodApi($requestBuilder, $transport);
     }
 
     public function tracking(): TrackingApi
@@ -101,5 +104,10 @@ final class DhlClient
     public function referenceData(): ReferenceDataApi
     {
         return $this->referenceData;
+    }
+
+    public function epod(): EpodApi
+    {
+        return $this->epod;
     }
 }
