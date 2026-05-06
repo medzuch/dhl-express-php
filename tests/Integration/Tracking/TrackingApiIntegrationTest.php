@@ -4,23 +4,14 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Tests\Integration\Tracking;
 
-use Medzuch\DhlExpress\Auth\Credentials;
-use Medzuch\DhlExpress\ClientConfig;
-use Medzuch\DhlExpress\DhlClient;
 use Medzuch\DhlExpress\Dto\Tracking\TrackingResponse;
-use Medzuch\DhlExpress\Enum\ApiEnvironment;
 use Medzuch\DhlExpress\Exception\DhlNotFoundException;
+use Medzuch\DhlExpress\Tests\Integration\IntegrationTestCase;
 use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\TestCase;
 
 /**
  * Hits the real DHL Express sandbox at express.api.dhl.com/mydhlapi/test.
- *
- * Skipped automatically unless both DHL_API_KEY (username) and
- * DHL_API_SECRET (password) are exported in the environment, so the
- * default `make test` run never reaches the network. Use
- * `make test-integration` to opt in.
  *
  * The test waybill numbers used here are the ones DHL publishes for
  * sandbox use; if DHL ever rotates them this test will start failing
@@ -28,9 +19,11 @@ use PHPUnit\Framework\TestCase;
  * need updating.
  */
 #[Group('integration')]
-final class TrackingApiIntegrationTest extends TestCase
+final class TrackingApiIntegrationTest extends IntegrationTestCase
 {
     private const KNOWN_TEST_WAYBILL = '9356579890';
+
+    private const SECOND_KNOWN_TEST_WAYBILL = '4818240420';
 
     private const UNKNOWN_WAYBILL = '0000000000';
 
@@ -58,20 +51,18 @@ final class TrackingApiIntegrationTest extends TestCase
         );
     }
 
-    private function makeClient(): DhlClient
+    public function testGetManyReturnsOneEntryPerSandboxWaybill(): void
     {
-        $username = getenv('DHL_API_KEY');
-        $password = getenv('DHL_API_SECRET');
+        $client = $this->makeClient();
 
-        if (!is_string($username) || $username === '' || !is_string($password) || $password === '') {
-            self::markTestSkipped('Set DHL_API_KEY and DHL_API_SECRET to run integration tests against the DHL sandbox.');
-        }
-
-        $config = new ClientConfig(
-            environment: ApiEnvironment::Sandbox,
-            credentials: new Credentials($username, $password),
+        $responses = $client->tracking()->getMany(
+            new TrackingNumber(self::KNOWN_TEST_WAYBILL),
+            new TrackingNumber(self::SECOND_KNOWN_TEST_WAYBILL),
         );
 
-        return new DhlClient($config);
+        self::assertGreaterThanOrEqual(2, count($responses));
+        $trackingNumbers = array_map(static fn (TrackingResponse $r): string => $r->shipmentTrackingNumber, $responses);
+        self::assertContains(self::KNOWN_TEST_WAYBILL, $trackingNumbers);
+        self::assertContains(self::SECOND_KNOWN_TEST_WAYBILL, $trackingNumbers);
     }
 }
