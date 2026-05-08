@@ -9,7 +9,9 @@ use GuzzleHttp\Psr7\HttpFactory;
 use Medzuch\DhlExpress\Api\AddressApi;
 use Medzuch\DhlExpress\Api\EpodApi;
 use Medzuch\DhlExpress\Api\IdentifierApi;
+use Medzuch\DhlExpress\Api\LandedCostApi;
 use Medzuch\DhlExpress\Api\ProductsApi;
+use Medzuch\DhlExpress\Api\RatesApi;
 use Medzuch\DhlExpress\Api\ReferenceDataApi;
 use Medzuch\DhlExpress\Api\ServicePointApi;
 use Medzuch\DhlExpress\Api\TrackingApi;
@@ -48,6 +50,8 @@ final class DhlClient
     private readonly ReferenceDataApi $referenceData;
     private readonly EpodApi $epod;
     private readonly ServicePointApi $servicePoints;
+    private readonly RatesApi $rates;
+    private readonly LandedCostApi $landedCost;
 
     public function __construct(
         ClientConfig $config,
@@ -82,6 +86,8 @@ final class DhlClient
         $this->referenceData = new ReferenceDataApi($requestBuilder, $transport);
         $this->epod = new EpodApi($requestBuilder, $transport);
         $this->servicePoints = new ServicePointApi($requestBuilder, $transport);
+        $this->rates = new RatesApi($requestBuilder, $transport);
+        $this->landedCost = new LandedCostApi($requestBuilder, $transport);
     }
 
     public function tracking(): TrackingApi
@@ -117,5 +123,15 @@ final class DhlClient
     public function servicePoints(): ServicePointApi
     {
         return $this->servicePoints;
+    }
+
+    public function rates(): RatesApi
+    {
+        return $this->rates;
+    }
+
+    public function landedCost(): LandedCostApi
+    {
+        return $this->landedCost;
     }
 }
