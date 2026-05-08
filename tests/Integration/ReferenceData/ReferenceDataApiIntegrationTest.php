@@ -8,6 +8,7 @@ use Medzuch\DhlExpress\Enum\ComparisonOperator;
 use Medzuch\DhlExpress\Enum\ReferenceDataset;
 use Medzuch\DhlExpress\Tests\Integration\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 
 /**
  * Sandbox checks for the /reference-data endpoint.
@@ -17,6 +18,8 @@ use PHPUnit\Framework\Attributes\Group;
  * static enums we ship and what the live API currently accepts.
  */
 #[Group('integration')]
+#[RequiresEnvironmentVariable('DHL_API_KEY')]
+#[RequiresEnvironmentVariable('DHL_API_SECRET')]
 final class ReferenceDataApiIntegrationTest extends IntegrationTestCase
 {
     public function testFetchesIncotermDataset(): void

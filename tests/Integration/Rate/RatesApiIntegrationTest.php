@@ -19,6 +19,7 @@ use Medzuch\DhlExpress\ValueObject\Dimensions;
 use Medzuch\DhlExpress\ValueObject\PostalCode;
 use Medzuch\DhlExpress\ValueObject\Weight;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 
 /**
  * Sandbox checks for `/rates` (GET single-piece + POST multi-piece).
@@ -29,6 +30,9 @@ use PHPUnit\Framework\Attributes\Group;
  * suite runs on.
  */
 #[Group('integration')]
+#[RequiresEnvironmentVariable('DHL_API_KEY')]
+#[RequiresEnvironmentVariable('DHL_API_SECRET')]
+#[RequiresEnvironmentVariable('DHL_ACCOUNT_NUMBER')]
 final class RatesApiIntegrationTest extends IntegrationTestCase
 {
     public function testQuoteSinglePieceReturnsProducts(): void

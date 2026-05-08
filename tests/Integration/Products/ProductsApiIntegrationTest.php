@@ -13,6 +13,7 @@ use Medzuch\DhlExpress\ValueObject\Dimensions;
 use Medzuch\DhlExpress\ValueObject\PostalCode;
 use Medzuch\DhlExpress\ValueObject\Weight;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 
 /**
  * Sandbox checks for the /products endpoint.
@@ -22,6 +23,9 @@ use PHPUnit\Framework\Attributes\Group;
  * to scope the result.
  */
 #[Group('integration')]
+#[RequiresEnvironmentVariable('DHL_API_KEY')]
+#[RequiresEnvironmentVariable('DHL_API_SECRET')]
+#[RequiresEnvironmentVariable('DHL_ACCOUNT_NUMBER')]
 final class ProductsApiIntegrationTest extends IntegrationTestCase
 {
     public function testListsProductsForCzechToUsShipment(): void

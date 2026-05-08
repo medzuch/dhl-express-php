@@ -8,6 +8,7 @@ use Medzuch\DhlExpress\Enum\IdentifierType;
 use Medzuch\DhlExpress\Exception\DhlApiException;
 use Medzuch\DhlExpress\Tests\Integration\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 
 /**
  * Sandbox check for the /identifiers endpoint.
@@ -20,6 +21,9 @@ use PHPUnit\Framework\Attributes\Group;
  * test passes via the exception path.
  */
 #[Group('integration')]
+#[RequiresEnvironmentVariable('DHL_API_KEY')]
+#[RequiresEnvironmentVariable('DHL_API_SECRET')]
+#[RequiresEnvironmentVariable('DHL_ACCOUNT_NUMBER')]
 final class IdentifierApiIntegrationTest extends IntegrationTestCase
 {
     public function testAllocatesSidIdentifiersOrSurfacesAuthorizationError(): void

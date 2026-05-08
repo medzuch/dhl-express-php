@@ -11,6 +11,7 @@ use Medzuch\DhlExpress\Tests\Integration\IntegrationTestCase;
 use Medzuch\DhlExpress\ValueObject\CountryCode;
 use Medzuch\DhlExpress\ValueObject\PostalCode;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 
 /**
  * Sandbox checks for the /address-validate endpoint.
@@ -20,6 +21,8 @@ use PHPUnit\Framework\Attributes\Group;
  * one validated address.
  */
 #[Group('integration')]
+#[RequiresEnvironmentVariable('DHL_API_KEY')]
+#[RequiresEnvironmentVariable('DHL_API_SECRET')]
 final class AddressApiIntegrationTest extends IntegrationTestCase
 {
     public function testValidatesPickupForPrague(): void

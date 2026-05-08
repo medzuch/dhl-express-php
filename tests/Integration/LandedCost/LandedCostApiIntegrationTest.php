@@ -24,6 +24,7 @@ use Medzuch\DhlExpress\ValueObject\Dimensions;
 use Medzuch\DhlExpress\ValueObject\PostalCode;
 use Medzuch\DhlExpress\ValueObject\Weight;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 
 /**
  * Sandbox checks for `POST /landed-cost`.
@@ -33,6 +34,9 @@ use PHPUnit\Framework\Attributes\Group;
  * landed-cost calculator's duty / tax / freight machinery.
  */
 #[Group('integration')]
+#[RequiresEnvironmentVariable('DHL_API_KEY')]
+#[RequiresEnvironmentVariable('DHL_API_SECRET')]
+#[RequiresEnvironmentVariable('DHL_ACCOUNT_NUMBER')]
 final class LandedCostApiIntegrationTest extends IntegrationTestCase
 {
     public function testEstimateReturnsProducts(): void

@@ -8,6 +8,7 @@ use Medzuch\DhlExpress\Dto\ServicePoint\ServicePointFindResponse;
 use Medzuch\DhlExpress\Tests\Integration\IntegrationTestCase;
 use Medzuch\DhlExpress\ValueObject\CountryCode;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 
 /**
  * Sandbox checks for the /servicepoints endpoint.
@@ -19,6 +20,8 @@ use PHPUnit\Framework\Attributes\Group;
  * zero results, so we only assert the response shape is well-formed.
  */
 #[Group('integration')]
+#[RequiresEnvironmentVariable('DHL_API_KEY')]
+#[RequiresEnvironmentVariable('DHL_API_SECRET')]
 final class ServicePointApiIntegrationTest extends IntegrationTestCase
 {
     public function testFindsServicePointsByLatitudeAndLongitude(): void
