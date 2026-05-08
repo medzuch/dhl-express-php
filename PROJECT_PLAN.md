@@ -560,17 +560,17 @@ Avoid front-loading. Ship these alongside the DTOs that use them, so we have a c
 - [x] `ReferenceDataApi::lookup()` for `GET /reference-data` (with `ReferenceDataset` and `ComparisonOperator` enums)
 
 #### Phase 3c — ServicePoint + Epod (medium)
-- [ ] `ServicePointApi::find()` for `GET /servicepoints` (geo + opening hours DTOs)
-- [ ] `EpodApi::get()` for `GET /shipments/{id}/proof-of-delivery` (binary response handling)
+- [x] `ServicePointApi::find()` for `GET /servicepoints` (subset DTO: facility id, address, geo, opening hours; reuses existing `ServicePointType` and `DayOfWeek` enums via `tryFrom` with raw-string fallback for unknown wire values)
+- [x] `EpodApi::get()` for `GET /shipments/{id}/proof-of-delivery` (JSON response with base64-encoded documents; `EpodContent` enum covers the 7 content variants)
 
 #### Phase 3d — Rates + LandedCost (complex)
 - [ ] `RatesApi::quote()` and `RatesApi::quoteMany()` for `POST /rates`, `POST /rates-many`
 - [ ] `LandedCostApi::estimate()` for `POST /landed-cost`
 
 #### Cross-cutting
-- [ ] DTOs for all responses (per sub-phase)
-- [ ] Unit tests per API (mocked HTTP)
-- [x] Integration tests against sandbox — covers Tracking (single + multi), Address, ReferenceData, Products, Identifier. Shared `IntegrationTestCase` base with env-gated `makeClient()` and `requireAccountNumber()` helpers; new sub-phase tests slot in alongside.
+- [x] DTOs for all responses (per sub-phase) — Tracking, Identifier, Address, Products, ReferenceData, Epod, ServicePoint all shipped with typed response DTOs
+- [x] Unit tests per API (mocked HTTP) — every shipped `*Api` has a sibling `*ApiTest` under `tests/Unit/Api/` exercising hydration + query-parameter emission against `php-http/mock-client`
+- [x] Integration tests against sandbox — covers Tracking (single + multi), Address, ReferenceData, Products, Identifier, Epod (404 path), ServicePoint (Brussels + enum drift detection). Shared `IntegrationTestCase` base with env-gated `makeClient()` / `requireAccountNumber()` helpers and `nextBusinessDay()` for date-stable lookups.
 
 ### Phase 4 — Shipment Creation (week 3-4) — biggest feature
 **Goal:** Create a real shipment end to end.

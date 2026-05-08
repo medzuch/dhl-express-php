@@ -1,0 +1,55 @@
+{
+  "servicePoints": [
+    {
+      "facilityId": "PRG001",
+      "facilityTypeCode": "SP",
+      "serviceAreaCode": "PRG",
+      "servicePointName": "DHL ServicePoint Prague Center",
+      "localName": "DHL Prague Center",
+      "servicePointType": "PARTNER",
+      "address": {
+        "addressLine1": "Wenceslas Square 12",
+        "city": "Prague",
+        "zipCode": "11000",
+        "country": "Czech Republic",
+        "countryDivisionCode": "CZ"
+      },
+      "geoLocation": {
+        "latitude": 50.0815,
+        "longitude": 14.4287
+      },
+      "distance": "0.4",
+      "shippingCutOffTime": "16:00",
+      "openingHours": {
+        "openingHours": [
+          {
+            "dayOfWeek": "MONDAY",
+            "openingTime": "09:00",
+            "closingTime": "18:00"
+          },
+          {
+            "dayOfWeek": "FRIDAY",
+            "openingTime": "09:00",
+            "closingTime": "18:00"
+          }
+        ]
+      }
+    },
+    {
+      "facilityId": "PRG002",
+      "serviceAreaCode": "PRG",
+      "servicePointName": "DHL ServicePoint Prague East",
+      "servicePointType": "STATION",
+      "address": {
+        "addressLine1": "Industrial Park 45",
+        "city": "Prague",
+        "zipCode": "10000"
+      },
+      "geoLocation": {
+        "latitude": 50.0700,
+        "longitude": 14.4900
+      },
+      "distance": "3.2"
+    }
+  ]
+}
