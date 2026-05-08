@@ -64,8 +64,8 @@ final class ShipmentApiIntegrationTest extends IntegrationTestCase
                 cityName: 'Prague',
                 addressLine1: 'Vaclavske namesti 1',
                 phone: new PhoneNumber('+420 222 333 444'),
-                companyName: 'Medzuch s.r.o.',
-                fullName: 'Marcin Mech',
+                companyName: 'Alfa Trading s.r.o.',
+                fullName: 'Jan Nowak',
             ))
             ->withReceiver(new ContactAddress(
                 countryCode: new CountryCode('CZ'),
