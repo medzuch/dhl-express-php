@@ -1,0 +1,33 @@
+{
+    "url": "https://express.api.dhl.com/mydhlapi/test/shipments",
+    "shipmentTrackingNumber": "1234567890",
+    "trackingUrl": "https://express.api.dhl.com/mydhlapi/shipments/1234567890/tracking",
+    "dispatchConfirmationNumber": "PRG200227000256",
+    "packages": [
+        {
+            "referenceNumber": 1,
+            "trackingNumber": "JD914600003889482921",
+            "trackingUrl": "https://express.api.dhl.com/mydhlapi/shipments/1234567890/tracking?PieceID=JD914600003889482921",
+            "volumetricWeight": 1.5,
+            "documents": [
+                {
+                    "imageFormat": "PNG",
+                    "content": "iVBORw0KGgoAAAANSUhEUgAA",
+                    "typeCode": "qr-code"
+                }
+            ]
+        }
+    ],
+    "documents": [
+        {
+            "imageFormat": "PDF",
+            "content": "JVBERi0xLjQKJeLjz9MK",
+            "typeCode": "label"
+        },
+        {
+            "imageFormat": "PDF",
+            "content": "JVBERi0xLjQKJeLjz9MK",
+            "typeCode": "waybillDoc"
+        }
+    ]
+}

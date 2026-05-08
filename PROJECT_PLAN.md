@@ -255,12 +255,12 @@ Per-item checklists for shipped phases live in [`docs/PROJECT_HISTORY.md`](docs/
 This is the largest sub-phase in the project. Phase 3d already shipped as one combined ~50-file PR; Phase 4 is wider still, so the recommended slice is three sequential PRs. Each one delivers something usable on its own.
 
 #### Phase 4a — Foundation: happy-path shipment creation
-- [ ] Common shipment DTOs: `ContactAddress` (Address + Contact composite), `Package` (the full shipment-side package, distinct from `RatePackage`), `OutputImageProperties`, `ValueAddedService`, `Invoice`, `LineItem` (shipment line item, distinct from the landed-cost one)
-- [ ] `CreateShipmentRequest` (top-level) + `CreateShipmentResponse`
-- [ ] `CreateShipmentBuilder` — second builder. Cross-field rules that ship in 4a: weight/dimension unit consistency across packages, `isCustomsDeclarable=true` ⇒ `exportDeclaration` required, DDP incoterm ⇒ payer details required.
-- [ ] `ShipmentApi::create()` for `POST /shipments`
-- [ ] Wire `shipments()` accessor on `DhlClient`
-- [ ] Integration test: domestic non-customs shipment happy path
+- [x] Common shipment DTOs: `ContactAddress` (Address + Contact composite), `Package` (the full shipment-side package, distinct from `RatePackage`), `OutputImageProperties`, `ValueAddedService`, plus the lighter `Pickup` / `Content` / `CustomerDetails` wrappers. `Invoice` and shipment-side `LineItem` defer to Phase 4b alongside the customs flow that uses them.
+- [x] `CreateShipmentRequest` (top-level) + `CreateShipmentResponse` + `CreateShipmentResponseHydrator`
+- [x] `CreateShipmentBuilder` — second builder. Cross-field rules in 4a: required-field presence, account count (1–3), package count (1–999), per-package weight/dimension unit alignment with the shipment-level `unitOfMeasurement`, customs guardrail (`isCustomsDeclarable=true` rejected until 4b ships `exportDeclaration`). The DDP-incoterm-requires-payer rule defers to 4b — `incoterm` lives under `content.exportDeclaration` per OpenAPI and isn't reachable in 4a.
+- [x] `ShipmentApi::create()` for `POST /shipments` with optional `validateDataOnly` query flag
+- [x] Wire `shipments()` accessor on `DhlClient`
+- [x] Integration test: domestic CZ→CZ shipment in `validateDataOnly` mode (avoids polluting sandbox); accepts the documented `8009` "account not IMP-enabled" exception path the same way `IdentifierApiIntegrationTest` does for breakbulk-authorization
 
 #### Phase 4b — Customs / DG / PLT
 - [ ] `ExportDeclaration` deepening (line-item totals, declared-value reconciliation, EU intra-zone exemption table)
@@ -387,8 +387,8 @@ recent entries are inlined below; older rationale is preserved verbatim there.
 
 | Date | Decision | Rationale |
 |---|---|---|
-| 2026-05-08 | Phase 4 to be sliced into three sequential PRs (4a/4b/4c) | Phase 3d already shipped as a single ~50-file PR; Phase 4 has more surface area and would balloon further if landed as one. 4a = foundation (happy-path domestic shipment + builder + `ShipmentApi::create()`). 4b = customs / dangerous-goods / paperless-trade. 4c = add-piece + label-format polish. Each slice ships something usable on its own and unblocks the deferred Phase 2C.3 enums (`ServiceCode`, `OutputImageTemplate`, `CommodityCategory`) at the slice that consumes them. See §8 Phase 4 sub-phases for the per-slice breakdown. |
-| 2026-05-08 | Bump PHPUnit constraint `^11` → `^12` and PHPStan src level `8` → `max` | PHPUnit 13.x needs PHP 8.4; we're locked to 8.3 so 12.x is the safe ceiling. Tests already used `PHPUnit\Framework\Attributes\*` so the bump was constraint + schema URL only — zero test edits. PHPStan level 9/10 was nearly free because `checkImplicitMixed: true` and `phpstan-strict-rules` were already on at level 8; only finding was a missing `@var` narrowing inside `TrackingApi::hydrateEvents()`. Using `level: max` to stay self-aligning with future PHPStan releases. |
+| 2026-05-08 | Phase 4a `CustomerDetails` / `ContactAddress` / `Package` live under `Dto/Shipment/`, not reused from `Dto/Common/` | The rates-side `Dto/Common/CustomerDetails` pairs `RateAddress` (no contact info — `/rates` only needs geography). Shipment customer details require the address + contact composite (phone, companyName, fullName), so a separate `Dto/Shipment/CustomerDetails` wraps `ContactAddress`. Same naming is intentional — they fill the same conceptual slot in their respective request payloads. Same logic applied to `ContactAddress` (vs. `RateAddress`) and `Package` (vs. `RatePackage`) in 4a. |
+| 2026-05-08 | Phase 4a integration test uses `validateDataOnly=true` and accepts the `8009` "account not IMP-enabled" exception path | DHL's `POST /shipments?validateDataOnly=true` returns the same response shape as a real create but does not produce a real shipment. Using it keeps `make test-integration` re-runnable without polluting the sandbox account with accumulated test shipments. Common DHL sandbox accounts are not IMP-enabled for shipment booking and surface error code `8009`; rather than gate the test on a special account class, we accept that 8009 path as a valid pipeline exercise — same pattern as `IdentifierApiIntegrationTest` does for breakbulk-authorization (`3501`). |
 
 ---
 
