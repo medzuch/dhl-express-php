@@ -576,18 +576,35 @@ Avoid front-loading. Ship these alongside the DTOs that use them, so we have a c
 ### Phase 4 — Shipment Creation (week 3-4) — biggest feature
 **Goal:** Create a real shipment end to end.
 
-- [ ] All shipment-related DTOs (~15 classes)
-- [ ] `CreateShipmentBuilder` — fluent interface for the deeply nested request
-- [ ] `ShipmentApi::create()`
-- [ ] `ShipmentApi::addPiece()`
-- [ ] `ShipmentApi::uploadImage()`
-- [ ] `ShipmentApi::uploadInvoiceData()`
-- [ ] `ShipmentApi::getImage()`
-- [ ] `ExportDeclaration` and customs handling
-- [ ] `DangerousGoods` support
-- [ ] PaperlessTrade (PLT) flow
-- [ ] Output image options (PDF/ZPL/EPL labels)
-- [ ] Integration tests with full create-shipment workflow
+This is the largest sub-phase in the project. Phase 3d already shipped as one combined ~50-file PR; Phase 4 is wider still, so the recommended slice is three sequential PRs. Each one delivers something usable on its own.
+
+#### Phase 4a — Foundation: happy-path shipment creation
+- [ ] Common shipment DTOs: `ContactAddress` (Address + Contact composite), `Package` (the full shipment-side package, distinct from `RatePackage`), `OutputImageProperties`, `ValueAddedService`, `Invoice`, `LineItem` (shipment line item, distinct from the landed-cost one)
+- [ ] `CreateShipmentRequest` (top-level) + `CreateShipmentResponse`
+- [ ] `CreateShipmentBuilder` — second builder. Cross-field rules that ship in 4a: weight/dimension unit consistency across packages, `isCustomsDeclarable=true` ⇒ `exportDeclaration` required, DDP incoterm ⇒ payer details required.
+- [ ] `ShipmentApi::create()` for `POST /shipments`
+- [ ] Wire `shipments()` accessor on `DhlClient`
+- [ ] Integration test: domestic non-customs shipment happy path
+
+#### Phase 4b — Customs / DG / PLT
+- [ ] `ExportDeclaration` deepening (line-item totals, declared-value reconciliation, EU intra-zone exemption table)
+- [ ] `DangerousGoods` block + builder rule (DG VAS code present ⇒ DG block required)
+- [ ] Insurance VAS rule (`II` ⇒ declared `Money` required)
+- [ ] Paperless Trade flow: `ShipmentApi::uploadImage()` for `POST /shipments/{id}/upload-image`, `ShipmentApi::uploadInvoiceData()` for `POST /shipments/{id}/upload-invoice-data`, `ShipmentApi::getImage()` for `GET /shipments/{id}/get-image`
+- [ ] Customs invoice line-item sum reconciliation in builder
+- [ ] Integration test: cross-border customs-declarable shipment with PLT
+
+#### Phase 4c — Add-piece + label format polish
+- [ ] `ShipmentApi::addPiece()` for `POST /shipments/{id}/add-piece`
+- [ ] Output image format coverage — PDF/ZPL/EPL/LP2 paths in `OutputImageProperties`
+- [ ] Label-template support via the deferred `OutputImageTemplate` enum (~66 templates from `outputImageTemplate` xlsx sheet — ship now that there's a concrete consumer)
+
+#### Phase 4 cross-cutting — enums unblocked by a concrete consumer
+Per Phase 2C.3, these were deferred until something used them. Phase 4 is that consumer:
+- [ ] `ServiceCode` (~384 codes from `serviceCode` xlsx sheet) — decision point: ship as one large enum or split per `serviceGroupCode` (W=Customs, H=DG, U=Temperature, …). Recommend deciding when 4b lands.
+- [ ] `OutputImageTemplate` (~66 templates) — ships in 4c.
+- [ ] `CommodityCategory` (~108 codes from `commodityCategory` sheet) — ships in 4b alongside `ExportDeclaration`.
+- [ ] `ShipmentReferenceTypeCode` (~63 codes from `customerShipmentReferenceType` sheet) — ship if `CreateShipmentBuilder` needs it; otherwise leave as free string.
 
 ### Phase 5 — Pickup & Operations (week 4-5)
 - [ ] `PickupApi` (create, update, cancel, list)
@@ -729,6 +746,8 @@ When generating enums, ALWAYS cross-reference these files. When the xlsx and the
 | 2026-05-08 | First builders + `InvalidRequestException` land in Phase 3d | The §7 validation strategy specifies: constructors validate single-field rules; builders accumulate cross-field rules and throw `InvalidRequestException` with every issue at once. `RateRequestBuilder.build()` and `LandedCostRequestBuilder.build()` are the first concrete implementations. The cross-field rule that ships first is "every package's weight/dimension unit system must match the request-level `unitOfMeasurement`" — a canonical example of a rule DHL would otherwise reject server-side; we surface it locally with field paths. |
 | 2026-05-08 | One `RatesResponseHydrator` shared by `/rates` and `/landed-cost` | Both endpoints return `supermodelIoLogisticsExpressRates`. Duplicating the ~250 lines of hydration in two API classes was rejected; instead the hydrator lives in `src/Dto/Rate/` (pure data-shape concern) and is injected by default into both `RatesApi` and `LandedCostApi` constructors. Per-line-item charge breakdowns from `/landed-cost` surface as `QuotedProduct::$rawItems` rather than a typed child class — they will get typed when a concrete consumer surfaces a use case. |
 | 2026-05-08 | DHL has no `/rates-many` endpoint — earlier PROJECT_PLAN entry was incorrect | The OpenAPI spec defines `GET /rates` (operationId `exp-api-rates`, single-piece query-string) and `POST /rates` (operationId `exp-api-rates-many`, multi-piece JSON body). The PROJECT_PLAN domain table erroneously listed `POST /rates-many` as a separate endpoint; that's the operation ID, not the URL. Corrected in the §3 endpoint table during Phase 3d. |
+| 2026-05-08 | DHL "API Platform Modernization" email audit — library unaffected | Email from DHL devportal announces three platform-level changes: (1) HTTP response header names switching to lower-case on **28 May 2026** (HTTP/2 standard); (2) new IP allow-list addresses **22-29 June 2026**; (3) cipher-suite tightening to TLS 1.3 + TLS 1.2 ECDHE-RSA-AES-GCM only **22-29 June 2026**. Audit result: no library code changes needed. `HttpTransport::redactHeaders()` already uses `strcasecmp()`; `ResponseParser` doesn't read headers; all tests use PSR-7 `getHeaderLine()` (case-insensitive by spec). IP / cipher concerns are deployment-environment problems for the consumer, not the library — we use the domain `https://express.api.dhl.com/...` and Guzzle delegates TLS to PHP's curl/OpenSSL stack, which on PHP 8.3 + a modern OS already negotiates TLS 1.3 by default. Recommended follow-up: re-run `make test-integration` after 28 May to verify no latent issue surfaces. Email saved at `docs/dhl/Important_ Upcoming Modernization of DHL's API Platform.eml` for archival reference. |
+| 2026-05-08 | Phase 4 to be sliced into three sequential PRs (4a/4b/4c) | Phase 3d already shipped as a single ~50-file PR; Phase 4 has more surface area and would balloon further if landed as one. 4a = foundation (happy-path domestic shipment + builder + `ShipmentApi::create()`). 4b = customs / dangerous-goods / paperless-trade. 4c = add-piece + label-format polish. Each slice ships something usable on its own and unblocks the deferred Phase 2C.3 enums (`ServiceCode`, `OutputImageTemplate`, `CommodityCategory`) at the slice that consumes them. See §8 Phase 4 sub-phases for the per-slice breakdown. |
 
 ---
 
