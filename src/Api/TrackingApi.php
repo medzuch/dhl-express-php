@@ -137,6 +137,7 @@ final class TrackingApi
                 continue;
             }
 
+            /** @var array<string, mixed> $rawEvent */
             $events[] = new ShipmentEvent(
                 date: $this->stringField($rawEvent, 'date'),
                 time: $this->stringField($rawEvent, 'time'),

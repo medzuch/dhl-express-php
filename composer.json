@@ -51,7 +51,7 @@
     "scripts-descriptions": {
         "test": "Run PHPUnit unit suite (integration excluded)",
         "test-integration": "Run PHPUnit integration suite (requires DHL_API_KEY)",
-        "analyse": "Run PHPStan on src/ (level 8)",
+        "analyse": "Run PHPStan on src/ (level max)",
         "analyse-tests": "Run PHPStan on tests/ (level 6)",
         "analyse-all": "Run PHPStan on src/ and tests/",
         "cs-fix": "Fix code style issues",

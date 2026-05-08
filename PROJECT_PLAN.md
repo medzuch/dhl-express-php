@@ -24,8 +24,8 @@
 | Composer | latest | Inside container |
 | HTTP client | PSR-18 + Guzzle 7.9 | `psr/http-client` + `psr/http-factory` interfaces; Guzzle as default implementation |
 | Logging | PSR-3 (`psr/log` ^3.0) | Optional `LoggerInterface` injected through `DhlClient` → `HttpTransport`; `NullLogger` default |
-| Testing | PHPUnit 11 | Unit + Integration suites |
-| Static analysis | PHPStan 2.x (^2.1, level 8) | Strictest level; separate config for tests at level 6 |
+| Testing | PHPUnit 12 | Unit + Integration suites |
+| Static analysis | PHPStan 2.x (^2.1, level max) | Strictest level; separate config for tests at level 6 |
 | Code style | php-cs-fixer 3.x | PSR-12 + PHP 8.3 migration rules |
 | HTTP mocking | `php-http/mock-client` + `nyholm/psr7` | For unit tests |
 
@@ -35,7 +35,7 @@ make up             # start containers
 make install        # composer install
 make test               # phpunit unit suite only (integration excluded by default)
 make test-integration   # phpunit integration suite (requires DHL_API_KEY)
-make analyse            # phpstan analyse src/ (level 8)
+make analyse            # phpstan analyse src/ (level max)
 make analyse-tests      # phpstan analyse tests/ (level 6)
 make analyse-all        # phpstan analyse src/ + tests/
 make check              # test + analyse-all + cs-check
@@ -113,7 +113,7 @@ make down           # stop
 ### Methodology
 - **TDD strict** — write test first, then implementation
 - **DDD selectively** — Value Objects + Ubiquitous Language YES; aggregates/repositories/events NO
-- **PHPStan level 8** from day one — no `mixed` types unless absolutely necessary
+- **PHPStan level max** from day one — no `mixed` types unless absolutely necessary
 - All public APIs must have full type declarations and docblocks
 - Constructor property promotion + readonly everywhere DTOs are used
 
@@ -327,7 +327,7 @@ Per Phase 2C.3, these were deferred until something used them. Phase 4 is that c
 ## 10. Coding Conventions
 
 - **PSR-12** code style enforced via `php-cs-fixer` (config: `.php-cs-fixer.php`)
-- **PHPStan level 8** — no `mixed`, all return types declared
+- **PHPStan level max** — no `mixed`, all return types declared
 - **Strict types** — `declare(strict_types=1);` at top of every file
 - **Final classes** by default — only mark non-final when designed for extension
 - **Readonly** for all DTOs and Value Objects
@@ -388,7 +388,7 @@ recent entries are inlined below; older rationale is preserved verbatim there.
 | Date | Decision | Rationale |
 |---|---|---|
 | 2026-05-08 | Phase 4 to be sliced into three sequential PRs (4a/4b/4c) | Phase 3d already shipped as a single ~50-file PR; Phase 4 has more surface area and would balloon further if landed as one. 4a = foundation (happy-path domestic shipment + builder + `ShipmentApi::create()`). 4b = customs / dangerous-goods / paperless-trade. 4c = add-piece + label-format polish. Each slice ships something usable on its own and unblocks the deferred Phase 2C.3 enums (`ServiceCode`, `OutputImageTemplate`, `CommodityCategory`) at the slice that consumes them. See §8 Phase 4 sub-phases for the per-slice breakdown. |
-| 2026-05-08 | Extract historical sections out of `PROJECT_PLAN.md` into `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/PROJECT_HISTORY.md` | `PROJECT_PLAN.md` is loaded into every Claude session via `@PROJECT_PLAN.md` in `CLAUDE.md` (~12K tokens at 754 lines). Completed-phase checkboxes, full decision log, post-1.0 considerations, and the 194-line ASCII `src/` tree are not load-bearing for active Phase 4+ work. Extracting them halves the file (~754 → ~380 lines, ~6K tokens saved per session) without losing information — the extracted docs stay in-repo for on-demand `@`-reference. |
+| 2026-05-08 | Bump PHPUnit constraint `^11` → `^12` and PHPStan src level `8` → `max` | PHPUnit 13.x needs PHP 8.4; we're locked to 8.3 so 12.x is the safe ceiling. Tests already used `PHPUnit\Framework\Attributes\*` so the bump was constraint + schema URL only — zero test edits. PHPStan level 9/10 was nearly free because `checkImplicitMixed: true` and `phpstan-strict-rules` were already on at level 8; only finding was a missing `@var` narrowing inside `TrackingApi::hydrateEvents()`. Using `level: max` to stay self-aligning with future PHPStan releases. |
 
 ---
 
