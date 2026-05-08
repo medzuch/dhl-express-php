@@ -19,7 +19,6 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
 use Medzuch\DhlExpress\Http\ResponseParser;
 use Medzuch\DhlExpress\ValueObject\CountryCode;
 use Medzuch\DhlExpress\ValueObject\MessageReference;
-use Medzuch\DhlExpress\ValueObject\PostalCode;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
@@ -39,8 +38,8 @@ final class ServicePointApiTest extends TestCase
         $api = $this->makeApi($mockClient, $factory);
 
         $result = $api->find(
+            address: 'Wenceslas Square, Prague',
             countryCode: new CountryCode('CZ'),
-            postalCode: new PostalCode('11000'),
         );
 
         self::assertInstanceOf(ServicePointFindResponse::class, $result);
@@ -78,7 +77,7 @@ final class ServicePointApiTest extends TestCase
         );
 
         $api = $this->makeApi($mockClient, $factory);
-        $result = $api->find(countryCode: new CountryCode('CZ'));
+        $result = $api->find(address: 'Prague', countryCode: new CountryCode('CZ'));
 
         $second = $result->servicePoints[1];
         self::assertSame('PRG002', $second->facilityId);
@@ -113,7 +112,7 @@ final class ServicePointApiTest extends TestCase
         );
 
         $api = $this->makeApi($mockClient, $factory);
-        $result = $api->find(countryCode: new CountryCode('CZ'));
+        $result = $api->find(address: 'Prague', countryCode: new CountryCode('CZ'));
 
         $sp = $result->servicePoints[0];
         self::assertNull($sp->servicePointType);
@@ -134,9 +133,8 @@ final class ServicePointApiTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
         $api->find(
+            address: 'Wenceslas Square, Prague',
             countryCode: new CountryCode('CZ'),
-            postalCode: new PostalCode('11000'),
-            cityName: 'Prague',
             resultLimit: 5,
         );
 
@@ -145,9 +143,52 @@ final class ServicePointApiTest extends TestCase
         $uri = (string) $sent->getUri();
         self::assertStringContainsString('/servicepoints?', $uri);
         self::assertStringContainsString('countryCode=CZ', $uri);
-        self::assertStringContainsString('postalCode=11000', $uri);
-        self::assertStringContainsString('city=Prague', $uri);
+        self::assertStringContainsString('address=Wenceslas%20Square%2C%20Prague', $uri);
         self::assertStringContainsString('servicePointResults=5', $uri);
+    }
+
+    public function testEmitsLatLongQueryParameters(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('prague.json')),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+        $api->find(
+            latitude: 50.8467,
+            longitude: 4.3499,
+            resultLimit: 5,
+        );
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('latitude=50.8467', $uri);
+        self::assertStringContainsString('longitude=4.3499', $uri);
+    }
+
+    public function testEmitsServicePointIdAndIdfQueryParameters(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('prague.json')),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+        $api->find(servicePointId: 'BRU001', idf: 'ES282291');
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('servicePointID=BRU001', $uri);
+        self::assertStringContainsString('idf=ES282291', $uri);
     }
 
     public function testOmitsAllParametersWhenNotProvided(): void

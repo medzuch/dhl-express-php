@@ -16,19 +16,18 @@ use Medzuch\DhlExpress\Exception\DhlNetworkException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\RequestBuilder;
 use Medzuch\DhlExpress\ValueObject\CountryCode;
-use Medzuch\DhlExpress\ValueObject\PostalCode;
 
 /**
  * Service Point lookup endpoint.
  *
  * Targets `GET /servicepoints` to find DHL Express facilities a
- * customer can use as pickup or drop-off points. The DHL endpoint
- * accepts a long list of mutually-exclusive search parameters; this
- * facade exposes the most commonly-used combinations:
+ * customer can use as pickup or drop-off points. DHL's spec exposes
+ * four mutually-exclusive search modes; this facade surfaces them:
  *
- * - by **address**: country + postal + optional city / free-form address text
+ * - by **address**: free-form address text + companion `countryCode`
  * - by **geo**: latitude + longitude
  * - by **identifier**: `servicePointID` (e.g. `BRU001`)
+ * - by **legacy facility ref**: `idf`
  *
  * The DHL response surfaces many more attributes than this DTO
  * captures (capabilities, partner, capacity, …); the most useful
@@ -50,28 +49,21 @@ final class ServicePointApi
      * @throws DhlNetworkException for transport-level failures
      */
     public function find(
-        ?CountryCode $countryCode = null,
-        ?PostalCode $postalCode = null,
-        ?string $cityName = null,
         ?string $address = null,
+        ?CountryCode $countryCode = null,
         ?float $latitude = null,
         ?float $longitude = null,
         ?string $servicePointId = null,
+        ?string $idf = null,
         ?int $resultLimit = null,
     ): ServicePointFindResponse {
         $params = [];
 
-        if ($countryCode !== null) {
-            $params['countryCode'] = $countryCode->value;
-        }
-        if ($postalCode !== null) {
-            $params['postalCode'] = $postalCode->value;
-        }
-        if ($cityName !== null) {
-            $params['city'] = $cityName;
-        }
         if ($address !== null) {
             $params['address'] = $address;
+        }
+        if ($countryCode !== null) {
+            $params['countryCode'] = $countryCode->value;
         }
         if ($latitude !== null) {
             $params['latitude'] = (string) $latitude;
@@ -81,6 +73,9 @@ final class ServicePointApi
         }
         if ($servicePointId !== null) {
             $params['servicePointID'] = $servicePointId;
+        }
+        if ($idf !== null) {
+            $params['idf'] = $idf;
         }
         if ($resultLimit !== null) {
             $params['servicePointResults'] = (string) $resultLimit;
