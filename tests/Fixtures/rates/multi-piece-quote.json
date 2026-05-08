@@ -1,0 +1,98 @@
+{
+    "products": [
+        {
+            "productName": "EXPRESS WORLDWIDE NONDOC",
+            "productCode": "P",
+            "localProductCode": "P",
+            "localProductCountryCode": "SG",
+            "networkTypeCode": "TD",
+            "isCustomerAgreement": false,
+            "weight": {
+                "volumetric": 1.2,
+                "provided": 1.5,
+                "unitOfMeasurement": "metric"
+            },
+            "totalPrice": [
+                {
+                    "currencyType": "BILLC",
+                    "priceCurrency": "GBP",
+                    "price": 157.95
+                },
+                {
+                    "currencyType": "PULCL",
+                    "priceCurrency": "GBP",
+                    "price": 157.95
+                },
+                {
+                    "currencyType": "BASEC",
+                    "priceCurrency": "EUR",
+                    "price": 182.84
+                }
+            ],
+            "totalPriceBreakdown": [
+                {
+                    "currencyType": "BILLC",
+                    "priceCurrency": "GBP",
+                    "priceBreakdown": [
+                        {"typeCode": "STTXA", "price": 0},
+                        {"typeCode": "SPRQT", "price": 130}
+                    ]
+                }
+            ],
+            "detailedPriceBreakdown": [
+                {
+                    "currencyType": "BILLC",
+                    "priceCurrency": "GBP",
+                    "breakdown": [
+                        {
+                            "name": "EXPRESS WORLDWIDE",
+                            "price": 130,
+                            "priceBreakdown": [
+                                {"priceType": "TAX", "typeCode": "All Bu", "price": 0, "rate": 0, "basePrice": 130}
+                            ]
+                        },
+                        {
+                            "name": "FUEL SURCHARGE",
+                            "serviceCode": "FF",
+                            "localServiceCode": "FF",
+                            "serviceTypeCode": "SCH",
+                            "price": 27.68,
+                            "isCustomerAgreement": false,
+                            "isMarketedService": false,
+                            "priceBreakdown": []
+                        }
+                    ]
+                }
+            ],
+            "deliveryCapabilities": {
+                "deliveryTypeCode": "QDDC",
+                "estimatedDeliveryDateAndTime": "2022-11-23T12:00:00",
+                "destinationServiceAreaCode": "PAR",
+                "destinationFacilityAreaCode": "CDG",
+                "deliveryAdditionalDays": 0,
+                "deliveryDayOfWeek": 3,
+                "totalTransitDays": 3
+            },
+            "estimatedDeliveryDate": {
+                "typeCode": "QDDC",
+                "estimatedDeliveryDate": "2022-11-23T12:00:00"
+            }
+        },
+        {
+            "productName": "EXPRESS 12:00",
+            "productCode": "T",
+            "localProductCode": "T",
+            "networkTypeCode": "TD",
+            "isCustomerAgreement": false,
+            "totalPrice": [
+                {"currencyType": "BILLC", "priceCurrency": "GBP", "price": 199.50}
+            ]
+        }
+    ],
+    "exchangeRates": [
+        {"currentExchangeRate": 0.8638, "currency": "EUR", "baseCurrency": "GBP"}
+    ],
+    "warnings": [
+        "Sample warning"
+    ]
+}

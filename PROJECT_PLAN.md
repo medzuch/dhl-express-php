@@ -76,7 +76,7 @@ make down           # stop
 | **Pickup** | `GET/POST /pickups`, `PATCH/DELETE /pickups/{id}` | Schedule, update, cancel pickups |
 | **Identifier** | `GET /identifiers` | Resolve tracking IDs |
 | **Address** | `POST /address-validate` | Validate destination addresses |
-| **Rates** | `POST /rates`, `POST /rates-many` | Get shipping rate quotes |
+| **Rates** | `GET /rates`, `POST /rates` | Get shipping rate quotes (single-piece GET, multi-piece POST) |
 | **Landed Cost** | `POST /landed-cost` | Estimate duties/taxes |
 | **Products** | `GET /products` | List available shipping products |
 | **Tracking** | `GET /shipments/{id}/tracking`, `GET /tracking` | Track shipments (single + multi) |
@@ -564,8 +564,9 @@ Avoid front-loading. Ship these alongside the DTOs that use them, so we have a c
 - [x] `EpodApi::get()` for `GET /shipments/{id}/proof-of-delivery` (JSON response with base64-encoded documents; `EpodContent` enum covers the 7 content variants)
 
 #### Phase 3d — Rates + LandedCost (complex)
-- [ ] `RatesApi::quote()` and `RatesApi::quoteMany()` for `POST /rates`, `POST /rates-many`
-- [ ] `LandedCostApi::estimate()` for `POST /landed-cost`
+- [x] `RatesApi::quote()` for `GET /rates` (single-piece, query-string) and `RatesApi::quoteMany()` for `POST /rates` (multi-piece, JSON body via `RateRequest` DTO; the OpenAPI spec calls the multi-piece operation `exp-api-rates-many`, hence the helper name — there is no separate `/rates-many` endpoint)
+- [x] `LandedCostApi::estimate()` for `POST /landed-cost`. Response shape (`supermodelIoLogisticsExpressRates`) is shared with `/rates`, so a single `RatesResponseHydrator` covers all three. Per-line-item charge breakdowns surface as `QuotedProduct::$rawItems` — typed children can fan out when a concrete consumer surfaces.
+- [x] `RateRequestBuilder` and `LandedCostRequestBuilder` — first builders in the project; both accumulate cross-field errors and throw a single `InvalidRequestException` (per §7).
 
 #### Cross-cutting
 - [x] DTOs for all responses (per sub-phase) — Tracking, Identifier, Address, Products, ReferenceData, Epod, ServicePoint all shipped with typed response DTOs
@@ -724,6 +725,10 @@ When generating enums, ALWAYS cross-reference these files. When the xlsx and the
 | 2026-05-06 | PSR-3 logger wired through `HttpTransport`, surfaced via `DhlClient` constructor | Added `psr/log` ^3.0 as a runtime dep so callers can plug a logger to see request/response payloads. Defaults to `NullLogger` (zero cost when absent). `Authorization` header is redacted before logging so basic-auth credentials never leak. Picked `HttpTransport` as the single chokepoint instead of per-`*Api` instrumentation or a PSR-18 decorator — minimum surface, maximum coverage. |
 | 2026-05-06 | Wire `.env` into the container via `env_file:` and add `make setup` bootstrap | `docker compose` reads `.env` for compose-file substitution but does **not** pass it into the container without `env_file:`. Adding it makes integration tests (and any in-container script) pick up `DHL_API_KEY` etc. via `getenv()` the canonical way. `make setup` chains `cp -n .env.example .env` + build + composer install so onboarding is one command. `cp -n` keeps re-runs idempotent. `.env.example` carries a top-of-file note that values must not be quoted — `env_file:` passes quote characters through verbatim. |
 | 2026-05-06 | Integration tests log request/response payloads to `var/integration-logs/` | Hand-rolled `JsonLineFileLogger` in `tests/Integration/Logging/` (extends `Psr\Log\AbstractLogger`, ~50 lines) wired into `IntegrationTestCase::makeClient()`. One file per test method, JSONL format, truncated on first write per run. Hand-rolled instead of pulling in monolog because: zero new dev deps, the library's "no framework" ethos, and the requirement is just append-only file output for sandbox debugging. |
+| 2026-05-08 | Phase 3d shipped as a single combined PR (Rates + LandedCost) | Both endpoints share request building blocks (`Account`, `RateAddress`, `RatePackage`, `CustomerDetails`) and the entire response model (`supermodelIoLogisticsExpressRates`). Splitting into two PRs would have made PR 3d-2 reach back into 3d-1's surface anyway. User opted for one combined ~50-file PR instead of two smaller ones; tradeoff is a wider review surface in exchange for atomic delivery of the rating domain. |
+| 2026-05-08 | First builders + `InvalidRequestException` land in Phase 3d | The §7 validation strategy specifies: constructors validate single-field rules; builders accumulate cross-field rules and throw `InvalidRequestException` with every issue at once. `RateRequestBuilder.build()` and `LandedCostRequestBuilder.build()` are the first concrete implementations. The cross-field rule that ships first is "every package's weight/dimension unit system must match the request-level `unitOfMeasurement`" — a canonical example of a rule DHL would otherwise reject server-side; we surface it locally with field paths. |
+| 2026-05-08 | One `RatesResponseHydrator` shared by `/rates` and `/landed-cost` | Both endpoints return `supermodelIoLogisticsExpressRates`. Duplicating the ~250 lines of hydration in two API classes was rejected; instead the hydrator lives in `src/Dto/Rate/` (pure data-shape concern) and is injected by default into both `RatesApi` and `LandedCostApi` constructors. Per-line-item charge breakdowns from `/landed-cost` surface as `QuotedProduct::$rawItems` rather than a typed child class — they will get typed when a concrete consumer surfaces a use case. |
+| 2026-05-08 | DHL has no `/rates-many` endpoint — earlier PROJECT_PLAN entry was incorrect | The OpenAPI spec defines `GET /rates` (operationId `exp-api-rates`, single-piece query-string) and `POST /rates` (operationId `exp-api-rates-many`, multi-piece JSON body). The PROJECT_PLAN domain table erroneously listed `POST /rates-many` as a separate endpoint; that's the operation ID, not the URL. Corrected in the §3 endpoint table during Phase 3d. |
 
 ---
 
