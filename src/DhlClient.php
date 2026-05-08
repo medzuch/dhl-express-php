@@ -14,6 +14,7 @@ use Medzuch\DhlExpress\Api\ProductsApi;
 use Medzuch\DhlExpress\Api\RatesApi;
 use Medzuch\DhlExpress\Api\ReferenceDataApi;
 use Medzuch\DhlExpress\Api\ServicePointApi;
+use Medzuch\DhlExpress\Api\ShipmentApi;
 use Medzuch\DhlExpress\Api\TrackingApi;
 use Medzuch\DhlExpress\Exception\DhlErrorMapper;
 use Medzuch\DhlExpress\Http\HttpTransport;
@@ -52,6 +53,7 @@ final class DhlClient
     private readonly ServicePointApi $servicePoints;
     private readonly RatesApi $rates;
     private readonly LandedCostApi $landedCost;
+    private readonly ShipmentApi $shipments;
 
     public function __construct(
         ClientConfig $config,
@@ -88,6 +90,7 @@ final class DhlClient
         $this->servicePoints = new ServicePointApi($requestBuilder, $transport);
         $this->rates = new RatesApi($requestBuilder, $transport);
         $this->landedCost = new LandedCostApi($requestBuilder, $transport);
+        $this->shipments = new ShipmentApi($requestBuilder, $transport);
     }
 
     public function tracking(): TrackingApi
@@ -133,5 +136,10 @@ final class DhlClient
     public function landedCost(): LandedCostApi
     {
         return $this->landedCost;
+    }
+
+    public function shipments(): ShipmentApi
+    {
+        return $this->shipments;
     }
 }
