@@ -24,7 +24,7 @@ ALWAYS cross-reference these files when generating enums, DTOs, or error mapping
 ### Code style
 - PHP 8.3 with `declare(strict_types=1);` at the top of every file
 - PSR-12 enforced via `php-cs-fixer` (config: `.php-cs-fixer.php`)
-- PHPStan **level 8** clean — no `mixed` unless truly unavoidable
+- PHPStan **level max** clean — no `mixed` unless truly unavoidable
 - All public methods have full type declarations and docblocks
 - `final` classes by default; only non-final when designed for extension
 
@@ -70,7 +70,7 @@ make build          # rebuild image
 make install        # composer install
 make test               # phpunit unit suite only (integration excluded by default)
 make test-integration   # phpunit integration suite (requires DHL_API_KEY)
-make analyse            # phpstan analyse src/ (level 8)
+make analyse            # phpstan analyse src/ (level max)
 make analyse-tests  # phpstan analyse tests/ (level 6)
 make analyse-all    # phpstan analyse src/ + tests/
 make cs-fix         # fix code style via php-cs-fixer
@@ -93,7 +93,7 @@ make shell          # enter container shell
 ## Critical reminders
 
 1. **TDD strict** — never write implementation before its test
-2. **PHPStan level 8** from day one, not "later"
+2. **PHPStan level max** from day one, not "later"
 3. **Cross-reference DHL docs** in `docs/dhl/` for any enum value, error code, or DTO field — do not invent values
 4. **Conventional Commits** — every commit message
 5. **No framework code** in the library — keep it pure PHP

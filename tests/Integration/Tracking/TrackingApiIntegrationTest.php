@@ -9,6 +9,7 @@ use Medzuch\DhlExpress\Exception\DhlNotFoundException;
 use Medzuch\DhlExpress\Tests\Integration\IntegrationTestCase;
 use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 
 /**
  * Hits the real DHL Express sandbox at express.api.dhl.com/mydhlapi/test.
@@ -19,6 +20,8 @@ use PHPUnit\Framework\Attributes\Group;
  * need updating.
  */
 #[Group('integration')]
+#[RequiresEnvironmentVariable('DHL_API_KEY')]
+#[RequiresEnvironmentVariable('DHL_API_SECRET')]
 final class TrackingApiIntegrationTest extends IntegrationTestCase
 {
     private const KNOWN_TEST_WAYBILL = '9356579890';

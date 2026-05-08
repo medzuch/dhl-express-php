@@ -8,6 +8,7 @@ use Medzuch\DhlExpress\Exception\DhlNotFoundException;
 use Medzuch\DhlExpress\Tests\Integration\IntegrationTestCase;
 use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 
 /**
  * Sandbox check for the /shipments/{id}/proof-of-delivery endpoint.
@@ -20,6 +21,9 @@ use PHPUnit\Framework\Attributes\Group;
  * success path.
  */
 #[Group('integration')]
+#[RequiresEnvironmentVariable('DHL_API_KEY')]
+#[RequiresEnvironmentVariable('DHL_API_SECRET')]
+#[RequiresEnvironmentVariable('DHL_ACCOUNT_NUMBER')]
 final class EpodApiIntegrationTest extends IntegrationTestCase
 {
     public function testFetchesProofOfDeliveryOrSurfacesNotFound(): void
