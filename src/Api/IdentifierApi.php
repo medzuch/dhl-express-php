@@ -12,6 +12,7 @@ use Medzuch\DhlExpress\Exception\DhlApiException;
 use Medzuch\DhlExpress\Exception\DhlNetworkException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\RequestBuilder;
+use Medzuch\DhlExpress\Support\HydrationHelper;
 use Medzuch\DhlExpress\ValueObject\AccountNumber;
 
 /**
@@ -66,7 +67,7 @@ final class IdentifierApi
     private function hydrate(array $body): IdentifierResponse
     {
         return new IdentifierResponse(
-            warnings: $this->stringList($body['warnings'] ?? null),
+            warnings: HydrationHelper::stringList($body['warnings'] ?? null),
             identifiers: $this->hydrateGroups($body['identifiers'] ?? null),
         );
     }
@@ -98,29 +99,11 @@ final class IdentifierApi
 
             $groups[] = new IdentifierGroup(
                 typeCode: $type,
-                list: $this->stringList($rawGroup['list'] ?? null),
+                list: HydrationHelper::stringList($rawGroup['list'] ?? null),
             );
         }
 
         return $groups;
     }
 
-    /**
-     * @return list<string>
-     */
-    private function stringList(mixed $raw): array
-    {
-        if (!is_array($raw)) {
-            return [];
-        }
-
-        $items = [];
-        foreach ($raw as $item) {
-            if (is_string($item)) {
-                $items[] = $item;
-            }
-        }
-
-        return $items;
-    }
 }

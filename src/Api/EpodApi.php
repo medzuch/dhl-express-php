@@ -11,6 +11,7 @@ use Medzuch\DhlExpress\Exception\DhlApiException;
 use Medzuch\DhlExpress\Exception\DhlNetworkException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\RequestBuilder;
+use Medzuch\DhlExpress\Support\HydrationHelper;
 use Medzuch\DhlExpress\ValueObject\AccountNumber;
 use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 
@@ -80,9 +81,9 @@ final class EpodApi
 
                 /** @var array<string, mixed> $rawDocument */
                 $documents[] = new EpodDocument(
-                    encodingFormat: $this->stringField($rawDocument, 'encodingFormat'),
-                    content: $this->stringField($rawDocument, 'content'),
-                    typeCode: $this->stringField($rawDocument, 'typeCode'),
+                    encodingFormat: HydrationHelper::stringField($rawDocument, 'encodingFormat'),
+                    content: HydrationHelper::stringField($rawDocument, 'content'),
+                    typeCode: HydrationHelper::stringField($rawDocument, 'typeCode'),
                 );
             }
         }
@@ -90,13 +91,4 @@ final class EpodApi
         return new EpodResponse(documents: $documents);
     }
 
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function stringField(array $source, string $key): string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : '';
-    }
 }

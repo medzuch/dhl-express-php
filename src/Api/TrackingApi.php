@@ -12,6 +12,7 @@ use Medzuch\DhlExpress\Exception\DhlNetworkException;
 use Medzuch\DhlExpress\Exception\DhlNotFoundException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\RequestBuilder;
+use Medzuch\DhlExpress\Support\HydrationHelper;
 use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 
 /**
@@ -112,9 +113,9 @@ final class TrackingApi
 
             /** @var array<string, mixed> $shipment */
             $results[] = new TrackingResponse(
-                shipmentTrackingNumber: $this->stringField($shipment, 'shipmentTrackingNumber'),
-                status: $this->stringField($shipment, 'status'),
-                description: $this->stringField($shipment, 'description'),
+                shipmentTrackingNumber: HydrationHelper::stringField($shipment, 'shipmentTrackingNumber'),
+                status: HydrationHelper::stringField($shipment, 'status'),
+                description: HydrationHelper::stringField($shipment, 'description'),
                 events: $this->hydrateEvents($shipment['events'] ?? null),
             );
         }
@@ -139,23 +140,13 @@ final class TrackingApi
 
             /** @var array<string, mixed> $rawEvent */
             $events[] = new ShipmentEvent(
-                date: $this->stringField($rawEvent, 'date'),
-                time: $this->stringField($rawEvent, 'time'),
-                typeCode: $this->stringField($rawEvent, 'typeCode'),
-                description: $this->stringField($rawEvent, 'description'),
+                date: HydrationHelper::stringField($rawEvent, 'date'),
+                time: HydrationHelper::stringField($rawEvent, 'time'),
+                typeCode: HydrationHelper::stringField($rawEvent, 'typeCode'),
+                description: HydrationHelper::stringField($rawEvent, 'description'),
             );
         }
 
         return $events;
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function stringField(array $source, string $key): string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : '';
     }
 }

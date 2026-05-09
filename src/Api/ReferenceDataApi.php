@@ -13,6 +13,7 @@ use Medzuch\DhlExpress\Exception\DhlApiException;
 use Medzuch\DhlExpress\Exception\DhlNetworkException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\RequestBuilder;
+use Medzuch\DhlExpress\Support\HydrationHelper;
 
 /**
  * Reference data domain endpoint.
@@ -82,7 +83,7 @@ final class ReferenceDataApi
     {
         return new ReferenceDataResponse(
             referenceData: $this->hydrateReferenceData($body['referenceData'] ?? null),
-            warnings: $this->stringList($body['warnings'] ?? null),
+            warnings: HydrationHelper::stringList($body['warnings'] ?? null),
         );
     }
 
@@ -103,8 +104,8 @@ final class ReferenceDataApi
 
             /** @var array<string, mixed> $rawItem */
             $items[] = new ReferenceData(
-                datasetName: $this->stringField($rawItem, 'datasetName'),
-                dataSetCaptions: $this->stringField($rawItem, 'dataSetCaptions'),
+                datasetName: HydrationHelper::stringField($rawItem, 'datasetName'),
+                dataSetCaptions: HydrationHelper::stringField($rawItem, 'dataSetCaptions'),
                 data: $this->hydrateRows($rawItem['data'] ?? null),
             );
         }
@@ -135,8 +136,8 @@ final class ReferenceDataApi
 
                 /** @var array<string, mixed> $rawPair */
                 $row[] = new ReferenceDataAttribute(
-                    attribute: $this->stringField($rawPair, 'attribute'),
-                    value: $this->stringField($rawPair, 'value'),
+                    attribute: HydrationHelper::stringField($rawPair, 'attribute'),
+                    value: HydrationHelper::stringField($rawPair, 'value'),
                 );
             }
 
@@ -146,32 +147,4 @@ final class ReferenceDataApi
         return $rows;
     }
 
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function stringField(array $source, string $key): string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : '';
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function stringList(mixed $raw): array
-    {
-        if (!is_array($raw)) {
-            return [];
-        }
-
-        $items = [];
-        foreach ($raw as $item) {
-            if (is_string($item)) {
-                $items[] = $item;
-            }
-        }
-
-        return $items;
-    }
 }

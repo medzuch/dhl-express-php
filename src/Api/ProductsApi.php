@@ -12,6 +12,7 @@ use Medzuch\DhlExpress\Exception\DhlApiException;
 use Medzuch\DhlExpress\Exception\DhlNetworkException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\RequestBuilder;
+use Medzuch\DhlExpress\Support\HydrationHelper;
 use Medzuch\DhlExpress\ValueObject\AccountNumber;
 use Medzuch\DhlExpress\ValueObject\CountryCode;
 use Medzuch\DhlExpress\ValueObject\Dimensions;
@@ -117,11 +118,11 @@ final class ProductsApi
 
             /** @var array<string, mixed> $rawProduct */
             $products[] = new Product(
-                productName: $this->stringField($rawProduct, 'productName'),
-                productCode: $this->stringField($rawProduct, 'productCode'),
-                localProductCode: $this->stringField($rawProduct, 'localProductCode'),
-                localProductCountryCode: $this->stringField($rawProduct, 'localProductCountryCode'),
-                networkTypeCode: $this->stringField($rawProduct, 'networkTypeCode'),
+                productName: HydrationHelper::stringField($rawProduct, 'productName'),
+                productCode: HydrationHelper::stringField($rawProduct, 'productCode'),
+                localProductCode: HydrationHelper::stringField($rawProduct, 'localProductCode'),
+                localProductCountryCode: HydrationHelper::stringField($rawProduct, 'localProductCountryCode'),
+                networkTypeCode: HydrationHelper::stringField($rawProduct, 'networkTypeCode'),
                 isCustomerAgreement: (bool) ($rawProduct['isCustomerAgreement'] ?? false),
             );
         }
@@ -129,13 +130,4 @@ final class ProductsApi
         return new ProductsResponse($products);
     }
 
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function stringField(array $source, string $key): string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : '';
-    }
 }
