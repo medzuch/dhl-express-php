@@ -44,7 +44,7 @@ Initial release of `medzuch/dhl-express-php`.
 
 #### Tracking API (`GET /shipments/{id}/tracking`, `GET /tracking`)
 - `TrackingApi::getByTrackingNumber()` — single shipment
-- `TrackingApi::getMany()` — up to 10 shipments in one call
+- `TrackingApi::getMany()` — up to 200 shipments in one call
 
 #### Identifier API (`GET /identifiers`)
 - `IdentifierApi::allocate()` — resolve tracking/waybill identifiers

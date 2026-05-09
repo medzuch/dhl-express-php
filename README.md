@@ -82,7 +82,7 @@ foreach ($response->events as $event) {
 }
 ```
 
-> Use `tracking()->getMany(...)` to track up to 10 shipments in a single call. It returns a `list<TrackingResponse>` with the same flat shape per entry.
+> Use `tracking()->getMany(...)` to track up to 200 shipments in a single call. It returns a `list<TrackingResponse>` with the same flat shape per entry.
 
 ### Get Shipping Rates
 
