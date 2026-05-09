@@ -51,6 +51,10 @@ use Medzuch\DhlExpress\Exception\InvalidRequestException;
  * - DG VAS code present ⇒ `dangerousGoods` block required.
  * - Insurance VAS (`II`) ⇒ `declaredValue` required.
  * - DDP incoterm ⇒ at least one `DutiesTaxes` account required.
+ * - Cross-border outside EU customs territory ⇒ `isCustomsDeclarable=true` required
+ *   (intra-EU shipments share a customs union and are exempt).
+ * - Line-item price×quantity sum must equal `declaredValue` within ±0.01
+ *   when both `exportDeclaration` and `declaredValue` are provided.
  *
  * Phase 4c note:
  * - No new builder rules; Phase 4c adds the `addPiece()` API method
@@ -61,6 +65,18 @@ use Medzuch\DhlExpress\Exception\InvalidRequestException;
  */
 final class CreateShipmentBuilder
 {
+    /**
+     * ISO 3166-1 alpha-2 codes for the 27 EU member states that share a
+     * customs union. Intra-EU shipments do not require a customs declaration
+     * regardless of whether the shipper and receiver countries differ.
+     *
+     * @var list<string>
+     */
+    private const EU_CUSTOMS_TERRITORY = [
+        'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+        'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+        'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+    ];
     private ?DateTimeImmutable $plannedShippingDateAndTime = null;
     private ?bool $pickupIsRequested = null;
     private ?string $productCode = null;
@@ -316,6 +332,43 @@ final class CreateShipmentBuilder
                 $errors[] = [
                     'field' => 'accounts',
                     'message' => 'a duties-taxes account is required when incoterm is DDP',
+                ];
+            }
+        }
+
+        // EU intra-zone exemption rule: cross-border shipments outside the EU
+        // customs territory require isCustomsDeclarable=true.
+        if (
+            $shipper !== null
+            && $receiver !== null
+            && $isCustomsDeclarable === false
+            && $shipper->countryCode->value !== $receiver->countryCode->value
+        ) {
+            $shipperInEu = in_array($shipper->countryCode->value, self::EU_CUSTOMS_TERRITORY, true);
+            $receiverInEu = in_array($receiver->countryCode->value, self::EU_CUSTOMS_TERRITORY, true);
+            if (!($shipperInEu && $receiverInEu)) {
+                $errors[] = [
+                    'field' => 'isCustomsDeclarable',
+                    'message' => 'cross-border shipment outside the EU customs territory requires isCustomsDeclarable=true',
+                ];
+            }
+        }
+
+        // Line-item sum reconciliation: sum of (price × quantity) must equal
+        // declaredValue within ±0.01 when both are provided.
+        if ($this->exportDeclaration !== null && $this->declaredValue !== null) {
+            $lineItemTotal = 0.0;
+            foreach ($this->exportDeclaration->lineItems as $item) {
+                $lineItemTotal += $item->price * $item->quantity->value;
+            }
+            if (abs($lineItemTotal - $this->declaredValue) > 0.01) {
+                $errors[] = [
+                    'field' => 'content.exportDeclaration.lineItems',
+                    'message' => sprintf(
+                        'line-item total (%.2f) does not match declaredValue (%.2f)',
+                        $lineItemTotal,
+                        $this->declaredValue,
+                    ),
                 ];
             }
         }

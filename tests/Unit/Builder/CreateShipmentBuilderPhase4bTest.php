@@ -224,6 +224,168 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
         self::assertArrayHasKey('lineItems', $content['exportDeclaration']);
     }
 
+    // ----- Phase 4b (missing): EU intra-zone exemption -----
+
+    public function testIntraEuCrossBorderDoesNotRequireCustoms(): void
+    {
+        // CZ → DE: both EU members — isCustomsDeclarable=false must be accepted
+        $request = $this->minimalCrossBorderBuilder('CZ', 'DE')
+            ->withIsCustomsDeclarable(false)
+            ->build();
+
+        self::assertFalse($request->content->isCustomsDeclarable);
+    }
+
+    public function testCrossBorderOutsideEuRequiresCustomsDeclarable(): void
+    {
+        // CZ (EU) → CH (non-EU): isCustomsDeclarable=false must fail
+        $builder = $this->minimalCrossBorderBuilder('CZ', 'CH')
+            ->withIsCustomsDeclarable(false);
+
+        try {
+            $builder->build();
+            self::fail('Expected InvalidRequestException');
+        } catch (InvalidRequestException $exception) {
+            $fields = array_column($exception->errors(), 'field');
+            self::assertContains('isCustomsDeclarable', $fields);
+        }
+    }
+
+    public function testCrossBorderBothNonEuRequiresCustomsDeclarable(): void
+    {
+        // US → CA: neither is EU — isCustomsDeclarable=false must fail
+        $builder = $this->minimalCrossBorderBuilder('US', 'CA')
+            ->withIsCustomsDeclarable(false);
+
+        try {
+            $builder->build();
+            self::fail('Expected InvalidRequestException');
+        } catch (InvalidRequestException $exception) {
+            $fields = array_column($exception->errors(), 'field');
+            self::assertContains('isCustomsDeclarable', $fields);
+        }
+    }
+
+    public function testCrossBorderOutsideEuWithCustomsDeclarableTrueSucceeds(): void
+    {
+        // CZ → CH with isCustomsDeclarable=true + exportDeclaration → valid
+        $request = $this->minimalCrossBorderBuilder('CZ', 'CH')
+            ->withIsCustomsDeclarable(true)
+            ->withExportDeclaration($this->makeExportDeclaration())
+            ->withDeclaredValue(100.00, 'EUR')
+            ->build();
+
+        self::assertTrue($request->content->isCustomsDeclarable);
+    }
+
+    public function testDomesticShipmentDoesNotTriggerEuRule(): void
+    {
+        // CZ → CZ (same country): no cross-border rule applies
+        $request = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(false)
+            ->build();
+
+        self::assertFalse($request->content->isCustomsDeclarable);
+    }
+
+    // ----- Phase 4b (missing): line-item sum reconciliation -----
+
+    public function testLineItemSumMatchingDeclaredValueSucceeds(): void
+    {
+        // 2 items × 50.00 = 100.00 = declaredValue
+        $request = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(true)
+            ->withExportDeclaration(new ExportDeclaration(
+                lineItems: [
+                    new ExportLineItem(
+                        number: 1,
+                        description: 'Widget A',
+                        price: 50.00,
+                        quantity: new LineItemQuantity(2, LineItemQuantityUnit::PCS),
+                        manufacturerCountry: 'CZ',
+                        weight: new LineItemWeight(netValue: 1.0),
+                    ),
+                ],
+            ))
+            ->withDeclaredValue(100.00, 'EUR')
+            ->build();
+
+        self::assertSame(100.00, $request->content->declaredValue);
+    }
+
+    public function testLineItemSumMismatchFailsValidation(): void
+    {
+        // 1 item × 80.00 ≠ 100.00 → error
+        $builder = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(true)
+            ->withExportDeclaration(new ExportDeclaration(
+                lineItems: [
+                    new ExportLineItem(
+                        number: 1,
+                        description: 'Widget B',
+                        price: 80.00,
+                        quantity: new LineItemQuantity(1, LineItemQuantityUnit::PCS),
+                        manufacturerCountry: 'CZ',
+                        weight: new LineItemWeight(netValue: 1.0),
+                    ),
+                ],
+            ))
+            ->withDeclaredValue(100.00, 'EUR');
+
+        try {
+            $builder->build();
+            self::fail('Expected InvalidRequestException');
+        } catch (InvalidRequestException $exception) {
+            $fields = array_column($exception->errors(), 'field');
+            self::assertContains('content.exportDeclaration.lineItems', $fields);
+        }
+    }
+
+    public function testLineItemSumWithinToleranceSucceeds(): void
+    {
+        // floating-point arithmetic: 3 × 33.33 = 99.99, declared 100.00 → diff 0.01 (within tolerance)
+        $request = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(true)
+            ->withExportDeclaration(new ExportDeclaration(
+                lineItems: [
+                    new ExportLineItem(
+                        number: 1,
+                        description: 'Widget C',
+                        price: 33.33,
+                        quantity: new LineItemQuantity(3, LineItemQuantityUnit::PCS),
+                        manufacturerCountry: 'CZ',
+                        weight: new LineItemWeight(netValue: 1.0),
+                    ),
+                ],
+            ))
+            ->withDeclaredValue(99.99, 'EUR')
+            ->build();
+
+        self::assertSame(99.99, $request->content->declaredValue);
+    }
+
+    public function testNoExportDeclarationSkipsReconciliation(): void
+    {
+        // isCustomsDeclarable=false, no exportDeclaration, but declaredValue set → no reconciliation
+        $request = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(false)
+            ->withDeclaredValue(100.00, 'EUR')
+            ->build();
+
+        self::assertSame(100.00, $request->content->declaredValue);
+    }
+
+    public function testNoDeclaredValueSkipsReconciliation(): void
+    {
+        // exportDeclaration set, but no declaredValue → no reconciliation
+        $request = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(true)
+            ->withExportDeclaration($this->makeExportDeclaration())
+            ->build();
+
+        self::assertNull($request->content->declaredValue);
+    }
+
     // ----- helpers -----
 
     private function makeExportDeclaration(): ExportDeclaration
@@ -240,6 +402,39 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
                 ),
             ],
         );
+    }
+
+    private function minimalCrossBorderBuilder(string $shipperCountry, string $receiverCountry): CreateShipmentBuilder
+    {
+        return (new CreateShipmentBuilder())
+            ->withShipper(new ContactAddress(
+                countryCode: new CountryCode($shipperCountry),
+                postalCode: new PostalCode('14800'),
+                cityName: 'Origin City',
+                addressLine1: 'Origin Street 1',
+                phone: new PhoneNumber('+420 222 333 444'),
+                companyName: 'Shipper Co.',
+                fullName: 'Shipper Name',
+            ))
+            ->withReceiver(new ContactAddress(
+                countryCode: new CountryCode($receiverCountry),
+                postalCode: new PostalCode('10115'),
+                cityName: 'Destination City',
+                addressLine1: 'Destination Street 1',
+                phone: new PhoneNumber('+49 30 12345678'),
+                companyName: 'Receiver Co.',
+                fullName: 'Receiver Name',
+            ))
+            ->withPlannedShippingDate(new DateTimeImmutable('2026-06-01T13:00:00+00:00'))
+            ->withProductCode('P')
+            ->withPickupRequested(false)
+            ->withContentDescription('Electronics')
+            ->withUnitSystem(UnitSystem::Metric)
+            ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber('123456789')))
+            ->withPackage(new Package(
+                weight: new Weight(1.0, WeightUnit::KG),
+                dimensions: new Dimensions(20.0, 15.0, 10.0, DimensionUnit::CM),
+            ));
     }
 
     private function minimalDomesticBuilder(): CreateShipmentBuilder
