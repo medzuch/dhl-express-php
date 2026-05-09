@@ -47,7 +47,7 @@ try {
         ))
         ->build();
 
-    $response = $client->rates()->getRates($request);
+    $response = $client->rates()->quote($request);
 } catch (InvalidRequestException $e) {
     fwrite(STDERR, "Validation error:\n");
     foreach ($e->errors() as ['field' => $field, 'message' => $msg]) {
@@ -62,7 +62,7 @@ try {
 echo sprintf("Found %d products:\n\n", count($response->products));
 
 foreach ($response->products as $product) {
-    $price = $product->totalPrice[0] ?? null;
+    $price = $product->totalPrices[0] ?? null;
     $priceStr = $price !== null
         ? sprintf('%s %s', $price->price, $price->priceCurrency)
         : 'price unavailable';

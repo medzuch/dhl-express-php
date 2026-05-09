@@ -118,16 +118,15 @@ $request = (new RateRequestBuilder())
     ))
     ->build();
 
-$response = $client->rates()->getRates($request);
+$response = $client->rates()->quote($request);
 
 foreach ($response->products as $product) {
-    echo sprintf(
-        '%s (%s): %s %s' . PHP_EOL,
-        $product->productName,
-        $product->productCode,
-        $product->totalPrice[0]->price ?? '?',
-        $product->totalPrice[0]->priceCurrency ?? '',
-    );
+    $price = $product->totalPrices[0] ?? null;
+    $priceStr = $price !== null
+        ? sprintf('%s %s', $price->price, $price->priceCurrency)
+        : 'price unavailable';
+
+    echo sprintf('%s (%s): %s' . PHP_EOL, $product->productName, $product->productCode, $priceStr);
 }
 ```
 

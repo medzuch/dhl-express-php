@@ -36,20 +36,20 @@ Initial release of `medzuch/dhl-express-php`.
 - `DangerousGoodsServiceCode`
 
 #### Tracking API (`GET /shipments/{id}/tracking`, `GET /tracking`)
-- `TrackingApi::track()` — single shipment
-- `TrackingApi::trackMultiple()` — up to 10 shipments in one call
+- `TrackingApi::getByTrackingNumber()` — single shipment
+- `TrackingApi::getMany()` — up to 10 shipments in one call
 
 #### Identifier API (`GET /identifiers`)
-- `IdentifierApi::resolve()` — resolve tracking/waybill identifiers
+- `IdentifierApi::allocate()` — resolve tracking/waybill identifiers
 
 #### Address API (`POST /address-validate`)
 - `AddressApi::validate()` — validate destination addresses
 
 #### Products API (`GET /products`)
-- `ProductsApi::getProducts()` — list available shipping products for a lane
+- `ProductsApi::list()` — list available shipping products for a lane
 
 #### Reference Data API (`GET /reference-data`)
-- `ReferenceDataApi::getData()` — look up DHL code lists
+- `ReferenceDataApi::lookup()` — look up DHL code lists
 
 #### EPOD API (`GET /shipments/{id}/proof-of-delivery`)
 - `EpodApi::get()` — retrieve electronic proof of delivery
@@ -58,8 +58,8 @@ Initial release of `medzuch/dhl-express-php`.
 - `ServicePointApi::find()` — find DHL service points near an address
 
 #### Rates API (`GET /rates`, `POST /rates`)
-- `RatesApi::getRates()` — single-piece rate request via GET
-- `RatesApi::postRates()` — multi-piece rate request via POST
+- `RatesApi::quote()` — single-piece rate request via GET
+- `RatesApi::quoteMany()` — multi-piece rate request via POST
 - `RateRequestBuilder` with cross-field validation (unit consistency, required fields)
 
 #### Landed Cost API (`POST /landed-cost`)
