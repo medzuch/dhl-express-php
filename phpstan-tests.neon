@@ -6,3 +6,6 @@ parameters:
         - tests
 
     level: 6  # slightly relaxed for test code — mocks and fixtures get messy
+
+    parallel:
+        maximumNumberOfProcesses: 1

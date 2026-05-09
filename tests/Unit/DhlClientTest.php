@@ -21,14 +21,14 @@ final class DhlClientTest extends TestCase
 {
     public function testTrackingExposesTrackingApi(): void
     {
-        $client = new DhlClient($this->config());
+        $client = $this->clientWithMocks();
 
         self::assertInstanceOf(TrackingApi::class, $client->tracking());
     }
 
     public function testTrackingReturnsTheSameInstanceAcrossCalls(): void
     {
-        $client = new DhlClient($this->config());
+        $client = $this->clientWithMocks();
 
         self::assertSame($client->tracking(), $client->tracking());
     }
@@ -77,6 +77,18 @@ final class DhlClientTest extends TestCase
         self::assertSame(
             'https://express.api.dhl.com/mydhlapi/test/shipments/9356579890/tracking',
             (string) $sent->getUri(),
+        );
+    }
+
+    private function clientWithMocks(): DhlClient
+    {
+        $factory = new Psr17Factory();
+
+        return new DhlClient(
+            config: $this->config(),
+            httpClient: new MockClient(),
+            requestFactory: $factory,
+            streamFactory: $factory,
         );
     }
 

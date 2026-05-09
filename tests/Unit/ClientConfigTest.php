@@ -33,7 +33,6 @@ final class ClientConfigTest extends TestCase
             credentials: new Credentials('user', 'pass'),
         );
 
-        self::assertSame(30.0, $config->timeout);
         self::assertSame('eng', $config->acceptLanguage);
         self::assertSame('3.2.0', $config->xVersion);
         self::assertNull($config->integrationProfile);
@@ -58,12 +57,10 @@ final class ClientConfigTest extends TestCase
         $config = new ClientConfig(
             environment: ApiEnvironment::Production,
             credentials: new Credentials('user', 'pass'),
-            timeout: 10.5,
             acceptLanguage: 'fra',
             xVersion: '3.2.0',
         );
 
-        self::assertSame(10.5, $config->timeout);
         self::assertSame('fra', $config->acceptLanguage);
         self::assertSame('3.2.0', $config->xVersion);
     }
@@ -81,30 +78,6 @@ final class ClientConfigTest extends TestCase
 
         self::assertSame('https://express.api.dhl.com/mydhlapi/test', $sandbox->baseUrl());
         self::assertSame('https://express.api.dhl.com/mydhlapi', $production->baseUrl());
-    }
-
-    public function testRejectsNonPositiveTimeout(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Timeout must be positive');
-
-        new ClientConfig(
-            environment: ApiEnvironment::Sandbox,
-            credentials: new Credentials('user', 'pass'),
-            timeout: 0.0,
-        );
-    }
-
-    public function testRejectsNegativeTimeout(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Timeout must be positive');
-
-        new ClientConfig(
-            environment: ApiEnvironment::Sandbox,
-            credentials: new Credentials('user', 'pass'),
-            timeout: -1.0,
-        );
     }
 
     public function testRejectsAcceptLanguageNotThreeChars(): void

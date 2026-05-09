@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress;
 
-use GuzzleHttp\Client as GuzzleClient;
-use GuzzleHttp\Psr7\HttpFactory;
+use Http\Discovery\Psr17FactoryDiscovery;
+use Http\Discovery\Psr18ClientDiscovery;
 use Medzuch\DhlExpress\Api\AddressApi;
 use Medzuch\DhlExpress\Api\EpodApi;
 use Medzuch\DhlExpress\Api\IdentifierApi;
@@ -35,7 +35,7 @@ use Psr\Log\LoggerInterface;
  * its own, only delegating to one `*Api` per DHL domain.
  *
  * The PSR-18 client and PSR-17 factories are optional constructor
- * parameters — Guzzle is used by default, but any compliant
+ * parameters — `php-http/discovery` auto-detects a PSR-18 client
  * implementation can be injected. The same applies to
  * {@see MessageReferenceGenerator}, exposed primarily as a test seam.
  *
@@ -65,10 +65,9 @@ final class DhlClient
         ?MessageReferenceGenerator $messageReferenceGenerator = null,
         ?LoggerInterface $logger = null,
     ) {
-        $guzzleFactory = new HttpFactory();
-        $resolvedRequestFactory = $requestFactory ?? $guzzleFactory;
-        $resolvedStreamFactory = $streamFactory ?? $guzzleFactory;
-        $resolvedHttpClient = $httpClient ?? new GuzzleClient(['timeout' => $config->timeout]);
+        $resolvedRequestFactory = $requestFactory ?? Psr17FactoryDiscovery::findRequestFactory();
+        $resolvedStreamFactory = $streamFactory ?? Psr17FactoryDiscovery::findStreamFactory();
+        $resolvedHttpClient = $httpClient ?? Psr18ClientDiscovery::find();
         $resolvedGenerator = $messageReferenceGenerator ?? new RandomMessageReferenceGenerator();
 
         $requestBuilder = new RequestBuilder(

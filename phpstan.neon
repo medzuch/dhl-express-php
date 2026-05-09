@@ -4,6 +4,8 @@ includes:
 parameters:
     level: max
     phpVersion: 80300
+    parallel:
+        maximumNumberOfProcesses: 1
 
     paths:
         - src
