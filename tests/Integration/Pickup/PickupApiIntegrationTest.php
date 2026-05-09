@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Tests\Integration\Pickup;
 
-use DateTimeImmutable;
 use DateTimeZone;
 use Medzuch\DhlExpress\Dto\Common\Account;
-use Medzuch\DhlExpress\Dto\Pickup\CreatePickupResponse;
 use Medzuch\DhlExpress\Dto\Pickup\CreatePickupRequest;
+use Medzuch\DhlExpress\Dto\Pickup\CreatePickupResponse;
 use Medzuch\DhlExpress\Dto\Pickup\PickupCustomerDetails;
 use Medzuch\DhlExpress\Dto\Pickup\PickupPackage;
 use Medzuch\DhlExpress\Dto\Pickup\PickupShipmentDetails;
