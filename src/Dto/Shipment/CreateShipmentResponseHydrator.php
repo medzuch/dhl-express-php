@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Dto\Shipment;
 
+use Medzuch\DhlExpress\Support\HydrationHelper;
+
 /**
  * Hydrates the POST `/shipments` JSON response into the typed
  * {@see CreateShipmentResponse} graph.
@@ -46,12 +48,12 @@ final class CreateShipmentResponseHydrator
         }
 
         return new CreateShipmentResponse(
-            shipmentTrackingNumber: $this->stringField($body, 'shipmentTrackingNumber'),
+            shipmentTrackingNumber: HydrationHelper::stringField($body, 'shipmentTrackingNumber'),
             packages: $packages,
             documents: $documents,
-            cancelPickupUrl: $this->nullableStringField($body, 'cancelPickupUrl'),
-            trackingUrl: $this->nullableStringField($body, 'trackingUrl'),
-            dispatchConfirmationNumber: $this->nullableStringField($body, 'dispatchConfirmationNumber'),
+            cancelPickupUrl: HydrationHelper::nullableStringField($body, 'cancelPickupUrl'),
+            trackingUrl: HydrationHelper::nullableStringField($body, 'trackingUrl'),
+            dispatchConfirmationNumber: HydrationHelper::nullableStringField($body, 'dispatchConfirmationNumber'),
         );
     }
 
@@ -73,10 +75,10 @@ final class CreateShipmentResponseHydrator
         }
 
         return new PackageResult(
-            trackingNumber: $this->stringField($raw, 'trackingNumber'),
-            referenceNumber: $this->intField($raw, 'referenceNumber'),
-            trackingUrl: $this->nullableStringField($raw, 'trackingUrl'),
-            volumetricWeight: $this->floatField($raw, 'volumetricWeight'),
+            trackingNumber: HydrationHelper::stringField($raw, 'trackingNumber'),
+            referenceNumber: HydrationHelper::intField($raw, 'referenceNumber'),
+            trackingUrl: HydrationHelper::nullableStringField($raw, 'trackingUrl'),
+            volumetricWeight: HydrationHelper::floatField($raw, 'volumetricWeight'),
             documents: $documents,
         );
     }
@@ -87,66 +89,10 @@ final class CreateShipmentResponseHydrator
     private function hydrateDocument(array $raw): ShipmentDocument
     {
         return new ShipmentDocument(
-            imageFormat: $this->stringField($raw, 'imageFormat'),
-            content: $this->stringField($raw, 'content'),
-            typeCode: $this->stringField($raw, 'typeCode'),
+            imageFormat: HydrationHelper::stringField($raw, 'imageFormat'),
+            content: HydrationHelper::stringField($raw, 'content'),
+            typeCode: HydrationHelper::stringField($raw, 'typeCode'),
         );
     }
 
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function stringField(array $source, string $key): string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : '';
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function nullableStringField(array $source, string $key): ?string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : null;
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function floatField(array $source, string $key): ?float
-    {
-        $value = $source[$key] ?? null;
-
-        if (is_int($value) || is_float($value)) {
-            return (float) $value;
-        }
-        if (is_string($value) && is_numeric($value)) {
-            return (float) $value;
-        }
-
-        return null;
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function intField(array $source, string $key): ?int
-    {
-        $value = $source[$key] ?? null;
-
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_float($value)) {
-            return (int) $value;
-        }
-        if (is_string($value) && is_numeric($value)) {
-            return (int) $value;
-        }
-
-        return null;
-    }
 }

@@ -15,6 +15,7 @@ use Medzuch\DhlExpress\Exception\DhlApiException;
 use Medzuch\DhlExpress\Exception\DhlNetworkException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\RequestBuilder;
+use Medzuch\DhlExpress\Support\HydrationHelper;
 use Medzuch\DhlExpress\ValueObject\CountryCode;
 
 /**
@@ -123,19 +124,19 @@ final class ServicePointApi
      */
     private function hydrateServicePoint(array $raw): ServicePoint
     {
-        $rawType = $this->stringField($raw, 'servicePointType');
+        $rawType = HydrationHelper::stringField($raw, 'servicePointType');
 
         return new ServicePoint(
-            facilityId: $this->stringField($raw, 'facilityId'),
-            serviceAreaCode: $this->stringField($raw, 'serviceAreaCode'),
-            servicePointName: $this->stringField($raw, 'servicePointName'),
-            localName: $this->stringField($raw, 'localName'),
+            facilityId: HydrationHelper::stringField($raw, 'facilityId'),
+            serviceAreaCode: HydrationHelper::stringField($raw, 'serviceAreaCode'),
+            servicePointName: HydrationHelper::stringField($raw, 'servicePointName'),
+            localName: HydrationHelper::stringField($raw, 'localName'),
             servicePointType: ServicePointType::tryFrom($rawType),
             rawServicePointType: $rawType,
             address: $this->hydrateAddress($raw['address'] ?? null),
             geoLocation: $this->hydrateGeoLocation($raw['geoLocation'] ?? null),
-            distance: $this->stringField($raw, 'distance'),
-            shippingCutOffTime: $this->stringField($raw, 'shippingCutOffTime'),
+            distance: HydrationHelper::stringField($raw, 'distance'),
+            shippingCutOffTime: HydrationHelper::stringField($raw, 'shippingCutOffTime'),
             openingHours: $this->hydrateOpeningHours($raw['openingHours'] ?? null),
         );
     }
@@ -148,14 +149,14 @@ final class ServicePointApi
 
         /** @var array<string, mixed> $raw */
         return new ServicePointAddress(
-            addressLine1: $this->stringField($raw, 'addressLine1'),
-            addressLine2: $this->stringField($raw, 'addressLine2'),
-            addressLine3: $this->stringField($raw, 'addressLine3'),
-            city: $this->stringField($raw, 'city'),
-            zipCode: $this->stringField($raw, 'zipCode'),
-            state: $this->stringField($raw, 'state'),
-            country: $this->stringField($raw, 'country'),
-            countryDivisionCode: $this->stringField($raw, 'countryDivisionCode'),
+            addressLine1: HydrationHelper::stringField($raw, 'addressLine1'),
+            addressLine2: HydrationHelper::stringField($raw, 'addressLine2'),
+            addressLine3: HydrationHelper::stringField($raw, 'addressLine3'),
+            city: HydrationHelper::stringField($raw, 'city'),
+            zipCode: HydrationHelper::stringField($raw, 'zipCode'),
+            state: HydrationHelper::stringField($raw, 'state'),
+            country: HydrationHelper::stringField($raw, 'country'),
+            countryDivisionCode: HydrationHelper::stringField($raw, 'countryDivisionCode'),
         );
     }
 
@@ -167,8 +168,8 @@ final class ServicePointApi
 
         /** @var array<string, mixed> $raw */
         return new GeoLocation(
-            latitude: $this->floatField($raw, 'latitude'),
-            longitude: $this->floatField($raw, 'longitude'),
+            latitude: HydrationHelper::floatField($raw, 'latitude'),
+            longitude: HydrationHelper::floatField($raw, 'longitude'),
         );
     }
 
@@ -193,42 +194,16 @@ final class ServicePointApi
                 continue;
             }
             /** @var array<string, mixed> $entry */
-            $rawDay = $this->stringField($entry, 'dayOfWeek');
+            $rawDay = HydrationHelper::stringField($entry, 'dayOfWeek');
             $hours[] = new OpeningTime(
                 dayOfWeek: DayOfWeek::tryFrom($rawDay),
                 rawDayOfWeek: $rawDay,
-                openingTime: $this->stringField($entry, 'openingTime'),
-                closingTime: $this->stringField($entry, 'closingTime'),
+                openingTime: HydrationHelper::stringField($entry, 'openingTime'),
+                closingTime: HydrationHelper::stringField($entry, 'closingTime'),
             );
         }
 
         return $hours;
     }
 
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function stringField(array $source, string $key): string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : '';
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function floatField(array $source, string $key): ?float
-    {
-        $value = $source[$key] ?? null;
-
-        if (is_int($value) || is_float($value)) {
-            return (float) $value;
-        }
-        if (is_string($value) && is_numeric($value)) {
-            return (float) $value;
-        }
-
-        return null;
-    }
 }

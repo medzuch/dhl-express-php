@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Dto\Pickup;
 
+use Medzuch\DhlExpress\Support\HydrationHelper;
+
 /**
  * Hydrates the `PATCH /pickups/{id}` JSON response into {@see UpdatePickupResponse}.
  */
@@ -14,41 +16,11 @@ final class UpdatePickupResponseHydrator
      */
     public function hydrate(array $body): UpdatePickupResponse
     {
-        $warnings = [];
-        $rawWarnings = $body['warnings'] ?? null;
-        if (is_array($rawWarnings)) {
-            foreach ($rawWarnings as $entry) {
-                if (is_string($entry)) {
-                    $warnings[] = $entry;
-                }
-            }
-        }
-
         return new UpdatePickupResponse(
-            dispatchConfirmationNumber: $this->string($body, 'dispatchConfirmationNumber'),
-            readyByTime: $this->nullableString($body, 'readyByTime'),
-            nextPickupDate: $this->nullableString($body, 'nextPickupDate'),
-            warnings: $warnings,
+            dispatchConfirmationNumber: HydrationHelper::stringField($body, 'dispatchConfirmationNumber'),
+            readyByTime: HydrationHelper::nullableStringField($body, 'readyByTime'),
+            nextPickupDate: HydrationHelper::nullableStringField($body, 'nextPickupDate'),
+            warnings: HydrationHelper::stringList($body['warnings'] ?? null),
         );
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function string(array $source, string $key): string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : '';
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function nullableString(array $source, string $key): ?string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : null;
     }
 }

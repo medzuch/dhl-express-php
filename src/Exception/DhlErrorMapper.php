@@ -19,18 +19,32 @@ final class DhlErrorMapper
 {
     /**
      * @param ResponseBody $body
+     * @param ?int         $retryAfter Integer seconds parsed from the `Retry-After`
+     *                                 header on a 429 response. Ignored for other
+     *                                 status codes; pass `null` when the header was
+     *                                 absent or unparsable.
      */
-    public function map(int $httpStatus, array $body): DhlApiException
+    public function map(int $httpStatus, array $body, ?int $retryAfter = null): DhlApiException
     {
         $dhlErrorCode = $this->extractDhlErrorCode($body);
         $dhlMessage = $this->extractDhlMessage($body);
         $message = $this->buildExceptionMessage($httpStatus, $dhlErrorCode, $dhlMessage);
 
+        if ($httpStatus === 429) {
+            return new DhlRateLimitException(
+                message: $message,
+                httpStatus: $httpStatus,
+                dhlErrorCode: $dhlErrorCode,
+                dhlMessage: $dhlMessage,
+                responseBody: $body,
+                retryAfter: $retryAfter,
+            );
+        }
+
         $class = match (true) {
             $httpStatus === 401 => DhlAuthenticationException::class,
             $httpStatus === 403 => DhlAuthorizationException::class,
             $httpStatus === 404 => DhlNotFoundException::class,
-            $httpStatus === 429 => DhlRateLimitException::class,
             $httpStatus === 400, $httpStatus === 422 => DhlValidationException::class,
             $httpStatus >= 500 && $httpStatus < 600 => DhlServerException::class,
             default => DhlApiException::class,

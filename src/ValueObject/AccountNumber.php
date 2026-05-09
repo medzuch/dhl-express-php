@@ -32,4 +32,23 @@ final readonly class AccountNumber implements Stringable
     {
         return $this->value;
     }
+
+    /**
+     * Mask the account number when var_dump'd or logged. Same idea as
+     * {@see \Medzuch\DhlExpress\Auth\Credentials::__debugInfo()}: a value
+     * leaking into a log file is one of the most common ways to expose
+     * customer account numbers, and the masked form keeps the last four
+     * digits to keep diagnostics useful.
+     *
+     * @return array{value: string}
+     */
+    public function __debugInfo(): array
+    {
+        $length = strlen($this->value);
+        if ($length <= 4) {
+            return ['value' => str_repeat('*', $length)];
+        }
+
+        return ['value' => str_repeat('*', $length - 4) . substr($this->value, -4)];
+    }
 }

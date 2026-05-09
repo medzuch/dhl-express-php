@@ -7,6 +7,7 @@ namespace Medzuch\DhlExpress\Dto\Rate;
 use Medzuch\DhlExpress\Enum\EstimatedDeliveryDateTypeCode;
 use Medzuch\DhlExpress\Enum\RateCurrencyType;
 use Medzuch\DhlExpress\Enum\RateNetworkTypeCode;
+use Medzuch\DhlExpress\Support\HydrationHelper;
 
 /**
  * Hydrates the shared `/rates` and `/landed-cost` JSON response into
@@ -45,9 +46,9 @@ final class RatesResponseHydrator
                 }
                 /** @var array<string, mixed> $entry */
                 $exchangeRates[] = new RateExchangeRate(
-                    currentExchangeRate: $this->floatField($entry, 'currentExchangeRate') ?? 0.0,
-                    currency: $this->stringField($entry, 'currency'),
-                    baseCurrency: $this->stringField($entry, 'baseCurrency'),
+                    currentExchangeRate: HydrationHelper::floatField($entry, 'currentExchangeRate') ?? 0.0,
+                    currency: HydrationHelper::stringField($entry, 'currency'),
+                    baseCurrency: HydrationHelper::stringField($entry, 'baseCurrency'),
                 );
             }
         }
@@ -74,7 +75,7 @@ final class RatesResponseHydrator
      */
     private function hydrateProduct(array $raw): QuotedProduct
     {
-        $rawNetworkTypeCode = $this->stringField($raw, 'networkTypeCode');
+        $rawNetworkTypeCode = HydrationHelper::stringField($raw, 'networkTypeCode');
 
         $rawItems = [];
         if (isset($raw['items']) && is_array($raw['items'])) {
@@ -93,13 +94,13 @@ final class RatesResponseHydrator
         }
 
         return new QuotedProduct(
-            productName: $this->stringField($raw, 'productName'),
-            productCode: $this->stringField($raw, 'productCode'),
-            localProductCode: $this->nullableStringField($raw, 'localProductCode'),
-            localProductCountryCode: $this->nullableStringField($raw, 'localProductCountryCode'),
+            productName: HydrationHelper::stringField($raw, 'productName'),
+            productCode: HydrationHelper::stringField($raw, 'productCode'),
+            localProductCode: HydrationHelper::nullableStringField($raw, 'localProductCode'),
+            localProductCountryCode: HydrationHelper::nullableStringField($raw, 'localProductCountryCode'),
             networkTypeCode: RateNetworkTypeCode::tryFrom($rawNetworkTypeCode),
             rawNetworkTypeCode: $rawNetworkTypeCode,
-            isCustomerAgreement: $this->nullableBoolField($raw, 'isCustomerAgreement'),
+            isCustomerAgreement: HydrationHelper::nullableBoolField($raw, 'isCustomerAgreement'),
             weight: $this->hydrateQuotedWeight($raw['weight'] ?? null),
             totalPrices: $this->hydrateTotalPrices($raw['totalPrice'] ?? null),
             totalPriceBreakdowns: $this->hydrateTotalPriceBreakdowns($raw['totalPriceBreakdown'] ?? null),
@@ -119,9 +120,9 @@ final class RatesResponseHydrator
 
         /** @var array<string, mixed> $raw */
         return new QuotedWeight(
-            volumetric: $this->floatField($raw, 'volumetric'),
-            provided: $this->floatField($raw, 'provided'),
-            unitOfMeasurement: $this->stringField($raw, 'unitOfMeasurement'),
+            volumetric: HydrationHelper::floatField($raw, 'volumetric'),
+            provided: HydrationHelper::floatField($raw, 'provided'),
+            unitOfMeasurement: HydrationHelper::stringField($raw, 'unitOfMeasurement'),
         );
     }
 
@@ -140,12 +141,12 @@ final class RatesResponseHydrator
                 continue;
             }
             /** @var array<string, mixed> $entry */
-            $rawCurrencyType = $this->stringField($entry, 'currencyType');
+            $rawCurrencyType = HydrationHelper::stringField($entry, 'currencyType');
             $prices[] = new TotalPrice(
                 currencyType: RateCurrencyType::tryFrom($rawCurrencyType),
                 rawCurrencyType: $rawCurrencyType,
-                priceCurrency: $this->stringField($entry, 'priceCurrency'),
-                price: $this->floatField($entry, 'price') ?? 0.0,
+                priceCurrency: HydrationHelper::stringField($entry, 'priceCurrency'),
+                price: HydrationHelper::floatField($entry, 'price') ?? 0.0,
             );
         }
 
@@ -167,7 +168,7 @@ final class RatesResponseHydrator
                 continue;
             }
             /** @var array<string, mixed> $entry */
-            $rawCurrencyType = $this->stringField($entry, 'currencyType');
+            $rawCurrencyType = HydrationHelper::stringField($entry, 'currencyType');
 
             $items = [];
             $rawItems = $entry['priceBreakdown'] ?? null;
@@ -178,8 +179,8 @@ final class RatesResponseHydrator
                     }
                     /** @var array<string, mixed> $item */
                     $items[] = new PriceBreakdownItem(
-                        typeCode: $this->stringField($item, 'typeCode'),
-                        price: $this->floatField($item, 'price') ?? 0.0,
+                        typeCode: HydrationHelper::stringField($item, 'typeCode'),
+                        price: HydrationHelper::floatField($item, 'price') ?? 0.0,
                     );
                 }
             }
@@ -187,7 +188,7 @@ final class RatesResponseHydrator
             $rows[] = new TotalPriceBreakdown(
                 currencyType: RateCurrencyType::tryFrom($rawCurrencyType),
                 rawCurrencyType: $rawCurrencyType,
-                priceCurrency: $this->stringField($entry, 'priceCurrency'),
+                priceCurrency: HydrationHelper::stringField($entry, 'priceCurrency'),
                 priceBreakdown: $items,
             );
         }
@@ -210,7 +211,7 @@ final class RatesResponseHydrator
                 continue;
             }
             /** @var array<string, mixed> $entry */
-            $rawCurrencyType = $this->stringField($entry, 'currencyType');
+            $rawCurrencyType = HydrationHelper::stringField($entry, 'currencyType');
 
             $details = [];
             $rawBreakdown = $entry['breakdown'] ?? null;
@@ -232,18 +233,18 @@ final class RatesResponseHydrator
                     }
 
                     $details[] = new BreakdownDetail(
-                        name: $this->stringField($detail, 'name'),
-                        serviceCode: $this->nullableStringField($detail, 'serviceCode'),
-                        localServiceCode: $this->nullableStringField($detail, 'localServiceCode'),
-                        typeCode: $this->nullableStringField($detail, 'typeCode'),
-                        serviceTypeCode: $this->nullableStringField($detail, 'serviceTypeCode'),
-                        price: $this->floatField($detail, 'price') ?? 0.0,
-                        priceCurrency: $this->nullableStringField($detail, 'priceCurrency'),
-                        isCustomerAgreement: $this->nullableBoolField($detail, 'isCustomerAgreement'),
-                        isMarketedService: $this->nullableBoolField($detail, 'isMarketedService'),
-                        isBillingServiceIndicator: $this->nullableBoolField($detail, 'isBillingServiceIndicator'),
+                        name: HydrationHelper::stringField($detail, 'name'),
+                        serviceCode: HydrationHelper::nullableStringField($detail, 'serviceCode'),
+                        localServiceCode: HydrationHelper::nullableStringField($detail, 'localServiceCode'),
+                        typeCode: HydrationHelper::nullableStringField($detail, 'typeCode'),
+                        serviceTypeCode: HydrationHelper::nullableStringField($detail, 'serviceTypeCode'),
+                        price: HydrationHelper::floatField($detail, 'price') ?? 0.0,
+                        priceCurrency: HydrationHelper::nullableStringField($detail, 'priceCurrency'),
+                        isCustomerAgreement: HydrationHelper::nullableBoolField($detail, 'isCustomerAgreement'),
+                        isMarketedService: HydrationHelper::nullableBoolField($detail, 'isMarketedService'),
+                        isBillingServiceIndicator: HydrationHelper::nullableBoolField($detail, 'isBillingServiceIndicator'),
                         priceBreakdown: $innerBreakdown,
-                        tariffRateFormula: $this->nullableStringField($detail, 'tariffRateFormula'),
+                        tariffRateFormula: HydrationHelper::nullableStringField($detail, 'tariffRateFormula'),
                     );
                 }
             }
@@ -251,7 +252,7 @@ final class RatesResponseHydrator
             $rows[] = new DetailedPriceBreakdown(
                 currencyType: RateCurrencyType::tryFrom($rawCurrencyType),
                 rawCurrencyType: $rawCurrencyType,
-                priceCurrency: $this->stringField($entry, 'priceCurrency'),
+                priceCurrency: HydrationHelper::stringField($entry, 'priceCurrency'),
                 breakdown: $details,
             );
         }
@@ -267,13 +268,13 @@ final class RatesResponseHydrator
 
         /** @var array<string, mixed> $raw */
         return new DeliveryCapability(
-            deliveryTypeCode: $this->nullableStringField($raw, 'deliveryTypeCode'),
-            estimatedDeliveryDateAndTime: $this->nullableStringField($raw, 'estimatedDeliveryDateAndTime'),
-            destinationServiceAreaCode: $this->nullableStringField($raw, 'destinationServiceAreaCode'),
-            destinationFacilityAreaCode: $this->nullableStringField($raw, 'destinationFacilityAreaCode'),
-            deliveryAdditionalDays: $this->floatField($raw, 'deliveryAdditionalDays'),
-            deliveryDayOfWeek: $this->intField($raw, 'deliveryDayOfWeek'),
-            totalTransitDays: $this->intField($raw, 'totalTransitDays'),
+            deliveryTypeCode: HydrationHelper::nullableStringField($raw, 'deliveryTypeCode'),
+            estimatedDeliveryDateAndTime: HydrationHelper::nullableStringField($raw, 'estimatedDeliveryDateAndTime'),
+            destinationServiceAreaCode: HydrationHelper::nullableStringField($raw, 'destinationServiceAreaCode'),
+            destinationFacilityAreaCode: HydrationHelper::nullableStringField($raw, 'destinationFacilityAreaCode'),
+            deliveryAdditionalDays: HydrationHelper::floatField($raw, 'deliveryAdditionalDays'),
+            deliveryDayOfWeek: HydrationHelper::intField($raw, 'deliveryDayOfWeek'),
+            totalTransitDays: HydrationHelper::intField($raw, 'totalTransitDays'),
         );
     }
 
@@ -284,79 +285,13 @@ final class RatesResponseHydrator
         }
 
         /** @var array<string, mixed> $raw */
-        $rawTypeCode = $this->stringField($raw, 'typeCode');
+        $rawTypeCode = HydrationHelper::stringField($raw, 'typeCode');
 
         return new EstimatedDeliveryDate(
             typeCode: EstimatedDeliveryDateTypeCode::tryFrom($rawTypeCode),
             rawTypeCode: $rawTypeCode,
-            estimatedDeliveryDate: $this->stringField($raw, 'estimatedDeliveryDate'),
+            estimatedDeliveryDate: HydrationHelper::stringField($raw, 'estimatedDeliveryDate'),
         );
     }
 
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function stringField(array $source, string $key): string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : '';
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function nullableStringField(array $source, string $key): ?string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : null;
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function nullableBoolField(array $source, string $key): ?bool
-    {
-        $value = $source[$key] ?? null;
-
-        return is_bool($value) ? $value : null;
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function floatField(array $source, string $key): ?float
-    {
-        $value = $source[$key] ?? null;
-
-        if (is_int($value) || is_float($value)) {
-            return (float) $value;
-        }
-        if (is_string($value) && is_numeric($value)) {
-            return (float) $value;
-        }
-
-        return null;
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function intField(array $source, string $key): ?int
-    {
-        $value = $source[$key] ?? null;
-
-        if (is_int($value)) {
-            return $value;
-        }
-        if (is_float($value)) {
-            return (int) $value;
-        }
-        if (is_string($value) && is_numeric($value)) {
-            return (int) $value;
-        }
-
-        return null;
-    }
 }

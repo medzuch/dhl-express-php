@@ -12,6 +12,7 @@ use Medzuch\DhlExpress\Exception\DhlApiException;
 use Medzuch\DhlExpress\Exception\DhlNetworkException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\RequestBuilder;
+use Medzuch\DhlExpress\Support\HydrationHelper;
 use Medzuch\DhlExpress\ValueObject\CountryCode;
 use Medzuch\DhlExpress\ValueObject\PostalCode;
 
@@ -84,7 +85,7 @@ final class AddressApi
     private function hydrate(array $body): AddressValidateResponse
     {
         return new AddressValidateResponse(
-            warnings: $this->stringList($body['warnings'] ?? null),
+            warnings: HydrationHelper::stringList($body['warnings'] ?? null),
             addresses: $this->hydrateAddresses($body['address'] ?? null),
         );
     }
@@ -106,10 +107,10 @@ final class AddressApi
 
             /** @var array<string, mixed> $rawAddress */
             $addresses[] = new ValidatedAddress(
-                countryCode: $this->stringField($rawAddress, 'countryCode'),
-                postalCode: $this->stringField($rawAddress, 'postalCode'),
-                cityName: $this->stringField($rawAddress, 'cityName'),
-                countyName: $this->stringField($rawAddress, 'countyName'),
+                countryCode: HydrationHelper::stringField($rawAddress, 'countryCode'),
+                postalCode: HydrationHelper::stringField($rawAddress, 'postalCode'),
+                cityName: HydrationHelper::stringField($rawAddress, 'cityName'),
+                countyName: HydrationHelper::stringField($rawAddress, 'countyName'),
                 serviceArea: $this->hydrateServiceArea($rawAddress['serviceArea'] ?? null),
             );
         }
@@ -125,38 +126,10 @@ final class AddressApi
 
         /** @var array<string, mixed> $raw */
         return new ServiceArea(
-            code: $this->stringField($raw, 'code'),
-            description: $this->stringField($raw, 'description'),
-            gmtOffset: $this->stringField($raw, 'GMTOffset'),
+            code: HydrationHelper::stringField($raw, 'code'),
+            description: HydrationHelper::stringField($raw, 'description'),
+            gmtOffset: HydrationHelper::stringField($raw, 'GMTOffset'),
         );
     }
 
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function stringField(array $source, string $key): string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : '';
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function stringList(mixed $raw): array
-    {
-        if (!is_array($raw)) {
-            return [];
-        }
-
-        $items = [];
-        foreach ($raw as $item) {
-            if (is_string($item)) {
-                $items[] = $item;
-            }
-        }
-
-        return $items;
-    }
 }

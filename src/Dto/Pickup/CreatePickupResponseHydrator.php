@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Dto\Pickup;
 
+use Medzuch\DhlExpress\Support\HydrationHelper;
+
 /**
  * Hydrates the `POST /pickups` JSON response into {@see CreatePickupResponse}.
  */
@@ -14,41 +16,11 @@ final class CreatePickupResponseHydrator
      */
     public function hydrate(array $body): CreatePickupResponse
     {
-        $numbers = [];
-        $rawNumbers = $body['dispatchConfirmationNumbers'] ?? null;
-        if (is_array($rawNumbers)) {
-            foreach ($rawNumbers as $entry) {
-                if (is_string($entry)) {
-                    $numbers[] = $entry;
-                }
-            }
-        }
-
-        $warnings = [];
-        $rawWarnings = $body['warnings'] ?? null;
-        if (is_array($rawWarnings)) {
-            foreach ($rawWarnings as $entry) {
-                if (is_string($entry)) {
-                    $warnings[] = $entry;
-                }
-            }
-        }
-
         return new CreatePickupResponse(
-            dispatchConfirmationNumbers: $numbers,
-            readyByTime: $this->nullableString($body, 'readyByTime'),
-            nextPickupDate: $this->nullableString($body, 'nextPickupDate'),
-            warnings: $warnings,
+            dispatchConfirmationNumbers: HydrationHelper::stringList($body['dispatchConfirmationNumbers'] ?? null),
+            readyByTime: HydrationHelper::nullableStringField($body, 'readyByTime'),
+            nextPickupDate: HydrationHelper::nullableStringField($body, 'nextPickupDate'),
+            warnings: HydrationHelper::stringList($body['warnings'] ?? null),
         );
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function nullableString(array $source, string $key): ?string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : null;
     }
 }

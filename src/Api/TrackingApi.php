@@ -12,6 +12,7 @@ use Medzuch\DhlExpress\Exception\DhlNetworkException;
 use Medzuch\DhlExpress\Exception\DhlNotFoundException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\RequestBuilder;
+use Medzuch\DhlExpress\Support\HydrationHelper;
 use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 
 /**
@@ -38,7 +39,9 @@ final class TrackingApi
      * Fetches the tracking history for a single shipment.
      *
      * @throws DhlNotFoundException when DHL has no record of the tracking number
-     * @throws DhlApiException for other DHL-side errors
+     *                              (either a 404 response or a 200 with an empty
+     *                              `shipments` array)
+     * @throws DhlApiException     for other DHL-side errors
      * @throws DhlNetworkException for transport-level failures
      */
     public function getByTrackingNumber(TrackingNumber $trackingNumber): TrackingResponse
@@ -49,13 +52,16 @@ final class TrackingApi
         );
 
         $body = $this->transport->send($request);
+        $shipments = $this->hydrateShipments($body);
 
-        return $this->hydrateShipments($body)[0] ?? new TrackingResponse(
-            shipmentTrackingNumber: '',
-            status: '',
-            description: '',
-            events: [],
-        );
+        if ($shipments === []) {
+            throw new DhlNotFoundException(
+                message: sprintf('No shipment found for tracking number %s.', $trackingNumber->value),
+                httpStatus: 404,
+            );
+        }
+
+        return $shipments[0];
     }
 
     /**
@@ -112,9 +118,9 @@ final class TrackingApi
 
             /** @var array<string, mixed> $shipment */
             $results[] = new TrackingResponse(
-                shipmentTrackingNumber: $this->stringField($shipment, 'shipmentTrackingNumber'),
-                status: $this->stringField($shipment, 'status'),
-                description: $this->stringField($shipment, 'description'),
+                shipmentTrackingNumber: HydrationHelper::stringField($shipment, 'shipmentTrackingNumber'),
+                status: HydrationHelper::stringField($shipment, 'status'),
+                description: HydrationHelper::stringField($shipment, 'description'),
                 events: $this->hydrateEvents($shipment['events'] ?? null),
             );
         }
@@ -139,23 +145,13 @@ final class TrackingApi
 
             /** @var array<string, mixed> $rawEvent */
             $events[] = new ShipmentEvent(
-                date: $this->stringField($rawEvent, 'date'),
-                time: $this->stringField($rawEvent, 'time'),
-                typeCode: $this->stringField($rawEvent, 'typeCode'),
-                description: $this->stringField($rawEvent, 'description'),
+                date: HydrationHelper::stringField($rawEvent, 'date'),
+                time: HydrationHelper::stringField($rawEvent, 'time'),
+                typeCode: HydrationHelper::stringField($rawEvent, 'typeCode'),
+                description: HydrationHelper::stringField($rawEvent, 'description'),
             );
         }
 
         return $events;
-    }
-
-    /**
-     * @param array<string, mixed> $source
-     */
-    private function stringField(array $source, string $key): string
-    {
-        $value = $source[$key] ?? null;
-
-        return is_string($value) ? $value : '';
     }
 }

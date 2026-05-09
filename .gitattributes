@@ -14,3 +14,5 @@
 /Makefile       export-ignore
 /CLAUDE.md      export-ignore
 /PROJECT_PLAN.md export-ignore
+/examples       export-ignore
+/docs           export-ignore

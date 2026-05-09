@@ -35,4 +35,25 @@ final class AccountNumberTest extends TestCase
 
         new AccountNumber('');
     }
+
+    public function testDebugInfoMasksAllButLastFourDigits(): void
+    {
+        $account = new AccountNumber('123456789');
+
+        $dump = print_r($account, true);
+
+        self::assertStringContainsString('*****6789', $dump);
+        self::assertStringNotContainsString('123456789', $dump);
+    }
+
+    public function testDebugInfoMasksEveryCharacterForShortValues(): void
+    {
+        // Length <= 4: full mask (no last-four window long enough to keep)
+        $account = new AccountNumber('1234');
+
+        $dump = print_r($account, true);
+
+        self::assertStringContainsString('****', $dump);
+        self::assertStringNotContainsString('1234', $dump);
+    }
 }

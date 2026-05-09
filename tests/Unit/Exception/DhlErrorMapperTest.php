@@ -105,6 +105,26 @@ final class DhlErrorMapperTest extends TestCase
         self::assertSame('Unprocessable Entity', $exception->dhlMessage);
     }
 
+    public function testRateLimitCarriesRetryAfterFromMapperCall(): void
+    {
+        $mapper = new DhlErrorMapper();
+
+        $exception = $mapper->map(429, ['detail' => 'Too many requests'], 30);
+
+        self::assertInstanceOf(DhlRateLimitException::class, $exception);
+        self::assertSame(30, $exception->retryAfter);
+    }
+
+    public function testRateLimitRetryAfterIsNullWhenNotProvided(): void
+    {
+        $mapper = new DhlErrorMapper();
+
+        $exception = $mapper->map(429, []);
+
+        self::assertInstanceOf(DhlRateLimitException::class, $exception);
+        self::assertNull($exception->retryAfter);
+    }
+
     public function testHandlesEmptyBodyGracefully(): void
     {
         $mapper = new DhlErrorMapper();

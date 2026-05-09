@@ -44,8 +44,26 @@ final class ResponseParser
         }
 
         $body = $this->tryDecode($rawBody);
+        $retryAfter = $status === 429 ? $this->parseRetryAfter($response) : null;
 
-        throw $this->errorMapper->map($status, $body);
+        throw $this->errorMapper->map($status, $body, $retryAfter);
+    }
+
+    /**
+     * Parse the integer-seconds form of the `Retry-After` header. Returns
+     * null when the header is absent or when the value isn't a positive
+     * integer string (the HTTP-date variant per RFC 7231 is not handled —
+     * DHL sends seconds in practice).
+     */
+    private function parseRetryAfter(ResponseInterface $response): ?int
+    {
+        $value = $response->getHeaderLine('Retry-After');
+
+        if ($value === '' || !ctype_digit($value)) {
+            return null;
+        }
+
+        return (int) $value;
     }
 
     /**
