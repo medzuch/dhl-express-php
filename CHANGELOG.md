@@ -20,6 +20,13 @@ Initial release of `medzuch/dhl-express-php`.
 - PSR-3 logger integration — request/response payloads logged at `debug` level with `Authorization` header redacted
 - Custom exception hierarchy: `DhlException` → `DhlApiException` → `DhlValidationException`, `DhlNetworkException`, `InvalidRequestException`
 - `DhlErrorMapper` translating HTTP status codes and DHL error codes to typed exceptions
+- `Support\HydrationHelper` — shared static helpers for defensive JSON-to-typed-PHP parsing across all API hydrators
+- `DhlRateLimitException::$retryAfter` carries the integer-seconds value of the response `Retry-After` header
+- `AccountNumber::__debugInfo()` masks the value when dumped, keeping only the last four digits
+
+### Changed
+
+- `TrackingApi::getByTrackingNumber()` now throws `DhlNotFoundException` when DHL returns no shipments. Previously it silently returned a `TrackingResponse` with empty-string fields, which masked the not-found case as a valid response.
 
 #### Value Objects (self-validating, immutable)
 - `TrackingNumber`, `Weight`, `Dimensions`, `Money`, `CountryCode`, `CurrencyCode`
