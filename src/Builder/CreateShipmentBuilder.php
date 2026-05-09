@@ -10,10 +10,14 @@ use Medzuch\DhlExpress\Dto\Shipment\ContactAddress;
 use Medzuch\DhlExpress\Dto\Shipment\Content;
 use Medzuch\DhlExpress\Dto\Shipment\CreateShipmentRequest;
 use Medzuch\DhlExpress\Dto\Shipment\CustomerDetails;
+use Medzuch\DhlExpress\Dto\Shipment\DangerousGoods;
+use Medzuch\DhlExpress\Dto\Shipment\ExportDeclaration;
 use Medzuch\DhlExpress\Dto\Shipment\OutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
 use Medzuch\DhlExpress\Dto\Shipment\Pickup;
 use Medzuch\DhlExpress\Dto\Shipment\ValueAddedService;
+use Medzuch\DhlExpress\Enum\AccountTypeCode;
+use Medzuch\DhlExpress\Enum\DangerousGoodsServiceCode;
 use Medzuch\DhlExpress\Enum\Incoterm;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Exception\InvalidRequestException;
@@ -41,14 +45,12 @@ use Medzuch\DhlExpress\Exception\InvalidRequestException;
  *   of a rule DHL would otherwise reject server-side.
  * - Per-package dimension unit consistency: same check on dimensions
  *   when present.
- * - Customs guardrail: `isCustomsDeclarable=true` is rejected because
- *   Phase 4a does not yet expose an `exportDeclaration` setter. This
- *   ships in Phase 4b.
  *
- * Deferred to Phase 4b:
- * - DDP incoterm ⇒ payerDetails required.
- * - DG VAS code ⇒ DangerousGoods block required.
- * - Insurance VAS (II) ⇒ declared `Money` value required.
+ * Phase 4b rules (added):
+ * - `isCustomsDeclarable=true` ⇒ `exportDeclaration` required.
+ * - DG VAS code present ⇒ `dangerousGoods` block required.
+ * - Insurance VAS (`II`) ⇒ `declaredValue` required.
+ * - DDP incoterm ⇒ at least one `DutiesTaxes` account required.
  */
 final class CreateShipmentBuilder
 {
@@ -70,6 +72,10 @@ final class CreateShipmentBuilder
     private array $valueAddedServices = [];
     private ?OutputImageProperties $outputImageProperties = null;
     private ?bool $getRateEstimates = null;
+    private ?ExportDeclaration $exportDeclaration = null;
+    private ?DangerousGoods $dangerousGoods = null;
+    private ?float $declaredValue = null;
+    private ?string $declaredValueCurrency = null;
 
     public function withPlannedShippingDate(DateTimeImmutable $dateTime): self
     {
@@ -170,6 +176,28 @@ final class CreateShipmentBuilder
         return $this;
     }
 
+    public function withExportDeclaration(ExportDeclaration $declaration): self
+    {
+        $this->exportDeclaration = $declaration;
+
+        return $this;
+    }
+
+    public function withDangerousGoods(DangerousGoods $dangerousGoods): self
+    {
+        $this->dangerousGoods = $dangerousGoods;
+
+        return $this;
+    }
+
+    public function withDeclaredValue(float $value, string $currency): self
+    {
+        $this->declaredValue = $value;
+        $this->declaredValueCurrency = $currency;
+
+        return $this;
+    }
+
     /**
      * @throws InvalidRequestException when one or more cross-field rules fail
      */
@@ -231,11 +259,58 @@ final class CreateShipmentBuilder
             ];
         }
 
-        if ($isCustomsDeclarable === true) {
+        if ($isCustomsDeclarable === true && $this->exportDeclaration === null) {
             $errors[] = [
-                'field' => 'isCustomsDeclarable',
-                'message' => 'customs-declarable shipments require an exportDeclaration — not yet supported in Phase 4a, see Phase 4b',
+                'field' => 'content.exportDeclaration',
+                'message' => 'exportDeclaration is required when isCustomsDeclarable is true',
             ];
+        }
+
+        // DG VAS rule: if any VAS has a DG service code, dangerousGoods block is required
+        $hasDgVas = false;
+        foreach ($this->valueAddedServices as $service) {
+            if (DangerousGoodsServiceCode::tryFrom($service->serviceCode) !== null) {
+                $hasDgVas = true;
+                break;
+            }
+        }
+        if ($hasDgVas && $this->dangerousGoods === null) {
+            $errors[] = [
+                'field' => 'dangerousGoods',
+                'message' => 'dangerousGoods block is required when a dangerous-goods VAS service code is present',
+            ];
+        }
+
+        // Insurance VAS rule: if VAS 'II' is present, declaredValue is required
+        $hasInsuranceVas = false;
+        foreach ($this->valueAddedServices as $service) {
+            if ($service->serviceCode === 'II') {
+                $hasInsuranceVas = true;
+                break;
+            }
+        }
+        if ($hasInsuranceVas && $this->declaredValue === null) {
+            $errors[] = [
+                'field' => 'content.declaredValue',
+                'message' => 'declaredValue is required when insurance VAS (II) is present',
+            ];
+        }
+
+        // DDP incoterm rule: at least one DutiesTaxes account required
+        if ($this->incoterm === Incoterm::DDP) {
+            $hasDutiesTaxesAccount = false;
+            foreach ($this->accounts as $account) {
+                if ($account->typeCode === AccountTypeCode::DutiesTaxes) {
+                    $hasDutiesTaxesAccount = true;
+                    break;
+                }
+            }
+            if (!$hasDutiesTaxesAccount) {
+                $errors[] = [
+                    'field' => 'accounts',
+                    'message' => 'a duties-taxes account is required when incoterm is DDP',
+                ];
+            }
         }
 
         if ($unitOfMeasurement !== null) {
@@ -296,11 +371,15 @@ final class CreateShipmentBuilder
                 description: $contentDescription,
                 unitOfMeasurement: $unitOfMeasurement,
                 incoterm: $this->incoterm,
+                declaredValue: $this->declaredValue,
+                declaredValueCurrency: $this->declaredValueCurrency,
+                exportDeclaration: $this->exportDeclaration,
             ),
             localProductCode: $this->localProductCode,
             valueAddedServices: $this->valueAddedServices,
             outputImageProperties: $this->outputImageProperties,
             getRateEstimates: $this->getRateEstimates,
+            dangerousGoods: $this->dangerousGoods,
         );
     }
 }
