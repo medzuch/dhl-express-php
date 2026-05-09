@@ -51,6 +51,14 @@ use Medzuch\DhlExpress\Exception\InvalidRequestException;
  * - DG VAS code present ⇒ `dangerousGoods` block required.
  * - Insurance VAS (`II`) ⇒ `declaredValue` required.
  * - DDP incoterm ⇒ at least one `DutiesTaxes` account required.
+ * - Cross-border outside EU customs territory ⇒ `isCustomsDeclarable=true` required
+ *   (intra-EU shipments share a customs union and are exempt). The territory
+ *   list covers 27 EU member states plus Monaco and French outermost regions
+ *   (GP, MQ, GF, RE, YT). Northern Ireland (GB) is detected via its "BT"
+ *   postal-code prefix. Known limitation: Canary Islands/Ceuta/Melilla (ES)
+ *   share the ES code with mainland Spain and cannot be distinguished.
+ * - Line-item price×quantity sum must equal `declaredValue` within ±0.01
+ *   when both `exportDeclaration` and `declaredValue` are provided.
  *
  * Phase 4c note:
  * - No new builder rules; Phase 4c adds the `addPiece()` API method
@@ -61,6 +69,41 @@ use Medzuch\DhlExpress\Exception\InvalidRequestException;
  */
 final class CreateShipmentBuilder
 {
+    /**
+     * ISO 3166-1 alpha-2 codes whose shipments are treated as intra-EU customs
+     * territory and therefore exempt from `isCustomsDeclarable=true`.
+     *
+     * Includes the 27 EU member states plus territories that are legally part
+     * of the EU customs union despite not being full EU members or having their
+     * own ISO codes:
+     * - MC (Monaco) — full customs union member via convention with France.
+     * - GP, MQ, GF, RE, YT (French outermost regions) — integral parts of
+     *   France under EU law; all carry their own ISO 3166-1 alpha-2 codes.
+     *
+     * Northern Ireland (GB) is handled separately in
+     * {@see self::isInEuCustomsTerritory()}: it follows EU single-market rules
+     * for goods under the Windsor Framework and every NI address carries a
+     * postal code starting with "BT" — no other UK region uses that prefix.
+     *
+     * Known limitation — cannot be resolved at country-code level:
+     * - Canary Islands / Ceuta / Melilla (code ES): Canary Islands are outside
+     *   the EU customs territory; Ceuta and Melilla are too. All share the ES
+     *   code with mainland Spain. The builder conservatively treats all ES
+     *   shipments as intra-EU — DHL server-side validation catches the
+     *   exceptions for these territories.
+     *
+     * @var list<string>
+     */
+    private const EU_CUSTOMS_TERRITORY = [
+        // 27 EU member states
+        'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+        'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+        'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+        // Monaco — EU customs union via convention with France
+        'MC',
+        // French outermost regions (own ISO codes, part of EU customs territory)
+        'GP', 'MQ', 'GF', 'RE', 'YT',
+    ];
     private ?DateTimeImmutable $plannedShippingDateAndTime = null;
     private ?bool $pickupIsRequested = null;
     private ?string $productCode = null;
@@ -320,6 +363,43 @@ final class CreateShipmentBuilder
             }
         }
 
+        // EU intra-zone exemption rule: cross-border shipments outside the EU
+        // customs territory require isCustomsDeclarable=true.
+        if (
+            $shipper !== null
+            && $receiver !== null
+            && $isCustomsDeclarable === false
+            && $shipper->countryCode->value !== $receiver->countryCode->value
+        ) {
+            $shipperInEu = $this->isInEuCustomsTerritory($shipper);
+            $receiverInEu = $this->isInEuCustomsTerritory($receiver);
+            if (!($shipperInEu && $receiverInEu)) {
+                $errors[] = [
+                    'field' => 'isCustomsDeclarable',
+                    'message' => 'cross-border shipment outside the EU customs territory requires isCustomsDeclarable=true',
+                ];
+            }
+        }
+
+        // Line-item sum reconciliation: sum of (price × quantity) must equal
+        // declaredValue within ±0.01 when both are provided.
+        if ($this->exportDeclaration !== null && $this->declaredValue !== null) {
+            $lineItemTotal = 0.0;
+            foreach ($this->exportDeclaration->lineItems as $item) {
+                $lineItemTotal += $item->price * $item->quantity->value;
+            }
+            if (abs($lineItemTotal - $this->declaredValue) > 0.01) {
+                $errors[] = [
+                    'field' => 'content.exportDeclaration.lineItems',
+                    'message' => sprintf(
+                        'line-item total (%.2f) does not match declaredValue (%.2f)',
+                        $lineItemTotal,
+                        $this->declaredValue,
+                    ),
+                ];
+            }
+        }
+
         if ($unitOfMeasurement !== null) {
             foreach ($this->packages as $index => $package) {
                 if ($package->weight->system() !== $unitOfMeasurement) {
@@ -388,5 +468,27 @@ final class CreateShipmentBuilder
             getRateEstimates: $this->getRateEstimates,
             dangerousGoods: $this->dangerousGoods,
         );
+    }
+
+    /**
+     * Returns true when the address is within the EU customs territory.
+     *
+     * Country-code lookup covers 27 EU member states plus Monaco and the
+     * French outermost regions (GP, MQ, GF, RE, YT). Northern Ireland is
+     * handled separately: it uses country code GB but every NI postal
+     * code begins with "BT" — no other UK region shares that prefix.
+     */
+    private function isInEuCustomsTerritory(ContactAddress $address): bool
+    {
+        if (in_array($address->countryCode->value, self::EU_CUSTOMS_TERRITORY, true)) {
+            return true;
+        }
+
+        // Northern Ireland: GB country code + BT postcode prefix
+        if ($address->countryCode->value === 'GB' && str_starts_with($address->postalCode->value, 'BT')) {
+            return true;
+        }
+
+        return false;
     }
 }
