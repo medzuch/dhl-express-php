@@ -248,39 +248,9 @@ Per-item checklists for shipped phases live in [`docs/PROJECT_HISTORY.md`](docs/
 - ✅ **Phase 3b — Address + Products + ReferenceData** — shipped 2026-05-05, PR #7 (`b4d3ee4`).
 - ✅ **Phase 3c — ServicePoint + Epod** — shipped 2026-05-08, PR #11 (`13fe7fa`).
 - ✅ **Phase 3d — Rates + LandedCost** — shipped 2026-05-08, PR #12 (`1a1c56b`). First builders + `InvalidRequestException` (see §7).
-
-### Phase 4 — Shipment Creation (week 3-4) — biggest feature
-**Goal:** Create a real shipment end to end.
-
-This is the largest sub-phase in the project. Phase 3d already shipped as one combined ~50-file PR; Phase 4 is wider still, so the recommended slice is three sequential PRs. Each one delivers something usable on its own.
-
-#### Phase 4a — Foundation: happy-path shipment creation
-- [x] Common shipment DTOs: `ContactAddress` (Address + Contact composite), `Package` (the full shipment-side package, distinct from `RatePackage`), `OutputImageProperties`, `ValueAddedService`, plus the lighter `Pickup` / `Content` / `CustomerDetails` wrappers. `Invoice` and shipment-side `LineItem` defer to Phase 4b alongside the customs flow that uses them.
-- [x] `CreateShipmentRequest` (top-level) + `CreateShipmentResponse` + `CreateShipmentResponseHydrator`
-- [x] `CreateShipmentBuilder` — second builder. Cross-field rules in 4a: required-field presence, account count (1–3), package count (1–999), per-package weight/dimension unit alignment with the shipment-level `unitOfMeasurement`, customs guardrail (`isCustomsDeclarable=true` rejected until 4b ships `exportDeclaration`). The DDP-incoterm-requires-payer rule defers to 4b — `incoterm` lives under `content.exportDeclaration` per OpenAPI and isn't reachable in 4a.
-- [x] `ShipmentApi::create()` for `POST /shipments` with optional `validateDataOnly` query flag
-- [x] Wire `shipments()` accessor on `DhlClient`
-- [x] Integration test: domestic CZ→CZ shipment in `validateDataOnly` mode (avoids polluting sandbox); accepts the documented `8009` "account not IMP-enabled" exception path the same way `IdentifierApiIntegrationTest` does for breakbulk-authorization
-
-#### Phase 4b — Customs / DG / PLT
-- [ ] `ExportDeclaration` deepening (line-item totals, declared-value reconciliation, EU intra-zone exemption table)
-- [ ] `DangerousGoods` block + builder rule (DG VAS code present ⇒ DG block required)
-- [ ] Insurance VAS rule (`II` ⇒ declared `Money` required)
-- [ ] Paperless Trade flow: `ShipmentApi::uploadImage()` for `POST /shipments/{id}/upload-image`, `ShipmentApi::uploadInvoiceData()` for `POST /shipments/{id}/upload-invoice-data`, `ShipmentApi::getImage()` for `GET /shipments/{id}/get-image`
-- [ ] Customs invoice line-item sum reconciliation in builder
-- [ ] Integration test: cross-border customs-declarable shipment with PLT
-
-#### Phase 4c — Add-piece + label format polish
-- [ ] `ShipmentApi::addPiece()` for `POST /shipments/{id}/add-piece`
-- [ ] Output image format coverage — PDF/ZPL/EPL/LP2 paths in `OutputImageProperties`
-- [ ] Label-template support via the deferred `OutputImageTemplate` enum (~66 templates from `outputImageTemplate` xlsx sheet — ship now that there's a concrete consumer)
-
-#### Phase 4 cross-cutting — enums unblocked by a concrete consumer
-Per Phase 2C.3, these were deferred until something used them. Phase 4 is that consumer:
-- [ ] `ServiceCode` (~384 codes from `serviceCode` xlsx sheet) — decision point: ship as one large enum or split per `serviceGroupCode` (W=Customs, H=DG, U=Temperature, …). Recommend deciding when 4b lands.
-- [ ] `OutputImageTemplate` (~66 templates) — ships in 4c.
-- [ ] `CommodityCategory` (~108 codes from `commodityCategory` sheet) — ships in 4b alongside `ExportDeclaration`.
-- [ ] `ShipmentReferenceTypeCode` (~63 codes from `customerShipmentReferenceType` sheet) — ship if `CreateShipmentBuilder` needs it; otherwise leave as free string.
+- ✅ **Phase 4a — Shipment foundation** — shipped 2026-05-09, PR #16 (`1a39f51`). `ContactAddress`, `Package`, `OutputImageProperties`, `ValueAddedService`, `CreateShipmentRequest/Response`, `CreateShipmentBuilder`, `ShipmentApi::create()`.
+- ✅ **Phase 4b — Customs / DG / PLT** — shipped 2026-05-09, PR #17 (`0988bc1`) + fix PR #19 (`7812bcc`). `ExportDeclaration`, `DangerousGoods`, PLT upload endpoints, all builder cross-field rules (DG VAS, insurance VAS, DDP incoterm, EU customs territory + NI BT-postcode detection, line-item reconciliation).
+- ✅ **Phase 4c — Add-piece + label polish** — shipped 2026-05-09, PR #18 (`39c1a19`). `ShipmentApi::addPiece()`, `OutputImageTemplate` (35 templates), `ServiceCode` (383 codes), `CommodityCategory` (108 codes), `ShipmentReferenceTypeCode`.
 
 ### Phase 5 — Pickup & Operations (week 4-5)
 - [ ] `PickupApi` (create, update, cancel, list)
