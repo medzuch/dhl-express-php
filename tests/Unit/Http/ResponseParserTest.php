@@ -7,6 +7,7 @@ namespace Medzuch\DhlExpress\Tests\Unit\Http;
 use Medzuch\DhlExpress\Exception\DhlAuthenticationException;
 use Medzuch\DhlExpress\Exception\DhlErrorMapper;
 use Medzuch\DhlExpress\Exception\DhlNotFoundException;
+use Medzuch\DhlExpress\Exception\DhlRateLimitException;
 use Medzuch\DhlExpress\Exception\DhlServerException;
 use Medzuch\DhlExpress\Exception\DhlValidationException;
 use Medzuch\DhlExpress\Http\ResponseParser;
@@ -100,6 +101,52 @@ final class ResponseParserTest extends TestCase
         $this->expectException(DhlServerException::class);
 
         $parser->parse($this->jsonResponse(500, ['detail' => 'internal error']));
+    }
+
+    public function testParsesRetryAfterIntegerSecondsOn429(): void
+    {
+        $parser = new ResponseParser(new DhlErrorMapper());
+
+        try {
+            $factory = new Psr17Factory();
+            $response = $factory->createResponse(429)
+                ->withHeader('Retry-After', '30')
+                ->withBody($factory->createStream(json_encode(['detail' => 'rate limited'], JSON_THROW_ON_ERROR)));
+            $parser->parse($response);
+            self::fail('Expected DhlRateLimitException');
+        } catch (DhlRateLimitException $e) {
+            self::assertSame(30, $e->retryAfter);
+        }
+    }
+
+    public function testRetryAfterIsNullWhenHeaderMissingOn429(): void
+    {
+        $parser = new ResponseParser(new DhlErrorMapper());
+
+        try {
+            $parser->parse($this->jsonResponse(429, ['detail' => 'rate limited']));
+            self::fail('Expected DhlRateLimitException');
+        } catch (DhlRateLimitException $e) {
+            self::assertNull($e->retryAfter);
+        }
+    }
+
+    public function testRetryAfterIsNullWhenHeaderIsNonInteger(): void
+    {
+        // HTTP-date variant of Retry-After per RFC 7231 — we don't parse it
+        $parser = new ResponseParser(new DhlErrorMapper());
+        $factory = new Psr17Factory();
+
+        $response = $factory->createResponse(429)
+            ->withHeader('Retry-After', 'Wed, 21 Oct 2026 07:28:00 GMT')
+            ->withBody($factory->createStream(''));
+
+        try {
+            $parser->parse($response);
+            self::fail('Expected DhlRateLimitException');
+        } catch (DhlRateLimitException $e) {
+            self::assertNull($e->retryAfter);
+        }
     }
 
     public function testStillRoutesByStatusWhenErrorBodyIsMalformedJson(): void
