@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Api;
 
+use Medzuch\DhlExpress\Dto\Shipment\AddPieceRequest;
 use Medzuch\DhlExpress\Dto\Shipment\CreateShipmentRequest;
 use Medzuch\DhlExpress\Dto\Shipment\CreateShipmentResponse;
 use Medzuch\DhlExpress\Dto\Shipment\CreateShipmentResponseHydrator;
@@ -30,6 +31,10 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
  *   for structured customs invoice data.
  * - {@see self::getImage()} — `GET /shipments/{id}/get-image`
  *   to retrieve uploaded document images.
+ *
+ * Phase 4c adds:
+ * - {@see self::addPiece()} — `PATCH /shipments/{id}/add-piece`
+ *   to attach extra pieces to a previously created shipment.
  */
 final class ShipmentApi
 {
@@ -102,6 +107,26 @@ final class ShipmentApi
         $httpRequest = $this->requestBuilder->build(
             'PATCH',
             "/shipments/{$shipmentTrackingNumber}/upload-invoice-data",
+            jsonBody: $request->toArray(),
+        );
+
+        $this->transport->send($httpRequest);
+    }
+
+    /**
+     * Add extra pieces to a previously created shipment via
+     * `PATCH /shipments/{shipmentTrackingNumber}/add-piece`.
+     *
+     * Returns void — the 200 response has no meaningful body.
+     *
+     * @throws DhlApiException     for DHL-side errors
+     * @throws DhlNetworkException for transport-level failures
+     */
+    public function addPiece(string $shipmentTrackingNumber, AddPieceRequest $request): void
+    {
+        $httpRequest = $this->requestBuilder->build(
+            'PATCH',
+            "/shipments/{$shipmentTrackingNumber}/add-piece",
             jsonBody: $request->toArray(),
         );
 
