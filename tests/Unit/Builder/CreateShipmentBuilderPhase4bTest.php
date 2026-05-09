@@ -288,6 +288,58 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
         self::assertFalse($request->content->isCustomsDeclarable);
     }
 
+    public function testMonacoIsInEuCustomsTerritory(): void
+    {
+        // MC (Monaco) is in the EU customs union — FR → MC should not require customs
+        $request = $this->minimalCrossBorderBuilder('FR', 'MC')
+            ->withIsCustomsDeclarable(false)
+            ->build();
+
+        self::assertFalse($request->content->isCustomsDeclarable);
+    }
+
+    public function testFrenchOutermostRegionIsInEuCustomsTerritory(): void
+    {
+        // GP (Guadeloupe), MQ (Martinique), GF (French Guiana), RE (Réunion),
+        // YT (Mayotte) are French outermost regions and part of the EU customs
+        // territory — shipping from FR to any of them should not require customs
+        foreach (['GP', 'MQ', 'GF', 'RE', 'YT'] as $regionCode) {
+            $request = $this->minimalCrossBorderBuilder('FR', $regionCode)
+                ->withIsCustomsDeclarable(false)
+                ->build();
+
+            self::assertFalse(
+                $request->content->isCustomsDeclarable,
+                "Expected FR → {$regionCode} to be exempt from customs declaration",
+            );
+        }
+    }
+
+    public function testShipmentFromFrenchRegionToEuMemberIsExempt(): void
+    {
+        // RE → DE: both in EU customs territory — no customs required
+        $request = $this->minimalCrossBorderBuilder('RE', 'DE')
+            ->withIsCustomsDeclarable(false)
+            ->build();
+
+        self::assertFalse($request->content->isCustomsDeclarable);
+    }
+
+    public function testShipmentFromFrenchRegionToNonEuRequiresCustoms(): void
+    {
+        // GP → US: Guadeloupe is in EU customs territory, US is not → customs required
+        $builder = $this->minimalCrossBorderBuilder('GP', 'US')
+            ->withIsCustomsDeclarable(false);
+
+        try {
+            $builder->build();
+            self::fail('Expected InvalidRequestException');
+        } catch (InvalidRequestException $exception) {
+            $fields = array_column($exception->errors(), 'field');
+            self::assertContains('isCustomsDeclarable', $fields);
+        }
+    }
+
     // ----- Phase 4b (missing): line-item sum reconciliation -----
 
     public function testLineItemSumMatchingDeclaredValueSucceeds(): void

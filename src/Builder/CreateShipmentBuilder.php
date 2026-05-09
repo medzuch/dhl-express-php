@@ -52,7 +52,11 @@ use Medzuch\DhlExpress\Exception\InvalidRequestException;
  * - Insurance VAS (`II`) ⇒ `declaredValue` required.
  * - DDP incoterm ⇒ at least one `DutiesTaxes` account required.
  * - Cross-border outside EU customs territory ⇒ `isCustomsDeclarable=true` required
- *   (intra-EU shipments share a customs union and are exempt).
+ *   (intra-EU shipments share a customs union and are exempt). The territory
+ *   list covers 27 EU member states plus Monaco and French outermost regions
+ *   (GP, MQ, GF, RE, YT). Known limitation: Northern Ireland (GB) and the
+ *   Canary Islands/Ceuta/Melilla (ES) cannot be distinguished at country-code
+ *   level — those edge cases fall through to DHL server-side validation.
  * - Line-item price×quantity sum must equal `declaredValue` within ±0.01
  *   when both `exportDeclaration` and `declaredValue` are provided.
  *
@@ -66,16 +70,38 @@ use Medzuch\DhlExpress\Exception\InvalidRequestException;
 final class CreateShipmentBuilder
 {
     /**
-     * ISO 3166-1 alpha-2 codes for the 27 EU member states that share a
-     * customs union. Intra-EU shipments do not require a customs declaration
-     * regardless of whether the shipper and receiver countries differ.
+     * ISO 3166-1 alpha-2 codes whose shipments are treated as intra-EU customs
+     * territory and therefore exempt from `isCustomsDeclarable=true`.
+     *
+     * Includes the 27 EU member states plus territories that are legally part
+     * of the EU customs union despite not being full EU members or having their
+     * own ISO codes:
+     * - MC (Monaco) — full customs union member via convention with France.
+     * - GP, MQ, GF, RE, YT (French outermost regions) — integral parts of
+     *   France under EU law; all carry their own ISO 3166-1 alpha-2 codes.
+     *
+     * Known limitations — cannot be resolved at country-code level:
+     * - Northern Ireland (code GB): follows EU single-market rules for goods
+     *   under the Windsor Framework, but Great Britain also uses GB. Shipments
+     *   from GB to GB with an NI destination must be treated as customs-
+     *   required by the caller; this builder cannot distinguish them.
+     * - Canary Islands / Ceuta / Melilla (code ES): Canary Islands are outside
+     *   the EU customs territory; Ceuta and Melilla are too. All share the ES
+     *   code with mainland Spain. The builder conservatively treats all ES
+     *   shipments as intra-EU — the caller or DHL server-side validation must
+     *   catch the exceptions.
      *
      * @var list<string>
      */
     private const EU_CUSTOMS_TERRITORY = [
+        // 27 EU member states
         'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
         'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
         'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+        // Monaco — EU customs union via convention with France
+        'MC',
+        // French outermost regions (own ISO codes, part of EU customs territory)
+        'GP', 'MQ', 'GF', 'RE', 'YT',
     ];
     private ?DateTimeImmutable $plannedShippingDateAndTime = null;
     private ?bool $pickupIsRequested = null;
