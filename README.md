@@ -345,11 +345,12 @@ $client = new DhlClient($config, logger: $myPsr3Logger);
 
 ### Timeout
 
+Timeout configuration is handled by your PSR-18 HTTP client, not by `ClientConfig`. When using the default Guzzle client, pass a configured instance via the `DhlClient` constructor:
+
 ```php
-$config = new ClientConfig(
-    environment: ApiEnvironment::Production,
-    credentials: $credentials,
-    timeout: 30,  // seconds, default 10
+$client = new DhlClient(
+    config: $config,
+    httpClient: new \GuzzleHttp\Client(['timeout' => 30.0]),
 );
 ```
 
