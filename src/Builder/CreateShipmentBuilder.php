@@ -46,11 +46,18 @@ use Medzuch\DhlExpress\Exception\InvalidRequestException;
  * - Per-package dimension unit consistency: same check on dimensions
  *   when present.
  *
- * Phase 4b rules (added):
+ * Phase 4b rules (shipped):
  * - `isCustomsDeclarable=true` ⇒ `exportDeclaration` required.
  * - DG VAS code present ⇒ `dangerousGoods` block required.
  * - Insurance VAS (`II`) ⇒ `declaredValue` required.
  * - DDP incoterm ⇒ at least one `DutiesTaxes` account required.
+ *
+ * Phase 4c note:
+ * - No new builder rules; Phase 4c adds the `addPiece()` API method
+ *   ({@see \Medzuch\DhlExpress\Api\ShipmentApi::addPiece()}) and the
+ *   {@see OutputImageTemplate}, {@see ImageOptionTypeCode},
+ *   {@see ServiceCode}, {@see CommodityCategory}, and
+ *   {@see ShipmentReferenceTypeCode} enums.
  */
 final class CreateShipmentBuilder
 {
