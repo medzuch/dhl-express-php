@@ -39,7 +39,9 @@ final class TrackingApi
      * Fetches the tracking history for a single shipment.
      *
      * @throws DhlNotFoundException when DHL has no record of the tracking number
-     * @throws DhlApiException for other DHL-side errors
+     *                              (either a 404 response or a 200 with an empty
+     *                              `shipments` array)
+     * @throws DhlApiException     for other DHL-side errors
      * @throws DhlNetworkException for transport-level failures
      */
     public function getByTrackingNumber(TrackingNumber $trackingNumber): TrackingResponse
@@ -50,13 +52,16 @@ final class TrackingApi
         );
 
         $body = $this->transport->send($request);
+        $shipments = $this->hydrateShipments($body);
 
-        return $this->hydrateShipments($body)[0] ?? new TrackingResponse(
-            shipmentTrackingNumber: '',
-            status: '',
-            description: '',
-            events: [],
-        );
+        if ($shipments === []) {
+            throw new DhlNotFoundException(
+                message: sprintf('No shipment found for tracking number %s.', $trackingNumber->value),
+                httpStatus: 404,
+            );
+        }
+
+        return $shipments[0];
     }
 
     /**

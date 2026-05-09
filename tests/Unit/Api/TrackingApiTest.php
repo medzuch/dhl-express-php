@@ -111,6 +111,44 @@ final class TrackingApiTest extends TestCase
         self::assertSame([], $result->events);
     }
 
+    public function testThrowsNotFoundWhenResponseShipmentsArrayIsEmpty(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream(json_encode(['shipments' => []], JSON_THROW_ON_ERROR)),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+
+        try {
+            $api->getByTrackingNumber(new TrackingNumber('0000000000'));
+            self::fail('Expected DhlNotFoundException');
+        } catch (DhlNotFoundException $exception) {
+            self::assertStringContainsString('0000000000', $exception->getMessage());
+            self::assertSame(404, $exception->httpStatus);
+        }
+    }
+
+    public function testThrowsNotFoundWhenResponseHasNoShipmentsKey(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream('{}'),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+
+        $this->expectException(DhlNotFoundException::class);
+
+        $api->getByTrackingNumber(new TrackingNumber('0000000000'));
+    }
+
     public function testGetManyHydratesEachShipmentInResponse(): void
     {
         $factory = new Psr17Factory();
