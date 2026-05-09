@@ -12,8 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
-        php: ['8.3']
+        php: ['8.3', '8.4']
 
     steps:
       - uses: actions/checkout@v4
@@ -22,13 +23,14 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          coverage: xdebug
+          extensions: json
+          coverage: none
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
       - name: PHPUnit (Unit suite)
-        run: ./vendor/bin/phpunit --testsuite Unit --exclude-group integration
+        run: ./vendor/bin/phpunit --testsuite Unit --exclude-group integration --no-coverage
 
       - name: PHPStan (src)
         run: ./vendor/bin/phpstan analyse --configuration phpstan.neon --memory-limit=512M --no-progress

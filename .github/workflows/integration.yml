@@ -1,0 +1,35 @@
+name: Integration Tests
+
+on:
+  schedule:
+    # Nightly at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  integration:
+    name: Integration (sandbox)
+    runs-on: ubuntu-latest
+
+    # Skip when secrets are absent (e.g. forks)
+    if: ${{ vars.DHL_ACCOUNT_NUMBER != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: json
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: PHPUnit (Integration suite)
+        env:
+          DHL_API_KEY: ${{ secrets.DHL_API_KEY }}
+          DHL_API_SECRET: ${{ secrets.DHL_API_SECRET }}
+          DHL_ACCOUNT_NUMBER: ${{ vars.DHL_ACCOUNT_NUMBER }}
+        run: ./vendor/bin/phpunit --testsuite Integration --no-coverage
