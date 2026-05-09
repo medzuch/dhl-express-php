@@ -340,6 +340,58 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
         }
     }
 
+    // ----- Northern Ireland BT postcode detection -----
+
+    public function testEuToNorthernIrelandIsExemptFromCustoms(): void
+    {
+        // DE → GB with BT postcode (NI): Windsor Framework — NI follows EU goods rules
+        $request = $this->minimalCrossBorderBuilderWithPostalCodes('DE', '10115', 'GB', 'BT1 1AA')
+            ->withIsCustomsDeclarable(false)
+            ->build();
+
+        self::assertFalse($request->content->isCustomsDeclarable);
+    }
+
+    public function testNorthernIrelandToEuIsExemptFromCustoms(): void
+    {
+        // GB (BT postcode) → FR: NI is in the EU customs territory
+        $request = $this->minimalCrossBorderBuilderWithPostalCodes('GB', 'BT48 6AQ', 'FR', '75001')
+            ->withIsCustomsDeclarable(false)
+            ->build();
+
+        self::assertFalse($request->content->isCustomsDeclarable);
+    }
+
+    public function testGreatBritainToEuRequiresCustoms(): void
+    {
+        // GB (non-BT postcode, mainland England) → FR: customs required
+        $builder = $this->minimalCrossBorderBuilderWithPostalCodes('GB', 'SW1A 1AA', 'FR', '75001')
+            ->withIsCustomsDeclarable(false);
+
+        try {
+            $builder->build();
+            self::fail('Expected InvalidRequestException');
+        } catch (InvalidRequestException $exception) {
+            $fields = array_column($exception->errors(), 'field');
+            self::assertContains('isCustomsDeclarable', $fields);
+        }
+    }
+
+    public function testEuToGreatBritainRequiresCustoms(): void
+    {
+        // DE → GB (non-BT postcode, mainland): customs required
+        $builder = $this->minimalCrossBorderBuilderWithPostalCodes('DE', '10115', 'GB', 'EC1A 1BB')
+            ->withIsCustomsDeclarable(false);
+
+        try {
+            $builder->build();
+            self::fail('Expected InvalidRequestException');
+        } catch (InvalidRequestException $exception) {
+            $fields = array_column($exception->errors(), 'field');
+            self::assertContains('isCustomsDeclarable', $fields);
+        }
+    }
+
     // ----- Phase 4b (missing): line-item sum reconciliation -----
 
     public function testLineItemSumMatchingDeclaredValueSucceeds(): void
@@ -458,10 +510,19 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
 
     private function minimalCrossBorderBuilder(string $shipperCountry, string $receiverCountry): CreateShipmentBuilder
     {
+        return $this->minimalCrossBorderBuilderWithPostalCodes($shipperCountry, '14800', $receiverCountry, '10115');
+    }
+
+    private function minimalCrossBorderBuilderWithPostalCodes(
+        string $shipperCountry,
+        string $shipperPostalCode,
+        string $receiverCountry,
+        string $receiverPostalCode,
+    ): CreateShipmentBuilder {
         return (new CreateShipmentBuilder())
             ->withShipper(new ContactAddress(
                 countryCode: new CountryCode($shipperCountry),
-                postalCode: new PostalCode('14800'),
+                postalCode: new PostalCode($shipperPostalCode),
                 cityName: 'Origin City',
                 addressLine1: 'Origin Street 1',
                 phone: new PhoneNumber('+420 222 333 444'),
@@ -470,7 +531,7 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
             ))
             ->withReceiver(new ContactAddress(
                 countryCode: new CountryCode($receiverCountry),
-                postalCode: new PostalCode('10115'),
+                postalCode: new PostalCode($receiverPostalCode),
                 cityName: 'Destination City',
                 addressLine1: 'Destination Street 1',
                 phone: new PhoneNumber('+49 30 12345678'),

@@ -54,9 +54,9 @@ use Medzuch\DhlExpress\Exception\InvalidRequestException;
  * - Cross-border outside EU customs territory ⇒ `isCustomsDeclarable=true` required
  *   (intra-EU shipments share a customs union and are exempt). The territory
  *   list covers 27 EU member states plus Monaco and French outermost regions
- *   (GP, MQ, GF, RE, YT). Known limitation: Northern Ireland (GB) and the
- *   Canary Islands/Ceuta/Melilla (ES) cannot be distinguished at country-code
- *   level — those edge cases fall through to DHL server-side validation.
+ *   (GP, MQ, GF, RE, YT). Northern Ireland (GB) is detected via its "BT"
+ *   postal-code prefix. Known limitation: Canary Islands/Ceuta/Melilla (ES)
+ *   share the ES code with mainland Spain and cannot be distinguished.
  * - Line-item price×quantity sum must equal `declaredValue` within ±0.01
  *   when both `exportDeclaration` and `declaredValue` are provided.
  *
@@ -80,16 +80,17 @@ final class CreateShipmentBuilder
      * - GP, MQ, GF, RE, YT (French outermost regions) — integral parts of
      *   France under EU law; all carry their own ISO 3166-1 alpha-2 codes.
      *
-     * Known limitations — cannot be resolved at country-code level:
-     * - Northern Ireland (code GB): follows EU single-market rules for goods
-     *   under the Windsor Framework, but Great Britain also uses GB. Shipments
-     *   from GB to GB with an NI destination must be treated as customs-
-     *   required by the caller; this builder cannot distinguish them.
+     * Northern Ireland (GB) is handled separately in
+     * {@see self::isInEuCustomsTerritory()}: it follows EU single-market rules
+     * for goods under the Windsor Framework and every NI address carries a
+     * postal code starting with "BT" — no other UK region uses that prefix.
+     *
+     * Known limitation — cannot be resolved at country-code level:
      * - Canary Islands / Ceuta / Melilla (code ES): Canary Islands are outside
      *   the EU customs territory; Ceuta and Melilla are too. All share the ES
      *   code with mainland Spain. The builder conservatively treats all ES
-     *   shipments as intra-EU — the caller or DHL server-side validation must
-     *   catch the exceptions.
+     *   shipments as intra-EU — DHL server-side validation catches the
+     *   exceptions for these territories.
      *
      * @var list<string>
      */
@@ -370,8 +371,8 @@ final class CreateShipmentBuilder
             && $isCustomsDeclarable === false
             && $shipper->countryCode->value !== $receiver->countryCode->value
         ) {
-            $shipperInEu = in_array($shipper->countryCode->value, self::EU_CUSTOMS_TERRITORY, true);
-            $receiverInEu = in_array($receiver->countryCode->value, self::EU_CUSTOMS_TERRITORY, true);
+            $shipperInEu = $this->isInEuCustomsTerritory($shipper);
+            $receiverInEu = $this->isInEuCustomsTerritory($receiver);
             if (!($shipperInEu && $receiverInEu)) {
                 $errors[] = [
                     'field' => 'isCustomsDeclarable',
@@ -467,5 +468,27 @@ final class CreateShipmentBuilder
             getRateEstimates: $this->getRateEstimates,
             dangerousGoods: $this->dangerousGoods,
         );
+    }
+
+    /**
+     * Returns true when the address is within the EU customs territory.
+     *
+     * Country-code lookup covers 27 EU member states plus Monaco and the
+     * French outermost regions (GP, MQ, GF, RE, YT). Northern Ireland is
+     * handled separately: it uses country code GB but every NI postal
+     * code begins with "BT" — no other UK region shares that prefix.
+     */
+    private function isInEuCustomsTerritory(ContactAddress $address): bool
+    {
+        if (in_array($address->countryCode->value, self::EU_CUSTOMS_TERRITORY, true)) {
+            return true;
+        }
+
+        // Northern Ireland: GB country code + BT postcode prefix
+        if ($address->countryCode->value === 'GB' && str_starts_with($address->postalCode->value, 'BT')) {
+            return true;
+        }
+
+        return false;
     }
 }
