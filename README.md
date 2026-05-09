@@ -34,10 +34,12 @@ A clean, framework-agnostic PHP 8.3 library for the **DHL Express MyDHL API 3.2.
 ## Installation
 
 ```bash
-composer require medzuch/dhl-express-php
+composer require medzuch/dhl-express-php guzzlehttp/guzzle
 ```
 
-The library ships with **Guzzle 7** as its default HTTP client. If you want to use a different PSR-18 compliant client, require it separately and inject it via the `DhlClient` constructor.
+The library uses **[php-http/discovery](https://github.com/php-http/discovery)** to auto-detect a PSR-18 HTTP client and PSR-17 factories at runtime. Any PSR-18 compliant client works — Guzzle 7 is the recommended default.
+
+If you want to use a different client (e.g. Symfony HttpClient), require it instead and it will be discovered automatically. You can also inject any PSR-18/PSR-17 implementation directly via the `DhlClient` constructor.
 
 ---
 

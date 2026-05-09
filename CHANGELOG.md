@@ -7,6 +7,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.2.0] — 2026-05-09
+
+### Changed
+
+- **Breaking:** `guzzlehttp/guzzle` and `guzzlehttp/psr7` are no longer hard dependencies. The library now uses `php-http/discovery` to auto-detect a PSR-18 HTTP client and PSR-17 factories at runtime. Users who relied on Guzzle being pulled in transitively must now require it explicitly: `composer require medzuch/dhl-express-php guzzlehttp/guzzle`. Any other PSR-18 compliant client (e.g. `symfony/http-client`) works as a drop-in alternative.
+
+---
+
 ## [0.1.0] — 2026-05-09
 
 Initial release of `medzuch/dhl-express-php`.
