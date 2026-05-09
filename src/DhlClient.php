@@ -35,7 +35,7 @@ use Psr\Log\LoggerInterface;
  * its own, only delegating to one `*Api` per DHL domain.
  *
  * The PSR-18 client and PSR-17 factories are optional constructor
- * parameters — Guzzle is used by default, but any compliant
+ * parameters — `php-http/discovery` auto-detects a PSR-18 client
  * implementation can be injected. The same applies to
  * {@see MessageReferenceGenerator}, exposed primarily as a test seam.
  *
