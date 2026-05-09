@@ -10,6 +10,7 @@ use Medzuch\DhlExpress\Api\AddressApi;
 use Medzuch\DhlExpress\Api\EpodApi;
 use Medzuch\DhlExpress\Api\IdentifierApi;
 use Medzuch\DhlExpress\Api\LandedCostApi;
+use Medzuch\DhlExpress\Api\PickupApi;
 use Medzuch\DhlExpress\Api\ProductsApi;
 use Medzuch\DhlExpress\Api\RatesApi;
 use Medzuch\DhlExpress\Api\ReferenceDataApi;
@@ -54,6 +55,7 @@ final class DhlClient
     private readonly RatesApi $rates;
     private readonly LandedCostApi $landedCost;
     private readonly ShipmentApi $shipments;
+    private readonly PickupApi $pickups;
 
     public function __construct(
         ClientConfig $config,
@@ -91,6 +93,7 @@ final class DhlClient
         $this->rates = new RatesApi($requestBuilder, $transport);
         $this->landedCost = new LandedCostApi($requestBuilder, $transport);
         $this->shipments = new ShipmentApi($requestBuilder, $transport);
+        $this->pickups = new PickupApi($requestBuilder, $transport);
     }
 
     public function tracking(): TrackingApi
@@ -141,5 +144,10 @@ final class DhlClient
     public function shipments(): ShipmentApi
     {
         return $this->shipments;
+    }
+
+    public function pickups(): PickupApi
+    {
+        return $this->pickups;
     }
 }
