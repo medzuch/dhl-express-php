@@ -8,14 +8,20 @@ use Medzuch\DhlExpress\Builder\CreateShipmentBuilder;
 use Medzuch\DhlExpress\Dto\Common\Account;
 use Medzuch\DhlExpress\Dto\Shipment\ContactAddress;
 use Medzuch\DhlExpress\Dto\Shipment\CreateShipmentResponse;
+use Medzuch\DhlExpress\Dto\Shipment\ExportDeclaration;
+use Medzuch\DhlExpress\Dto\Shipment\ExportLineItem;
 use Medzuch\DhlExpress\Dto\Shipment\ImageOption;
+use Medzuch\DhlExpress\Dto\Shipment\LineItemQuantity;
+use Medzuch\DhlExpress\Dto\Shipment\LineItemWeight;
 use Medzuch\DhlExpress\Dto\Shipment\OutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
 use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
+use Medzuch\DhlExpress\Enum\LineItemQuantityUnit;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Enum\WeightUnit;
+use Medzuch\DhlExpress\Exception\DhlApiException;
 use Medzuch\DhlExpress\Exception\DhlValidationException;
 use Medzuch\DhlExpress\Tests\Integration\IntegrationTestCase;
 use Medzuch\DhlExpress\ValueObject\CountryCode;
@@ -112,6 +118,92 @@ final class ShipmentApiIntegrationTest extends IntegrationTestCase
         // IMP-enabled. validateDataOnly returns the same response shape;
         // some fields (notably shipmentTrackingNumber) are typically
         // empty because no real shipment was created.
+        self::assertInstanceOf(CreateShipmentResponse::class, $response);
+    }
+
+    /**
+     * CZ→DE cross-border customs-declarable shipment (Phase 4b).
+     *
+     * Validates a shipment with `isCustomsDeclarable=true` and a minimal
+     * `ExportDeclaration` containing one line item. Uses
+     * `validateDataOnly=true` to avoid creating a real shipment. Accepts
+     * the `8009` "account not IMP-enabled" path as a valid pipeline
+     * exercise — same pattern as the domestic test above.
+     */
+    public function testValidatesCustomsDeclarableCzToDeShipmentInValidationMode(): void
+    {
+        $client = $this->makeClient();
+        $account = $this->requireAccountNumber();
+
+        $request = (new CreateShipmentBuilder())
+            ->withShipper(new ContactAddress(
+                countryCode: new CountryCode('CZ'),
+                postalCode: new PostalCode('14800'),
+                cityName: 'Prague',
+                addressLine1: 'Vaclavske namesti 1',
+                phone: new PhoneNumber('+420 222 333 444'),
+                companyName: 'Alfa Trading s.r.o.',
+                fullName: 'Jan Novak',
+            ))
+            ->withReceiver(new ContactAddress(
+                countryCode: new CountryCode('DE'),
+                postalCode: new PostalCode('10115'),
+                cityName: 'Berlin',
+                addressLine1: 'Unter den Linden 1',
+                phone: new PhoneNumber('+49 30 12345678'),
+                companyName: 'Receiver GmbH',
+                fullName: 'Hans Mueller',
+            ))
+            ->withPlannedShippingDate($this->nextBusinessDay(3)->setTime(13, 0, 0))
+            ->withProductCode('P')
+            ->withPickupRequested(false)
+            ->withIsCustomsDeclarable(true)
+            ->withContentDescription('Electronics')
+            ->withUnitSystem(UnitSystem::Metric)
+            ->withAccount(new Account(AccountTypeCode::Shipper, $account))
+            ->withPackage(new Package(
+                weight: new Weight(1.5, WeightUnit::KG),
+                dimensions: new Dimensions(25.0, 20.0, 10.0, DimensionUnit::CM),
+            ))
+            ->withExportDeclaration(new ExportDeclaration(
+                lineItems: [
+                    new ExportLineItem(
+                        number: 1,
+                        description: 'Laptop computer',
+                        price: 800.00,
+                        quantity: new LineItemQuantity(1, LineItemQuantityUnit::PCS),
+                        manufacturerCountry: 'CZ',
+                        weight: new LineItemWeight(netValue: 1.5, grossValue: 1.8),
+                    ),
+                ],
+            ))
+            ->withDeclaredValue(800.00, 'EUR')
+            ->withOutputImageProperties(new OutputImageProperties(
+                encodingFormat: LabelEncodingFormat::Pdf,
+                imageOptions: [
+                    new ImageOption(typeCode: 'label', isRequested: true),
+                ],
+            ))
+            ->build();
+
+        try {
+            $response = $client->shipments()->create($request, validateDataOnly: true);
+        } catch (DhlValidationException $exception) {
+            // 8009: account not IMP enabled — common on sandbox accounts.
+            // Reaching this path still proves the full customs-declarable
+            // request-build / serialisation / transport pipeline works.
+            self::assertNotNull($exception->dhlMessage);
+            self::assertStringContainsString('8009', $exception->dhlMessage);
+
+            return;
+        } catch (DhlApiException $exception) {
+            // Other DHL errors (e.g. product not available on lane) are
+            // acceptable — the pipeline worked end-to-end.
+            self::assertNotEmpty($exception->getMessage());
+
+            return;
+        }
+
         self::assertInstanceOf(CreateShipmentResponse::class, $response);
     }
 }

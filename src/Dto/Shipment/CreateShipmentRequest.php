@@ -36,6 +36,7 @@ final readonly class CreateShipmentRequest
         public array $valueAddedServices = [],
         public ?OutputImageProperties $outputImageProperties = null,
         public ?bool $getRateEstimates = null,
+        public ?DangerousGoods $dangerousGoods = null,
     ) {
     }
 
@@ -72,6 +73,9 @@ final readonly class CreateShipmentRequest
         }
         if ($this->getRateEstimates !== null) {
             $payload['getRateEstimates'] = $this->getRateEstimates;
+        }
+        if ($this->dangerousGoods !== null) {
+            $payload['dangerousGoods'] = [$this->dangerousGoods->toArray()];
         }
 
         return $payload;

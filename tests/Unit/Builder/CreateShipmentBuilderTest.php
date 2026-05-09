@@ -64,7 +64,7 @@ final class CreateShipmentBuilderTest extends TestCase
         }
     }
 
-    public function testRejectsCustomsDeclarableInPhase4a(): void
+    public function testRejectsCustomsDeclarableWithoutExportDeclaration(): void
     {
         $builder = $this->minimalDomesticBuilder()
             ->withIsCustomsDeclarable(true);
@@ -75,7 +75,7 @@ final class CreateShipmentBuilderTest extends TestCase
         } catch (InvalidRequestException $exception) {
             $fields = array_column($exception->errors(), 'field');
 
-            self::assertContains('isCustomsDeclarable', $fields);
+            self::assertContains('content.exportDeclaration', $fields);
         }
     }
 
@@ -134,6 +134,7 @@ final class CreateShipmentBuilderTest extends TestCase
         $builder = $this->minimalDomesticBuilder()
             ->withProductCode('N', 'N')
             ->withValueAddedService(new ValueAddedService('II', value: 50.0))
+            ->withDeclaredValue(50.0, 'EUR')
             ->withOutputImageProperties(new OutputImageProperties(
                 encodingFormat: LabelEncodingFormat::Pdf,
                 imageOptions: [new ImageOption(typeCode: 'label', isRequested: true)],
