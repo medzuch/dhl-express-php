@@ -25,7 +25,7 @@ if ($trackingNumber === null) {
 $client = makeClient();
 
 try {
-    $response = $client->tracking()->track(new TrackingNumber($trackingNumber));
+    $response = $client->tracking()->getByTrackingNumber(new TrackingNumber($trackingNumber));
 } catch (DhlNetworkException $e) {
     fwrite(STDERR, "Network error: {$e->getMessage()}\n");
     exit(1);
@@ -34,15 +34,16 @@ try {
     exit(1);
 }
 
-foreach ($response->shipments as $shipment) {
-    echo "Shipment: {$shipment->id}" . PHP_EOL;
-    echo "Status:   {$shipment->status->description}" . PHP_EOL;
-    echo PHP_EOL;
+echo "Shipment: {$response->shipmentTrackingNumber}" . PHP_EOL;
+echo "Status:   {$response->status} — {$response->description}" . PHP_EOL;
+echo PHP_EOL;
 
-    foreach ($shipment->events as $event) {
-        $time = $event->timestamp->format('Y-m-d H:i');
-        $location = $event->location->address->cityName ?? 'Unknown';
-        $country = $event->location->address->countryCode ?? '';
-        echo "  [{$time}] {$event->description} — {$location}, {$country}" . PHP_EOL;
-    }
+foreach ($response->events as $event) {
+    echo sprintf(
+        '  [%s %s] %s (%s)' . PHP_EOL,
+        $event->date,
+        $event->time,
+        $event->description,
+        $event->typeCode,
+    );
 }

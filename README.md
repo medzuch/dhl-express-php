@@ -67,22 +67,22 @@ $client = new DhlClient(new ClientConfig(
 ```php
 use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 
-$response = $client->tracking()->track(new TrackingNumber('1234567890'));
+$response = $client->tracking()->getByTrackingNumber(new TrackingNumber('1234567890'));
 
-foreach ($response->shipments as $shipment) {
-    echo $shipment->status->description . PHP_EOL;
+echo $response->status . ': ' . $response->description . PHP_EOL;
 
-    foreach ($shipment->events as $event) {
-        echo sprintf(
-            '[%s] %s — %s, %s' . PHP_EOL,
-            $event->timestamp->format('Y-m-d H:i'),
-            $event->description,
-            $event->location->address->cityName ?? '',
-            $event->location->address->countryCode ?? '',
-        );
-    }
+foreach ($response->events as $event) {
+    echo sprintf(
+        '[%s %s] %s (%s)' . PHP_EOL,
+        $event->date,
+        $event->time,
+        $event->description,
+        $event->typeCode,
+    );
 }
 ```
+
+> Use `tracking()->getMany(...)` to track up to 10 shipments in a single call. It returns a `list<TrackingResponse>` with the same flat shape per entry.
 
 ### Get Shipping Rates
 
