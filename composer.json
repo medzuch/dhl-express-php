@@ -4,6 +4,17 @@
     "type": "library",
     "license": "MIT",
     "keywords": ["dhl", "dhl-express", "mydhl", "mydhl-api", "shipping", "logistics", "api"],
+    "homepage": "https://github.com/medzuch/dhl-express-php",
+    "authors": [
+        {
+            "name": "Marcin Mech",
+            "email": "marcin.mech@gmail.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/medzuch/dhl-express-php/issues",
+        "source": "https://github.com/medzuch/dhl-express-php"
+    },
     "require": {
         "php": "^8.3",
         "psr/http-client": "^1.0",
