@@ -379,6 +379,8 @@ make install
 
 ### Integration Tests
 
+Integration tests hit the real DHL Express sandbox. To run them locally:
+
 ```bash
 export DHL_API_KEY=your_api_key
 export DHL_API_SECRET=your_api_secret
@@ -386,6 +388,13 @@ export DHL_ACCOUNT_NUMBER=your_account_number
 
 make test-integration
 ```
+
+In GitHub Actions, the nightly `Integration Tests` workflow needs the same three values configured under repo settings — but split between **Secrets** and **Variables**:
+
+- **Secrets** (Settings → Secrets and variables → Actions → Secrets): `DHL_API_KEY`, `DHL_API_SECRET`
+- **Variables** (Settings → Secrets and variables → Actions → Variables): `DHL_ACCOUNT_NUMBER`
+
+The account number is stored as a variable rather than a secret because workflow `if:` conditions can read variables but not secrets — that lets the workflow skip cleanly on forks where credentials aren't configured.
 
 ---
 
