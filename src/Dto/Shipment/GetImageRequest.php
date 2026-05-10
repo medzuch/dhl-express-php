@@ -45,7 +45,7 @@ final readonly class GetImageRequest
             $params['payerAccountNumber'] = $this->payerAccountNumber;
         }
         if ($this->typeCodes !== []) {
-            $params['typeCodes'] = $this->typeCodes;
+            $params['typeCode'] = $this->typeCodes;
         }
         if ($this->pickupYearAndMonth !== null) {
             $params['pickupYearAndMonth'] = $this->pickupYearAndMonth;
