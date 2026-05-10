@@ -153,6 +153,30 @@ final class ShipmentApiUploadGetTest extends TestCase
         self::assertSame('INV', $response->documents[0]->typeCode);
     }
 
+    public function testGetImageSerializesTypeCodesAsRepeatedTypeCodeParam(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody($factory->createStream($this->loadFixture('get_image_response.json'))),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+
+        $api->getImage('1234567890', new GetImageRequest(
+            shipperAccountNumber: '123456789',
+            typeCodes: ['waybill', 'commercial-invoice'],
+        ));
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        // DHL expects repeated `typeCode` (singular) params, not `typeCodes`.
+        self::assertStringContainsString('typeCode=waybill', $uri);
+        self::assertStringContainsString('typeCode=commercial-invoice', $uri);
+        self::assertStringNotContainsString('typeCodes', $uri);
+    }
+
     public function testGetImageRequestRequiresAtLeastOneAccountNumber(): void
     {
         $this->expectException(\InvalidArgumentException::class);
