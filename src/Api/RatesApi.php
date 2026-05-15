@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Medzuch\DhlExpress\Dto\Rate\RateRequest;
 use Medzuch\DhlExpress\Dto\Rate\RatesResponse;
 use Medzuch\DhlExpress\Dto\Rate\RatesResponseHydrator;
+use Medzuch\DhlExpress\Enum\EstimatedDeliveryDateTypeCode;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Exception\DhlApiException;
 use Medzuch\DhlExpress\Exception\DhlNetworkException;
@@ -55,26 +56,28 @@ final class RatesApi
     public function quote(
         AccountNumber $account,
         CountryCode $originCountryCode,
+        string $originCityName,
         CountryCode $destinationCountryCode,
+        string $destinationCityName,
         Weight $weight,
         Dimensions $dimensions,
         DateTimeImmutable $plannedShippingDate,
         bool $isCustomsDeclarable,
         UnitSystem $unitOfMeasurement,
         ?PostalCode $originPostalCode = null,
-        ?string $originCityName = null,
         ?PostalCode $destinationPostalCode = null,
-        ?string $destinationCityName = null,
         ?bool $nextBusinessDay = null,
         ?bool $strictValidation = null,
         ?bool $getAllValueAddedServices = null,
         ?bool $requestEstimatedDeliveryDate = null,
-        ?string $estimatedDeliveryDateType = null,
+        ?EstimatedDeliveryDateTypeCode $estimatedDeliveryDateType = null,
     ): RatesResponse {
         $params = [
             'accountNumber' => $account->value,
             'originCountryCode' => $originCountryCode->value,
+            'originCityName' => $originCityName,
             'destinationCountryCode' => $destinationCountryCode->value,
+            'destinationCityName' => $destinationCityName,
             'weight' => (string) $weight->value,
             'length' => (string) $dimensions->length,
             'width' => (string) $dimensions->width,
@@ -87,14 +90,8 @@ final class RatesApi
         if ($originPostalCode !== null) {
             $params['originPostalCode'] = $originPostalCode->value;
         }
-        if ($originCityName !== null) {
-            $params['originCityName'] = $originCityName;
-        }
         if ($destinationPostalCode !== null) {
             $params['destinationPostalCode'] = $destinationPostalCode->value;
-        }
-        if ($destinationCityName !== null) {
-            $params['destinationCityName'] = $destinationCityName;
         }
         if ($nextBusinessDay !== null) {
             $params['nextBusinessDay'] = $nextBusinessDay ? 'true' : 'false';
@@ -109,7 +106,7 @@ final class RatesApi
             $params['requestEstimatedDeliveryDate'] = $requestEstimatedDeliveryDate ? 'true' : 'false';
         }
         if ($estimatedDeliveryDateType !== null) {
-            $params['estimatedDeliveryDateType'] = $estimatedDeliveryDateType;
+            $params['estimatedDeliveryDateType'] = $estimatedDeliveryDateType->value;
         }
 
         $request = $this->requestBuilder->build('GET', '/rates', queryParams: $params);
@@ -124,11 +121,19 @@ final class RatesApi
      * @throws DhlApiException for DHL-side errors
      * @throws DhlNetworkException for transport-level failures
      */
-    public function quoteMany(RateRequest $request): RatesResponse
-    {
+    public function quoteMany(
+        RateRequest $request,
+        ?bool $strictValidation = null,
+    ): RatesResponse {
+        $queryParams = [];
+        if ($strictValidation !== null) {
+            $queryParams['strictValidation'] = $strictValidation ? 'true' : 'false';
+        }
+
         $httpRequest = $this->requestBuilder->build(
             'POST',
             '/rates',
+            queryParams: $queryParams !== [] ? $queryParams : null,
             jsonBody: $request->toArray(),
         );
 

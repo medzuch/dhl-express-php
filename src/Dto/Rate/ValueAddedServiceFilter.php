@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Dto\Rate;
 
+use Medzuch\DhlExpress\Enum\ValueAddedServiceMethod;
 use Medzuch\DhlExpress\ValueObject\CurrencyCode;
 
 /**
@@ -13,7 +14,8 @@ use Medzuch\DhlExpress\ValueObject\CurrencyCode;
  * country-specific override.
  *
  * Optional `value` and `currency` carry monetary amounts associated
- * with the VAS (e.g. insured value).
+ * with the VAS (e.g. insured value). `method` mirrors the spec's
+ * reserved-for-future-use payment method (currently only `cash`).
  */
 final readonly class ValueAddedServiceFilter
 {
@@ -22,7 +24,7 @@ final readonly class ValueAddedServiceFilter
         public ?string $localServiceCode = null,
         public ?float $value = null,
         public ?CurrencyCode $currency = null,
-        public ?string $dgContent = null,
+        public ?ValueAddedServiceMethod $method = null,
     ) {
     }
 
@@ -42,8 +44,8 @@ final readonly class ValueAddedServiceFilter
         if ($this->currency !== null) {
             $payload['currency'] = $this->currency->value;
         }
-        if ($this->dgContent !== null) {
-            $payload['dgContent'] = $this->dgContent;
+        if ($this->method !== null) {
+            $payload['method'] = $this->method->value;
         }
 
         return $payload;
