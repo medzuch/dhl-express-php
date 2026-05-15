@@ -12,6 +12,7 @@ use Medzuch\DhlExpress\Builder\RateRequestBuilder;
 use Medzuch\DhlExpress\ClientConfig;
 use Medzuch\DhlExpress\Dto\Common\RateAddress;
 use Medzuch\DhlExpress\Dto\Common\RatePackage;
+use Medzuch\DhlExpress\Dto\Rate\RateRequest;
 use Medzuch\DhlExpress\Dto\Rate\RatesResponse;
 use Medzuch\DhlExpress\Enum\ApiEnvironment;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
@@ -50,7 +51,9 @@ final class RatesApiTest extends TestCase
         $api->quote(
             account: new AccountNumber('123456789'),
             originCountryCode: new CountryCode('SG'),
+            originCityName: 'Singapore',
             destinationCountryCode: new CountryCode('FR'),
+            destinationCityName: 'Paris',
             weight: new Weight(1.5, WeightUnit::KG),
             dimensions: new Dimensions(10.0, 20.0, 30.0, DimensionUnit::CM),
             plannedShippingDate: new DateTimeImmutable('2026-06-01'),
@@ -59,6 +62,7 @@ final class RatesApiTest extends TestCase
             originPostalCode: new PostalCode('048582'),
             destinationPostalCode: new PostalCode('75001'),
             nextBusinessDay: true,
+            estimatedDeliveryDateType: EstimatedDeliveryDateTypeCode::QDDC,
         );
 
         $sent = $mockClient->getLastRequest();
@@ -69,12 +73,15 @@ final class RatesApiTest extends TestCase
         self::assertStringContainsString('/rates?', $uri);
         self::assertStringContainsString('accountNumber=123456789', $uri);
         self::assertStringContainsString('originCountryCode=SG', $uri);
+        self::assertStringContainsString('originCityName=Singapore', $uri);
         self::assertStringContainsString('destinationCountryCode=FR', $uri);
+        self::assertStringContainsString('destinationCityName=Paris', $uri);
         self::assertStringContainsString('weight=1.5', $uri);
         self::assertStringContainsString('plannedShippingDate=2026-06-01', $uri);
         self::assertStringContainsString('isCustomsDeclarable=true', $uri);
         self::assertStringContainsString('unitOfMeasurement=metric', $uri);
         self::assertStringContainsString('nextBusinessDay=true', $uri);
+        self::assertStringContainsString('estimatedDeliveryDateType=QDDC', $uri);
     }
 
     public function testQuoteHydratesResponse(): void
@@ -90,7 +97,9 @@ final class RatesApiTest extends TestCase
         $response = $api->quote(
             account: new AccountNumber('123'),
             originCountryCode: new CountryCode('SG'),
+            originCityName: 'Singapore',
             destinationCountryCode: new CountryCode('FR'),
+            destinationCityName: 'Paris',
             weight: new Weight(1.0, WeightUnit::KG),
             dimensions: new Dimensions(1.0, 1.0, 1.0, DimensionUnit::CM),
             plannedShippingDate: new DateTimeImmutable('2026-06-01'),
@@ -130,19 +139,7 @@ final class RatesApiTest extends TestCase
         );
 
         $api = $this->makeApi($mockClient, $factory);
-
-        $request = (new RateRequestBuilder())
-            ->withShipper(new RateAddress(new CountryCode('CZ'), new PostalCode('14800'), 'Prague'))
-            ->withReceiver(new RateAddress(new CountryCode('DE'), new PostalCode('10115'), 'Berlin'))
-            ->withPlannedShippingDate(new DateTimeImmutable('2026-06-01T13:00:00+00:00'))
-            ->withUnitSystem(UnitSystem::Metric)
-            ->withIsCustomsDeclarable(false)
-            ->withPackage(new RatePackage(
-                weight: new Weight(2.0, WeightUnit::KG),
-                dimensions: new Dimensions(10.0, 10.0, 10.0, DimensionUnit::CM),
-            ))
-            ->withPackage(new RatePackage(new Weight(1.5, WeightUnit::KG)))
-            ->build();
+        $request = $this->buildSampleRateRequest();
 
         $response = $api->quoteMany($request);
 
@@ -161,6 +158,58 @@ final class RatesApiTest extends TestCase
         self::assertCount(2, $decoded['packages']);
 
         self::assertInstanceOf(RatesResponse::class, $response);
+    }
+
+    public function testQuoteManySendsStrictValidationWhenProvided(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody($factory->createStream($this->loadFixture('multi-piece-quote.json'))),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+
+        $api->quoteMany($this->buildSampleRateRequest(), strictValidation: true);
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        self::assertStringContainsString('/rates?strictValidation=true', (string) $sent->getUri());
+    }
+
+    public function testQuoteManyOmitsStrictValidationWhenNull(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody($factory->createStream($this->loadFixture('multi-piece-quote.json'))),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+
+        $api->quoteMany($this->buildSampleRateRequest());
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringNotContainsString('strictValidation', $uri);
+        self::assertStringEndsWith('/rates', $uri);
+    }
+
+    private function buildSampleRateRequest(): RateRequest
+    {
+        return (new RateRequestBuilder())
+            ->withShipper(new RateAddress(new CountryCode('CZ'), new PostalCode('14800'), 'Prague'))
+            ->withReceiver(new RateAddress(new CountryCode('DE'), new PostalCode('10115'), 'Berlin'))
+            ->withPlannedShippingDate(new DateTimeImmutable('2026-06-01T13:00:00+00:00'))
+            ->withUnitSystem(UnitSystem::Metric)
+            ->withIsCustomsDeclarable(false)
+            ->withPackage(new RatePackage(
+                weight: new Weight(2.0, WeightUnit::KG),
+                dimensions: new Dimensions(10.0, 10.0, 10.0, DimensionUnit::CM),
+            ))
+            ->withPackage(new RatePackage(new Weight(1.5, WeightUnit::KG)))
+            ->build();
     }
 
     private function makeApi(MockClient $mockClient, Psr17Factory $factory): RatesApi
