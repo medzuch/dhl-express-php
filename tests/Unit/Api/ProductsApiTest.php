@@ -11,6 +11,7 @@ use Medzuch\DhlExpress\Auth\Credentials;
 use Medzuch\DhlExpress\ClientConfig;
 use Medzuch\DhlExpress\Enum\ApiEnvironment;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
+use Medzuch\DhlExpress\Enum\EstimatedDeliveryDateTypeCode;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Enum\WeightUnit;
 use Medzuch\DhlExpress\Exception\DhlErrorMapper;
@@ -81,8 +82,45 @@ final class ProductsApiTest extends TestCase
         self::assertStringContainsString('plannedShippingDate=2026-05-10', $uri);
         self::assertStringContainsString('isCustomsDeclarable=true', $uri);
         self::assertStringContainsString('unitOfMeasurement=metric', $uri);
+        self::assertStringContainsString('originCityName=Prague', $uri);
+        self::assertStringContainsString('destinationCityName=New%20York', $uri);
         self::assertStringContainsString('originPostalCode=14800', $uri);
         self::assertStringContainsString('destinationPostalCode=10001', $uri);
+        self::assertStringNotContainsString('requestEstimatedDeliveryDate', $uri);
+        self::assertStringNotContainsString('estimatedDeliveryDateType', $uri);
+    }
+
+    public function testEmitsEstimatedDeliveryDateQueryParameters(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('cz-to-us.json')),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+        $api->list(
+            account: new AccountNumber('123456789'),
+            originCountryCode: new CountryCode('CZ'),
+            originCityName: 'Prague',
+            destinationCountryCode: new CountryCode('US'),
+            destinationCityName: 'New York',
+            weight: new Weight(5.0, WeightUnit::KG),
+            dimensions: new Dimensions(30.0, 20.0, 15.0, DimensionUnit::CM),
+            plannedShippingDate: new DateTimeImmutable('2026-05-10'),
+            isCustomsDeclarable: true,
+            unitOfMeasurement: UnitSystem::Metric,
+            requestEstimatedDeliveryDate: true,
+            estimatedDeliveryDateType: EstimatedDeliveryDateTypeCode::QDDF,
+        );
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('requestEstimatedDeliveryDate=true', $uri);
+        self::assertStringContainsString('estimatedDeliveryDateType=QDDF', $uri);
     }
 
     public function testReturnsEmptyResponseWhenProductsKeyMissing(): void
@@ -104,16 +142,16 @@ final class ProductsApiTest extends TestCase
         return $api->list(
             account: new AccountNumber('123456789'),
             originCountryCode: new CountryCode('CZ'),
+            originCityName: 'Prague',
             destinationCountryCode: new CountryCode('US'),
+            destinationCityName: 'New York',
             weight: new Weight(5.0, WeightUnit::KG),
             dimensions: new Dimensions(30.0, 20.0, 15.0, DimensionUnit::CM),
             plannedShippingDate: new DateTimeImmutable('2026-05-10'),
             isCustomsDeclarable: true,
             unitOfMeasurement: UnitSystem::Metric,
             originPostalCode: new PostalCode('14800'),
-            originCityName: 'Prague',
             destinationPostalCode: new PostalCode('10001'),
-            destinationCityName: 'New York',
         );
     }
 

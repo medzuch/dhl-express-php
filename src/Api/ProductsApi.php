@@ -7,6 +7,7 @@ namespace Medzuch\DhlExpress\Api;
 use DateTimeImmutable;
 use Medzuch\DhlExpress\Dto\Product\Product;
 use Medzuch\DhlExpress\Dto\Product\ProductsResponse;
+use Medzuch\DhlExpress\Enum\EstimatedDeliveryDateTypeCode;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Exception\DhlApiException;
 use Medzuch\DhlExpress\Exception\DhlNetworkException;
@@ -44,24 +45,28 @@ final class ProductsApi
     public function list(
         AccountNumber $account,
         CountryCode $originCountryCode,
+        string $originCityName,
         CountryCode $destinationCountryCode,
+        string $destinationCityName,
         Weight $weight,
         Dimensions $dimensions,
         DateTimeImmutable $plannedShippingDate,
         bool $isCustomsDeclarable,
         UnitSystem $unitOfMeasurement,
         ?PostalCode $originPostalCode = null,
-        ?string $originCityName = null,
         ?PostalCode $destinationPostalCode = null,
-        ?string $destinationCityName = null,
         ?bool $nextBusinessDay = null,
         ?bool $strictValidation = null,
         ?bool $getAllValueAddedServices = null,
+        ?bool $requestEstimatedDeliveryDate = null,
+        ?EstimatedDeliveryDateTypeCode $estimatedDeliveryDateType = null,
     ): ProductsResponse {
         $params = [
             'accountNumber' => $account->value,
             'originCountryCode' => $originCountryCode->value,
+            'originCityName' => $originCityName,
             'destinationCountryCode' => $destinationCountryCode->value,
+            'destinationCityName' => $destinationCityName,
             'weight' => (string) $weight->value,
             'length' => (string) $dimensions->length,
             'width' => (string) $dimensions->width,
@@ -74,14 +79,8 @@ final class ProductsApi
         if ($originPostalCode !== null) {
             $params['originPostalCode'] = $originPostalCode->value;
         }
-        if ($originCityName !== null) {
-            $params['originCityName'] = $originCityName;
-        }
         if ($destinationPostalCode !== null) {
             $params['destinationPostalCode'] = $destinationPostalCode->value;
-        }
-        if ($destinationCityName !== null) {
-            $params['destinationCityName'] = $destinationCityName;
         }
         if ($nextBusinessDay !== null) {
             $params['nextBusinessDay'] = $nextBusinessDay ? 'true' : 'false';
@@ -91,6 +90,12 @@ final class ProductsApi
         }
         if ($getAllValueAddedServices !== null) {
             $params['getAllValueAddedServices'] = $getAllValueAddedServices ? 'true' : 'false';
+        }
+        if ($requestEstimatedDeliveryDate !== null) {
+            $params['requestEstimatedDeliveryDate'] = $requestEstimatedDeliveryDate ? 'true' : 'false';
+        }
+        if ($estimatedDeliveryDateType !== null) {
+            $params['estimatedDeliveryDateType'] = $estimatedDeliveryDateType->value;
         }
 
         $request = $this->requestBuilder->build('GET', '/products', queryParams: $params);

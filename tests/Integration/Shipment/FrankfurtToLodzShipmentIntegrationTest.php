@@ -120,16 +120,16 @@ final class FrankfurtToLodzShipmentIntegrationTest extends IntegrationTestCase
         $response = $client->products()->list(
             account: $account,
             originCountryCode: new CountryCode(self::ORIGIN_COUNTRY),
+            originCityName: self::ORIGIN_CITY,
             destinationCountryCode: new CountryCode(self::DEST_COUNTRY),
+            destinationCityName: self::DEST_CITY,
             weight: $this->makeWeight(),
             dimensions: $this->makeDimensions(),
             plannedShippingDate: $this->nextBusinessDay(3),
             isCustomsDeclarable: false,
             unitOfMeasurement: UnitSystem::Metric,
             originPostalCode: new PostalCode(self::ORIGIN_POSTAL),
-            originCityName: self::ORIGIN_CITY,
             destinationPostalCode: new PostalCode(self::DEST_POSTAL),
-            destinationCityName: self::DEST_CITY,
         );
 
         self::assertNotSame([], $response->products, 'Expected at least one product for DE→PL lane.');
@@ -156,16 +156,16 @@ final class FrankfurtToLodzShipmentIntegrationTest extends IntegrationTestCase
         $productsResponse = $client->products()->list(
             account: $account,
             originCountryCode: new CountryCode(self::ORIGIN_COUNTRY),
+            originCityName: self::ORIGIN_CITY,
             destinationCountryCode: new CountryCode(self::DEST_COUNTRY),
+            destinationCityName: self::DEST_CITY,
             weight: $this->makeWeight(),
             dimensions: $this->makeDimensions(),
             plannedShippingDate: $this->nextBusinessDay(3),
             isCustomsDeclarable: false,
             unitOfMeasurement: UnitSystem::Metric,
             originPostalCode: new PostalCode(self::ORIGIN_POSTAL),
-            originCityName: self::ORIGIN_CITY,
             destinationPostalCode: new PostalCode(self::DEST_POSTAL),
-            destinationCityName: self::DEST_CITY,
         );
 
         self::assertNotSame(

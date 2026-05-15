@@ -36,16 +36,16 @@ final class ProductsApiIntegrationTest extends IntegrationTestCase
         $response = $client->products()->list(
             account: $account,
             originCountryCode: new CountryCode('CZ'),
+            originCityName: 'Prague',
             destinationCountryCode: new CountryCode('US'),
+            destinationCityName: 'New York',
             weight: new Weight(5.0, WeightUnit::KG),
             dimensions: new Dimensions(30.0, 20.0, 15.0, DimensionUnit::CM),
             plannedShippingDate: $this->nextBusinessDay(5),
             isCustomsDeclarable: true,
             unitOfMeasurement: UnitSystem::Metric,
             originPostalCode: new PostalCode('14800'),
-            originCityName: 'Prague',
             destinationPostalCode: new PostalCode('10001'),
-            destinationCityName: 'New York',
         );
 
         self::assertNotSame([], $response->products);

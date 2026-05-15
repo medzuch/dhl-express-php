@@ -58,10 +58,10 @@ final class TrackingApiIntegrationTest extends IntegrationTestCase
     {
         $client = $this->makeClient();
 
-        $responses = $client->tracking()->getMany(
+        $responses = $client->tracking()->getMany([
             new TrackingNumber(self::KNOWN_TEST_WAYBILL),
             new TrackingNumber(self::SECOND_KNOWN_TEST_WAYBILL),
-        );
+        ]);
 
         self::assertGreaterThanOrEqual(2, count($responses));
         $trackingNumbers = array_map(static fn (TrackingResponse $r): string => $r->shipmentTrackingNumber, $responses);
