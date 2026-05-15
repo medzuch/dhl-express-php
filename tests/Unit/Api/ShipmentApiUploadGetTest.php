@@ -35,6 +35,7 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
 use Medzuch\DhlExpress\Http\ResponseParser;
 use Medzuch\DhlExpress\ValueObject\AccountNumber;
 use Medzuch\DhlExpress\ValueObject\MessageReference;
+use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 use Medzuch\DhlExpress\ValueObject\YearMonth;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
@@ -52,7 +53,7 @@ final class ShipmentApiUploadGetTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $api->uploadImage('1234567890', new UploadImageRequest(
+        $api->uploadImage(new TrackingNumber('1234567890'), new UploadImageRequest(
             originalPlannedShippingDate: new DateTimeImmutable('2026-05-15'),
             accounts: [new Account(AccountTypeCode::Shipper, new AccountNumber('123456789'))],
             productCode: 'P',
@@ -79,7 +80,7 @@ final class ShipmentApiUploadGetTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $api->uploadImage('AWB123', new UploadImageRequest(
+        $api->uploadImage(new TrackingNumber('AWB123'), new UploadImageRequest(
             originalPlannedShippingDate: new DateTimeImmutable('2026-05-20'),
             accounts: [new Account(AccountTypeCode::Shipper, new AccountNumber('987654321'))],
             productCode: 'N',
@@ -105,7 +106,7 @@ final class ShipmentApiUploadGetTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $api->uploadInvoiceData('1234567890', $this->makeUploadInvoiceDataRequest());
+        $api->uploadInvoiceData(new TrackingNumber('1234567890'), $this->makeUploadInvoiceDataRequest());
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);
@@ -121,7 +122,7 @@ final class ShipmentApiUploadGetTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $api->uploadInvoiceData('AWB456', $this->makeUploadInvoiceDataRequest());
+        $api->uploadInvoiceData(new TrackingNumber('AWB456'), $this->makeUploadInvoiceDataRequest());
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);
@@ -143,7 +144,7 @@ final class ShipmentApiUploadGetTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $response = $api->getImage('1234567890', new GetImageRequest(
+        $response = $api->getImage(new TrackingNumber('1234567890'), new GetImageRequest(
             typeCodes: [GetImageDocumentTypeCode::Waybill],
             pickupYearAndMonth: new YearMonth('2026-05'),
             shipperAccountNumber: new AccountNumber('123456789'),
@@ -175,7 +176,7 @@ final class ShipmentApiUploadGetTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $api->getImage('1234567890', new GetImageRequest(
+        $api->getImage(new TrackingNumber('1234567890'), new GetImageRequest(
             typeCodes: [GetImageDocumentTypeCode::Waybill, GetImageDocumentTypeCode::CommercialInvoice],
             pickupYearAndMonth: new YearMonth('2026-05'),
             shipperAccountNumber: new AccountNumber('123456789'),

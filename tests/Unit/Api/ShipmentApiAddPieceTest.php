@@ -21,6 +21,7 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
 use Medzuch\DhlExpress\Http\ResponseParser;
 use Medzuch\DhlExpress\ValueObject\AccountNumber;
 use Medzuch\DhlExpress\ValueObject\MessageReference;
+use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
@@ -38,7 +39,7 @@ final class ShipmentApiAddPieceTest extends TestCase
         $api = $this->makeApi($mockClient, $factory);
 
         // addPiece() returns void — we just assert no exception was thrown and a request was sent
-        $api->addPiece('1234567890', $this->makeAddPieceRequest());
+        $api->addPiece(new TrackingNumber('1234567890'), $this->makeAddPieceRequest());
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);
@@ -53,7 +54,7 @@ final class ShipmentApiAddPieceTest extends TestCase
         );
 
         $api = $this->makeApi($mockClient, $factory);
-        $api->addPiece('1234567890', $this->makeAddPieceRequest());
+        $api->addPiece(new TrackingNumber('1234567890'), $this->makeAddPieceRequest());
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);
@@ -69,7 +70,7 @@ final class ShipmentApiAddPieceTest extends TestCase
         );
 
         $api = $this->makeApi($mockClient, $factory);
-        $api->addPiece('9876543210', $this->makeAddPieceRequest());
+        $api->addPiece(new TrackingNumber('9876543210'), $this->makeAddPieceRequest());
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);
@@ -85,7 +86,7 @@ final class ShipmentApiAddPieceTest extends TestCase
         );
 
         $api = $this->makeApi($mockClient, $factory);
-        $api->addPiece('1234567890', $this->makeAddPieceRequest());
+        $api->addPiece(new TrackingNumber('1234567890'), $this->makeAddPieceRequest());
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);

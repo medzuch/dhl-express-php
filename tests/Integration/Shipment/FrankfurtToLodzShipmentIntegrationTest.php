@@ -27,6 +27,7 @@ use Medzuch\DhlExpress\ValueObject\CountryCode;
 use Medzuch\DhlExpress\ValueObject\Dimensions;
 use Medzuch\DhlExpress\ValueObject\PhoneNumber;
 use Medzuch\DhlExpress\ValueObject\PostalCode;
+use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 use Medzuch\DhlExpress\ValueObject\Weight;
 use Medzuch\DhlExpress\ValueObject\YearMonth;
 use PHPUnit\Framework\Attributes\Group;
@@ -241,7 +242,7 @@ final class FrankfurtToLodzShipmentIntegrationTest extends IntegrationTestCase
         }
 
         $imageResponse = $client->shipments()->getImage(
-            $response->shipmentTrackingNumber,
+            new TrackingNumber($response->shipmentTrackingNumber),
             new GetImageRequest(
                 typeCodes: [GetImageDocumentTypeCode::Waybill],
                 pickupYearAndMonth: YearMonth::fromDateTime($plannedDate),
