@@ -15,6 +15,8 @@ use Medzuch\DhlExpress\Dto\Shipment\OutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
+use Medzuch\DhlExpress\Enum\GetImageDocumentTypeCode;
+use Medzuch\DhlExpress\Enum\GetImageEncodingFormat;
 use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Enum\WeightUnit;
@@ -25,7 +27,9 @@ use Medzuch\DhlExpress\ValueObject\CountryCode;
 use Medzuch\DhlExpress\ValueObject\Dimensions;
 use Medzuch\DhlExpress\ValueObject\PhoneNumber;
 use Medzuch\DhlExpress\ValueObject\PostalCode;
+use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 use Medzuch\DhlExpress\ValueObject\Weight;
+use Medzuch\DhlExpress\ValueObject\YearMonth;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 
@@ -238,12 +242,12 @@ final class FrankfurtToLodzShipmentIntegrationTest extends IntegrationTestCase
         }
 
         $imageResponse = $client->shipments()->getImage(
-            $response->shipmentTrackingNumber,
+            new TrackingNumber($response->shipmentTrackingNumber),
             new GetImageRequest(
-                shipperAccountNumber: $account->value,
-                typeCodes: ['waybill'],
-                pickupYearAndMonth: $plannedDate->format('Y-m'),
-                encodingFormat: 'pdf',
+                typeCodes: [GetImageDocumentTypeCode::Waybill],
+                pickupYearAndMonth: YearMonth::fromDateTime($plannedDate),
+                shipperAccountNumber: $account,
+                encodingFormat: GetImageEncodingFormat::Pdf,
             ),
         );
 

@@ -2,8 +2,8 @@
     "documents": [
         {
             "shipmentTrackingNumber": "1234567890",
-            "typeCode": "INV",
-            "encodingFormat": "PDF",
+            "typeCode": "waybill",
+            "encodingFormat": "pdf",
             "content": "JVBERi0xLjQKJeLjz9MKMyAwIG9iagoxMzIKZW5kb2Jq",
             "function": "export"
         }

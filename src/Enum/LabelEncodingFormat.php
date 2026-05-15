@@ -13,7 +13,7 @@ namespace Medzuch\DhlExpress\Enum;
  * receipt always come back as PDF regardless of this setting.
  *
  * Distinct from the get-image download format (pdf or tiff) which
- * is a different field entirely.
+ * is a different field entirely — see {@see GetImageEncodingFormat}.
  */
 enum LabelEncodingFormat: string
 {

@@ -21,8 +21,11 @@ use Medzuch\DhlExpress\Dto\Shipment\UploadImageRequest;
 use Medzuch\DhlExpress\Dto\Shipment\UploadInvoiceDataRequest;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\ApiEnvironment;
+use Medzuch\DhlExpress\Enum\DocumentFunction;
 use Medzuch\DhlExpress\Enum\DocumentImageFormat;
 use Medzuch\DhlExpress\Enum\DocumentImageTypeCode;
+use Medzuch\DhlExpress\Enum\GetImageDocumentTypeCode;
+use Medzuch\DhlExpress\Enum\GetImageEncodingFormat;
 use Medzuch\DhlExpress\Enum\LineItemQuantityUnit;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Exception\DhlErrorMapper;
@@ -32,6 +35,8 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
 use Medzuch\DhlExpress\Http\ResponseParser;
 use Medzuch\DhlExpress\ValueObject\AccountNumber;
 use Medzuch\DhlExpress\ValueObject\MessageReference;
+use Medzuch\DhlExpress\ValueObject\TrackingNumber;
+use Medzuch\DhlExpress\ValueObject\YearMonth;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
@@ -48,7 +53,7 @@ final class ShipmentApiUploadGetTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $api->uploadImage('1234567890', new UploadImageRequest(
+        $api->uploadImage(new TrackingNumber('1234567890'), new UploadImageRequest(
             originalPlannedShippingDate: new DateTimeImmutable('2026-05-15'),
             accounts: [new Account(AccountTypeCode::Shipper, new AccountNumber('123456789'))],
             productCode: 'P',
@@ -75,7 +80,7 @@ final class ShipmentApiUploadGetTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $api->uploadImage('AWB123', new UploadImageRequest(
+        $api->uploadImage(new TrackingNumber('AWB123'), new UploadImageRequest(
             originalPlannedShippingDate: new DateTimeImmutable('2026-05-20'),
             accounts: [new Account(AccountTypeCode::Shipper, new AccountNumber('987654321'))],
             productCode: 'N',
@@ -101,7 +106,7 @@ final class ShipmentApiUploadGetTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $api->uploadInvoiceData('1234567890', $this->makeUploadInvoiceDataRequest());
+        $api->uploadInvoiceData(new TrackingNumber('1234567890'), $this->makeUploadInvoiceDataRequest());
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);
@@ -117,7 +122,7 @@ final class ShipmentApiUploadGetTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $api->uploadInvoiceData('AWB456', $this->makeUploadInvoiceDataRequest());
+        $api->uploadInvoiceData(new TrackingNumber('AWB456'), $this->makeUploadInvoiceDataRequest());
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);
@@ -139,18 +144,26 @@ final class ShipmentApiUploadGetTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $response = $api->getImage('1234567890', new GetImageRequest(shipperAccountNumber: '123456789'));
+        $response = $api->getImage(new TrackingNumber('1234567890'), new GetImageRequest(
+            typeCodes: [GetImageDocumentTypeCode::Waybill],
+            pickupYearAndMonth: new YearMonth('2026-05'),
+            shipperAccountNumber: new AccountNumber('123456789'),
+        ));
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
         self::assertSame('GET', $sent->getMethod());
-        self::assertStringContainsString('/shipments/1234567890/get-image', (string) $sent->getUri());
-        self::assertStringContainsString('shipperAccountNumber=123456789', (string) $sent->getUri());
+        self::assertStringContainsString('/shipments/1234567890/get-image', $uri);
+        self::assertStringContainsString('shipperAccountNumber=123456789', $uri);
+        self::assertStringContainsString('typeCode=waybill', $uri);
+        self::assertStringContainsString('pickupYearAndMonth=2026-05', $uri);
 
         self::assertInstanceOf(GetImageResponse::class, $response);
         self::assertCount(1, $response->documents);
         self::assertSame('1234567890', $response->documents[0]->shipmentTrackingNumber);
-        self::assertSame('INV', $response->documents[0]->typeCode);
+        self::assertSame('waybill', $response->documents[0]->typeCode);
+        self::assertSame(DocumentFunction::Export, $response->documents[0]->function);
     }
 
     public function testGetImageSerializesTypeCodesAsRepeatedTypeCodeParam(): void
@@ -163,9 +176,10 @@ final class ShipmentApiUploadGetTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $api->getImage('1234567890', new GetImageRequest(
-            shipperAccountNumber: '123456789',
-            typeCodes: ['waybill', 'commercial-invoice'],
+        $api->getImage(new TrackingNumber('1234567890'), new GetImageRequest(
+            typeCodes: [GetImageDocumentTypeCode::Waybill, GetImageDocumentTypeCode::CommercialInvoice],
+            pickupYearAndMonth: new YearMonth('2026-05'),
+            shipperAccountNumber: new AccountNumber('123456789'),
         ));
 
         $sent = $mockClient->getLastRequest();
@@ -177,10 +191,48 @@ final class ShipmentApiUploadGetTest extends TestCase
         self::assertStringNotContainsString('typeCodes', $uri);
     }
 
+    public function testGetImageRequestSerializesOptionalParams(): void
+    {
+        $request = new GetImageRequest(
+            typeCodes: [GetImageDocumentTypeCode::Waybill],
+            pickupYearAndMonth: new YearMonth('2026-05'),
+            shipperAccountNumber: new AccountNumber('123456789'),
+            encodingFormat: GetImageEncodingFormat::Pdf,
+            allInOnePDF: true,
+            compressedPackage: false,
+        );
+
+        $params = $request->toQueryParams();
+
+        self::assertSame(['waybill'], $params['typeCode']);
+        self::assertSame('2026-05', $params['pickupYearAndMonth']);
+        self::assertSame('pdf', $params['encodingFormat']);
+        self::assertSame('true', $params['allInOnePDF']);
+        self::assertSame('false', $params['compressedPackage']);
+    }
+
     public function testGetImageRequestRequiresAtLeastOneAccountNumber(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        new GetImageRequest();
+        $this->expectExceptionMessage('shipperAccountNumber or payerAccountNumber');
+
+        new GetImageRequest(
+            typeCodes: [GetImageDocumentTypeCode::Waybill],
+            pickupYearAndMonth: new YearMonth('2026-05'),
+        );
+    }
+
+    public function testGetImageRequestRequiresAtLeastOneTypeCode(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('at least one typeCode');
+
+        new GetImageRequest(
+            // @phpstan-ignore argument.type
+            typeCodes: [],
+            pickupYearAndMonth: new YearMonth('2026-05'),
+            shipperAccountNumber: new AccountNumber('123456789'),
+        );
     }
 
     private function makeUploadInvoiceDataRequest(): UploadInvoiceDataRequest

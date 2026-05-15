@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Dto\Shipment;
 
+use Medzuch\DhlExpress\Enum\DocumentFunction;
+
 /**
  * Hydrates a {@see GetImageResponse} from the raw DHL API response body.
  */
@@ -26,12 +28,16 @@ final class GetImageResponseHydrator
                 $content = $raw['content'] ?? '';
                 $function = $raw['function'] ?? null;
 
+                $functionEnum = ($function !== null && is_scalar($function))
+                    ? DocumentFunction::tryFrom((string) $function)
+                    : null;
+
                 return new DocumentImageResult(
                     shipmentTrackingNumber: is_scalar($trackingNumber) ? (string) $trackingNumber : '',
                     typeCode: is_scalar($typeCode) ? (string) $typeCode : '',
                     encodingFormat: is_scalar($encodingFormat) ? (string) $encodingFormat : '',
                     content: is_scalar($content) ? (string) $content : '',
-                    function: ($function !== null && is_scalar($function)) ? (string) $function : null,
+                    function: $functionEnum,
                 );
             },
             $rawDocuments,

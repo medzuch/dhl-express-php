@@ -17,6 +17,7 @@ use Medzuch\DhlExpress\Exception\DhlApiException;
 use Medzuch\DhlExpress\Exception\DhlNetworkException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\RequestBuilder;
+use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 
 /**
  * Shipment endpoint.
@@ -83,7 +84,7 @@ final class ShipmentApi
      * @throws DhlApiException     for DHL-side errors
      * @throws DhlNetworkException for transport-level failures
      */
-    public function uploadImage(string $shipmentTrackingNumber, UploadImageRequest $request): void
+    public function uploadImage(TrackingNumber $shipmentTrackingNumber, UploadImageRequest $request): void
     {
         $httpRequest = $this->requestBuilder->build(
             'PATCH',
@@ -102,7 +103,7 @@ final class ShipmentApi
      * @throws DhlApiException     for DHL-side errors
      * @throws DhlNetworkException for transport-level failures
      */
-    public function uploadInvoiceData(string $shipmentTrackingNumber, UploadInvoiceDataRequest $request): void
+    public function uploadInvoiceData(TrackingNumber $shipmentTrackingNumber, UploadInvoiceDataRequest $request): void
     {
         $httpRequest = $this->requestBuilder->build(
             'PATCH',
@@ -122,7 +123,7 @@ final class ShipmentApi
      * @throws DhlApiException     for DHL-side errors
      * @throws DhlNetworkException for transport-level failures
      */
-    public function addPiece(string $shipmentTrackingNumber, AddPieceRequest $request): void
+    public function addPiece(TrackingNumber $shipmentTrackingNumber, AddPieceRequest $request): void
     {
         $httpRequest = $this->requestBuilder->build(
             'PATCH',
@@ -141,7 +142,7 @@ final class ShipmentApi
      * @throws DhlApiException     for DHL-side errors
      * @throws DhlNetworkException for transport-level failures
      */
-    public function getImage(string $shipmentTrackingNumber, GetImageRequest $request): GetImageResponse
+    public function getImage(TrackingNumber $shipmentTrackingNumber, GetImageRequest $request): GetImageResponse
     {
         $httpRequest = $this->requestBuilder->build(
             'GET',
