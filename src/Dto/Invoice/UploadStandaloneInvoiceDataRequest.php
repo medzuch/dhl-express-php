@@ -2,26 +2,31 @@
 
 declare(strict_types=1);
 
-namespace Medzuch\DhlExpress\Dto\Shipment;
+namespace Medzuch\DhlExpress\Dto\Invoice;
 
 use DateTimeImmutable;
 use Medzuch\DhlExpress\Dto\Common\Account;
+use Medzuch\DhlExpress\Dto\Shipment\ExportDeclaration;
+use Medzuch\DhlExpress\Dto\Shipment\InvoiceCustomerDetails;
+use Medzuch\DhlExpress\Dto\Shipment\InvoiceOutputImageProperties;
 use Medzuch\DhlExpress\Enum\UnitSystem;
+use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 
 /**
- * Request body for `PATCH /shipments/{id}/upload-invoice-data`.
+ * Request body for `POST /invoices/upload-invoice-data`.
  *
- * Uploads structured invoice/customs data (as opposed to image files)
- * for Paperless Trade (PLT). The export declarations are nested under
- * `content.exportDeclaration` in the wire format.
+ * The standalone invoice-upload variant — used when invoice data is
+ * uploaded before (or independently of) the shipment that carries it.
+ * Mirrors `supermodelIoLogisticsExpressUploadInvoiceDataRequestSID`.
  *
- * Optional {@see $outputImageProperties} lets DHL render and return an
- * invoice PDF/image alongside the data upload (avoids a separate
- * `get-image` call). Optional {@see $customerDetails} lets callers
- * override the parties already on the shipment with invoice-specific
- * seller/buyer/importer/exporter information.
+ * Schema-wise this is the PATCH /shipments/{id}/upload-invoice-data
+ * payload plus a `shipmentTrackingNumber` carried inside the body
+ * instead of the URL path. Empty `shipmentTrackingNumber` is allowed
+ * for the "upload now, attach a shipment later via shipper reference"
+ * flow; in that case the first `accounts[]` entry must carry
+ * `typeCode=shipper` per the spec.
  */
-final readonly class UploadInvoiceDataRequest
+final readonly class UploadStandaloneInvoiceDataRequest
 {
     /**
      * @param list<ExportDeclaration> $exportDeclarations
@@ -31,6 +36,7 @@ final readonly class UploadInvoiceDataRequest
         public array $exportDeclarations,
         public string $currency,
         public UnitSystem $unitOfMeasurement,
+        public ?TrackingNumber $shipmentTrackingNumber = null,
         public array $accounts = [],
         public ?DateTimeImmutable $plannedShipDate = null,
         public ?InvoiceOutputImageProperties $outputImageProperties = null,
@@ -44,6 +50,10 @@ final readonly class UploadInvoiceDataRequest
     public function toArray(): array
     {
         $payload = [];
+
+        if ($this->shipmentTrackingNumber !== null) {
+            $payload['shipmentTrackingNumber'] = $this->shipmentTrackingNumber->value;
+        }
 
         if ($this->plannedShipDate !== null) {
             $payload['plannedShipDate'] = $this->plannedShipDate->format('Y-m-d');

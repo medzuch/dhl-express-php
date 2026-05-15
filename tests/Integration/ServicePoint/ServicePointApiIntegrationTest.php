@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Tests\Integration\ServicePoint;
 
+use Medzuch\DhlExpress\Builder\ServicePointFindCriteriaBuilder;
 use Medzuch\DhlExpress\Dto\ServicePoint\ServicePointFindResponse;
 use Medzuch\DhlExpress\Tests\Integration\IntegrationTestCase;
 use Medzuch\DhlExpress\ValueObject\CountryCode;
@@ -29,9 +30,10 @@ final class ServicePointApiIntegrationTest extends IntegrationTestCase
         $client = $this->makeClient();
 
         $response = $client->servicePoints()->find(
-            latitude: 50.8467,
-            longitude: 4.3499,
-            resultLimit: 5,
+            (new ServicePointFindCriteriaBuilder())
+                ->withGeoLocation(50.8467, 4.3499)
+                ->withResultLimit(5)
+                ->build(),
         );
 
         self::assertInstanceOf(ServicePointFindResponse::class, $response);
@@ -47,9 +49,10 @@ final class ServicePointApiIntegrationTest extends IntegrationTestCase
         $client = $this->makeClient();
 
         $response = $client->servicePoints()->find(
-            address: 'Brussels',
-            countryCode: new CountryCode('BE'),
-            resultLimit: 5,
+            (new ServicePointFindCriteriaBuilder())
+                ->withAddress('Brussels', new CountryCode('BE'))
+                ->withResultLimit(5)
+                ->build(),
         );
 
         self::assertInstanceOf(ServicePointFindResponse::class, $response);
@@ -60,9 +63,10 @@ final class ServicePointApiIntegrationTest extends IntegrationTestCase
         $client = $this->makeClient();
 
         $response = $client->servicePoints()->find(
-            latitude: 50.8467,
-            longitude: 4.3499,
-            resultLimit: 3,
+            (new ServicePointFindCriteriaBuilder())
+                ->withGeoLocation(50.8467, 4.3499)
+                ->withResultLimit(3)
+                ->build(),
         );
 
         self::assertInstanceOf(ServicePointFindResponse::class, $response);

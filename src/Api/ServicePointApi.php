@@ -8,6 +8,7 @@ use Medzuch\DhlExpress\Dto\ServicePoint\GeoLocation;
 use Medzuch\DhlExpress\Dto\ServicePoint\OpeningTime;
 use Medzuch\DhlExpress\Dto\ServicePoint\ServicePoint;
 use Medzuch\DhlExpress\Dto\ServicePoint\ServicePointAddress;
+use Medzuch\DhlExpress\Dto\ServicePoint\ServicePointFindCriteria;
 use Medzuch\DhlExpress\Dto\ServicePoint\ServicePointFindResponse;
 use Medzuch\DhlExpress\Enum\DayOfWeek;
 use Medzuch\DhlExpress\Enum\ServicePointType;
@@ -16,19 +17,24 @@ use Medzuch\DhlExpress\Exception\DhlNetworkException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\RequestBuilder;
 use Medzuch\DhlExpress\Support\HydrationHelper;
-use Medzuch\DhlExpress\ValueObject\CountryCode;
 
 /**
  * Service Point lookup endpoint.
  *
  * Targets `GET /servicepoints` to find DHL Express facilities a
- * customer can use as pickup or drop-off points. DHL's spec exposes
- * four mutually-exclusive search modes; this facade surfaces them:
+ * customer can use as pickup or drop-off points. The spec exposes
+ * 30+ query parameters spanning five search modes (address, geo,
+ * servicePointID, idf, placeId), capability and capacity filters,
+ * weight/dimension constraints, GDPR encoding flags, and SCMS
+ * capacity-management hooks.
  *
- * - by **address**: free-form address text + companion `countryCode`
- * - by **geo**: latitude + longitude
- * - by **identifier**: `servicePointID` (e.g. `BRU001`)
- * - by **legacy facility ref**: `idf`
+ * Construct the call via
+ * {@see \Medzuch\DhlExpress\Builder\ServicePointFindCriteriaBuilder}:
+ * the builder enforces cross-field rules (search-mode mutual
+ * exclusivity, weight/weightUom pairing, HH:MM time format, etc.)
+ * client-side so callers see a structured
+ * {@see \Medzuch\DhlExpress\Exception\InvalidRequestException} rather
+ * than a server 400.
  *
  * The DHL response surfaces many more attributes than this DTO
  * captures (capabilities, partner, capacity, …); the most useful
@@ -44,48 +50,15 @@ final class ServicePointApi
     }
 
     /**
-     * @param int|null $resultLimit Maximum number of service points to return (DHL caps at 50)
-     *
      * @throws DhlApiException for DHL-side errors
      * @throws DhlNetworkException for transport-level failures
      */
-    public function find(
-        ?string $address = null,
-        ?CountryCode $countryCode = null,
-        ?float $latitude = null,
-        ?float $longitude = null,
-        ?string $servicePointId = null,
-        ?string $idf = null,
-        ?int $resultLimit = null,
-    ): ServicePointFindResponse {
-        $params = [];
-
-        if ($address !== null) {
-            $params['address'] = $address;
-        }
-        if ($countryCode !== null) {
-            $params['countryCode'] = $countryCode->value;
-        }
-        if ($latitude !== null) {
-            $params['latitude'] = (string) $latitude;
-        }
-        if ($longitude !== null) {
-            $params['longitude'] = (string) $longitude;
-        }
-        if ($servicePointId !== null) {
-            $params['servicePointID'] = $servicePointId;
-        }
-        if ($idf !== null) {
-            $params['idf'] = $idf;
-        }
-        if ($resultLimit !== null) {
-            $params['servicePointResults'] = (string) $resultLimit;
-        }
-
+    public function find(ServicePointFindCriteria $criteria): ServicePointFindResponse
+    {
         $request = $this->requestBuilder->build(
             'GET',
             '/servicepoints',
-            queryParams: $params,
+            queryParams: $criteria->toQueryParams(),
         );
 
         $body = $this->transport->send($request);
@@ -205,5 +178,4 @@ final class ServicePointApi
 
         return $hours;
     }
-
 }

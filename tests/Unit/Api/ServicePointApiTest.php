@@ -7,7 +7,9 @@ namespace Medzuch\DhlExpress\Tests\Unit\Api;
 use Http\Mock\Client as MockClient;
 use Medzuch\DhlExpress\Api\ServicePointApi;
 use Medzuch\DhlExpress\Auth\Credentials;
+use Medzuch\DhlExpress\Builder\ServicePointFindCriteriaBuilder;
 use Medzuch\DhlExpress\ClientConfig;
+use Medzuch\DhlExpress\Dto\ServicePoint\ServicePointFindCriteria;
 use Medzuch\DhlExpress\Dto\ServicePoint\ServicePointFindResponse;
 use Medzuch\DhlExpress\Enum\ApiEnvironment;
 use Medzuch\DhlExpress\Enum\DayOfWeek;
@@ -38,8 +40,9 @@ final class ServicePointApiTest extends TestCase
         $api = $this->makeApi($mockClient, $factory);
 
         $result = $api->find(
-            address: 'Wenceslas Square, Prague',
-            countryCode: new CountryCode('CZ'),
+            (new ServicePointFindCriteriaBuilder())
+                ->withAddress('Wenceslas Square, Prague', new CountryCode('CZ'))
+                ->build(),
         );
 
         self::assertInstanceOf(ServicePointFindResponse::class, $result);
@@ -77,7 +80,11 @@ final class ServicePointApiTest extends TestCase
         );
 
         $api = $this->makeApi($mockClient, $factory);
-        $result = $api->find(address: 'Prague', countryCode: new CountryCode('CZ'));
+        $result = $api->find(
+            (new ServicePointFindCriteriaBuilder())
+                ->withAddress('Prague', new CountryCode('CZ'))
+                ->build(),
+        );
 
         $second = $result->servicePoints[1];
         self::assertSame('PRG002', $second->facilityId);
@@ -112,7 +119,11 @@ final class ServicePointApiTest extends TestCase
         );
 
         $api = $this->makeApi($mockClient, $factory);
-        $result = $api->find(address: 'Prague', countryCode: new CountryCode('CZ'));
+        $result = $api->find(
+            (new ServicePointFindCriteriaBuilder())
+                ->withAddress('Prague', new CountryCode('CZ'))
+                ->build(),
+        );
 
         $sp = $result->servicePoints[0];
         self::assertNull($sp->servicePointType);
@@ -133,9 +144,10 @@ final class ServicePointApiTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
         $api->find(
-            address: 'Wenceslas Square, Prague',
-            countryCode: new CountryCode('CZ'),
-            resultLimit: 5,
+            (new ServicePointFindCriteriaBuilder())
+                ->withAddress('Wenceslas Square, Prague', new CountryCode('CZ'))
+                ->withResultLimit(5)
+                ->build(),
         );
 
         $sent = $mockClient->getLastRequest();
@@ -159,9 +171,10 @@ final class ServicePointApiTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
         $api->find(
-            latitude: 50.8467,
-            longitude: 4.3499,
-            resultLimit: 5,
+            (new ServicePointFindCriteriaBuilder())
+                ->withGeoLocation(50.8467, 4.3499)
+                ->withResultLimit(5)
+                ->build(),
         );
 
         $sent = $mockClient->getLastRequest();
@@ -171,7 +184,7 @@ final class ServicePointApiTest extends TestCase
         self::assertStringContainsString('longitude=4.3499', $uri);
     }
 
-    public function testEmitsServicePointIdAndIdfQueryParameters(): void
+    public function testEmitsServicePointIdQueryParameters(): void
     {
         $factory = new Psr17Factory();
         $mockClient = new MockClient();
@@ -182,16 +195,42 @@ final class ServicePointApiTest extends TestCase
         );
 
         $api = $this->makeApi($mockClient, $factory);
-        $api->find(servicePointId: 'BRU001', idf: 'ES282291');
+        $api->find(
+            (new ServicePointFindCriteriaBuilder())
+                ->withServicePointId('BRU001')
+                ->build(),
+        );
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);
         $uri = (string) $sent->getUri();
         self::assertStringContainsString('servicePointID=BRU001', $uri);
+    }
+
+    public function testEmitsIdfQueryParameters(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('prague.json')),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+        $api->find(
+            (new ServicePointFindCriteriaBuilder())
+                ->withIdf('ES282291')
+                ->build(),
+        );
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
         self::assertStringContainsString('idf=ES282291', $uri);
     }
 
-    public function testOmitsAllParametersWhenNotProvided(): void
+    public function testEmitsBareUrlWhenCriteriaEmpty(): void
     {
         $factory = new Psr17Factory();
         $mockClient = new MockClient();
@@ -202,7 +241,10 @@ final class ServicePointApiTest extends TestCase
         );
 
         $api = $this->makeApi($mockClient, $factory);
-        $api->find();
+        // Directly construct an empty criteria — bypasses the builder
+        // (which would reject for missing search mode). This exercises
+        // the API/transport path with no query params at all.
+        $api->find(new ServicePointFindCriteria());
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);
