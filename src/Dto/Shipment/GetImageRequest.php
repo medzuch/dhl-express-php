@@ -4,23 +4,29 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Dto\Shipment;
 
+use Medzuch\DhlExpress\Enum\GetImageDocumentTypeCode;
+use Medzuch\DhlExpress\Enum\GetImageEncodingFormat;
+use Medzuch\DhlExpress\ValueObject\AccountNumber;
+use Medzuch\DhlExpress\ValueObject\YearMonth;
+
 /**
  * Query parameters for `GET /shipments/{id}/get-image`.
  *
- * Either `shipperAccountNumber` or `payerAccountNumber` must be
- * provided (at least one is required by DHL).
+ * `typeCodes` and `pickupYearAndMonth` are required by the OpenAPI
+ * spec. At least one of `shipperAccountNumber` or
+ * `payerAccountNumber` must be provided (DHL constraint).
  */
 final readonly class GetImageRequest
 {
     /**
-     * @param list<string> $typeCodes
+     * @param non-empty-list<GetImageDocumentTypeCode> $typeCodes
      */
     public function __construct(
-        public ?string $shipperAccountNumber = null,
-        public ?string $payerAccountNumber = null,
-        public array $typeCodes = [],
-        public ?string $pickupYearAndMonth = null,
-        public ?string $encodingFormat = null,
+        public array $typeCodes,
+        public YearMonth $pickupYearAndMonth,
+        public ?AccountNumber $shipperAccountNumber = null,
+        public ?AccountNumber $payerAccountNumber = null,
+        public ?GetImageEncodingFormat $encodingFormat = null,
         public ?bool $allInOnePDF = null,
         public ?bool $compressedPackage = null,
     ) {
@@ -29,9 +35,27 @@ final readonly class GetImageRequest
                 'GetImageRequest requires at least one of shipperAccountNumber or payerAccountNumber.',
             );
         }
+        // Defensive runtime check for callers that pass an unchecked array
+        // despite the `non-empty-list` PHPDoc contract.
+        // @phpstan-ignore identical.alwaysFalse
+        if ($this->typeCodes === []) {
+            throw new \InvalidArgumentException(
+                'GetImageRequest requires at least one typeCode.',
+            );
+        }
     }
 
     /**
+     * Build the query parameter map.
+     *
+     * The PHP-side field is plural (`typeCodes`) but the wire-side
+     * key is singular (`typeCode`), repeated once per value
+     * (`?typeCode=waybill&typeCode=commercial-invoice`). The OpenAPI
+     * spec declares the parameter as a single `string` with no
+     * `explode: true` / `array` annotation, yet both example URLs in
+     * the same operation repeat the key — so the implementation
+     * follows the examples and DHL's actual behavior.
+     *
      * @return array<string, string|list<string>>
      */
     public function toQueryParams(): array
@@ -39,19 +63,20 @@ final readonly class GetImageRequest
         $params = [];
 
         if ($this->shipperAccountNumber !== null) {
-            $params['shipperAccountNumber'] = $this->shipperAccountNumber;
+            $params['shipperAccountNumber'] = (string) $this->shipperAccountNumber;
         }
         if ($this->payerAccountNumber !== null) {
-            $params['payerAccountNumber'] = $this->payerAccountNumber;
+            $params['payerAccountNumber'] = (string) $this->payerAccountNumber;
         }
-        if ($this->typeCodes !== []) {
-            $params['typeCode'] = $this->typeCodes;
-        }
-        if ($this->pickupYearAndMonth !== null) {
-            $params['pickupYearAndMonth'] = $this->pickupYearAndMonth;
-        }
+
+        $params['typeCode'] = array_map(
+            static fn (GetImageDocumentTypeCode $code): string => $code->value,
+            $this->typeCodes,
+        );
+        $params['pickupYearAndMonth'] = (string) $this->pickupYearAndMonth;
+
         if ($this->encodingFormat !== null) {
-            $params['encodingFormat'] = $this->encodingFormat;
+            $params['encodingFormat'] = $this->encodingFormat->value;
         }
         if ($this->allInOnePDF !== null) {
             $params['allInOnePDF'] = $this->allInOnePDF ? 'true' : 'false';

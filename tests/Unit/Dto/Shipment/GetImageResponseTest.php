@@ -7,6 +7,7 @@ namespace Medzuch\DhlExpress\Tests\Unit\Dto\Shipment;
 use Medzuch\DhlExpress\Dto\Shipment\DocumentImageResult;
 use Medzuch\DhlExpress\Dto\Shipment\GetImageResponse;
 use Medzuch\DhlExpress\Dto\Shipment\GetImageResponseHydrator;
+use Medzuch\DhlExpress\Enum\DocumentFunction;
 use PHPUnit\Framework\TestCase;
 
 final class GetImageResponseTest extends TestCase
@@ -19,8 +20,8 @@ final class GetImageResponseTest extends TestCase
             'documents' => [
                 [
                     'shipmentTrackingNumber' => '1234567890',
-                    'typeCode' => 'INV',
-                    'encodingFormat' => 'PDF',
+                    'typeCode' => 'waybill',
+                    'encodingFormat' => 'pdf',
                     'content' => 'JVBERi0xLjQ=',
                     'function' => 'export',
                 ],
@@ -35,10 +36,10 @@ final class GetImageResponseTest extends TestCase
         $doc = $response->documents[0];
         self::assertInstanceOf(DocumentImageResult::class, $doc);
         self::assertSame('1234567890', $doc->shipmentTrackingNumber);
-        self::assertSame('INV', $doc->typeCode);
-        self::assertSame('PDF', $doc->encodingFormat);
+        self::assertSame('waybill', $doc->typeCode);
+        self::assertSame('pdf', $doc->encodingFormat);
         self::assertSame('JVBERi0xLjQ=', $doc->content);
-        self::assertSame('export', $doc->function);
+        self::assertSame(DocumentFunction::Export, $doc->function);
     }
 
     public function testHydratorHandlesMissingOptionalFunction(): void
@@ -49,9 +50,30 @@ final class GetImageResponseTest extends TestCase
             'documents' => [
                 [
                     'shipmentTrackingNumber' => '9876543210',
-                    'typeCode' => 'AWB',
-                    'encodingFormat' => 'PDF',
+                    'typeCode' => 'waybill',
+                    'encodingFormat' => 'pdf',
                     'content' => 'abc123',
+                ],
+            ],
+        ];
+
+        $response = $hydrator->hydrate($body);
+
+        self::assertNull($response->documents[0]->function);
+    }
+
+    public function testHydratorMapsUnknownFunctionValueToNull(): void
+    {
+        $hydrator = new GetImageResponseHydrator();
+
+        $body = [
+            'documents' => [
+                [
+                    'shipmentTrackingNumber' => '1234567890',
+                    'typeCode' => 'waybill',
+                    'encodingFormat' => 'pdf',
+                    'content' => 'abc',
+                    'function' => 'reexport',
                 ],
             ],
         ];
