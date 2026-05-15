@@ -4,18 +4,22 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Tests\Unit\Api;
 
+use DateTimeImmutable;
 use Http\Mock\Client as MockClient;
 use Medzuch\DhlExpress\Api\TrackingApi;
 use Medzuch\DhlExpress\Auth\Credentials;
 use Medzuch\DhlExpress\ClientConfig;
 use Medzuch\DhlExpress\Dto\Tracking\TrackingResponse;
 use Medzuch\DhlExpress\Enum\ApiEnvironment;
+use Medzuch\DhlExpress\Enum\TrackingLevelOfDetail;
+use Medzuch\DhlExpress\Enum\TrackingView;
 use Medzuch\DhlExpress\Exception\DhlErrorMapper;
 use Medzuch\DhlExpress\Exception\DhlNotFoundException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\MessageReferenceGenerator;
 use Medzuch\DhlExpress\Http\RequestBuilder;
 use Medzuch\DhlExpress\Http\ResponseParser;
+use Medzuch\DhlExpress\ValueObject\AccountNumber;
 use Medzuch\DhlExpress\ValueObject\MessageReference;
 use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -161,11 +165,11 @@ final class TrackingApiTest extends TestCase
 
         $api = $this->makeApi($mockClient, $factory);
 
-        $results = $api->getMany(
+        $results = $api->getMany([
             new TrackingNumber('9356579890'),
             new TrackingNumber('4818240420'),
             new TrackingNumber('5584773180'),
-        );
+        ]);
 
         self::assertCount(3, $results);
         self::assertSame('9356579890', $results[0]->shipmentTrackingNumber);
@@ -189,10 +193,10 @@ final class TrackingApiTest extends TestCase
         );
 
         $api = $this->makeApi($mockClient, $factory);
-        $api->getMany(
+        $api->getMany([
             new TrackingNumber('9356579890'),
             new TrackingNumber('4818240420'),
-        );
+        ]);
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);
@@ -211,7 +215,177 @@ final class TrackingApiTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
 
-        $api->getMany();
+        $api->getMany([]);
+    }
+
+    public function testGetByTrackingNumberEmitsOptionalQueryParameters(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('single-shipment.json')),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+        $api->getByTrackingNumber(
+            new TrackingNumber('9356579890'),
+            trackingView: TrackingView::LastCheckpoint,
+            levelOfDetail: TrackingLevelOfDetail::Piece,
+            requestControlledAccessDataCodes: false,
+            requestGMTOffsetPerEvent: true,
+        );
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('/shipments/9356579890/tracking?', $uri);
+        self::assertStringContainsString('trackingView=last-checkpoint', $uri);
+        self::assertStringContainsString('levelOfDetail=piece', $uri);
+        self::assertStringContainsString('requestControlledAccessDataCodes=false', $uri);
+        self::assertStringContainsString('requestGMTOffsetPerEvent=true', $uri);
+    }
+
+    public function testGetManyEmitsOptionalQueryParameters(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('multi-shipment.json')),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+        $api->getMany(
+            [new TrackingNumber('9356579890')],
+            trackingView: TrackingView::AllCheckpointsWithRemarks,
+            levelOfDetail: TrackingLevelOfDetail::All,
+            requestControlledAccessDataCodes: true,
+        );
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('trackingView=all-checkpoints-with-remarks', $uri);
+        self::assertStringContainsString('levelOfDetail=all', $uri);
+        self::assertStringContainsString('requestControlledAccessDataCodes=true', $uri);
+    }
+
+    public function testGetManyByPieceIdEmitsRepeatedPieceTrackingNumberParameters(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('multi-shipment.json')),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+        $api->getManyByPieceId('JD014600004617230770', 'JD014600004617230779');
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('/tracking?', $uri);
+        self::assertStringContainsString('pieceTrackingNumber=JD014600004617230770', $uri);
+        self::assertStringContainsString('pieceTrackingNumber=JD014600004617230779', $uri);
+        self::assertStringNotContainsString('pieceTrackingNumber%5B', $uri);
+    }
+
+    public function testGetManyByPieceIdRequiresAtLeastOnePieceId(): void
+    {
+        $factory = new Psr17Factory();
+        $api = $this->makeApi(new MockClient(), $factory);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        $api->getManyByPieceId();
+    }
+
+    public function testGetManyByPieceIdEnforcesMaxOf200(): void
+    {
+        $factory = new Psr17Factory();
+        $api = $this->makeApi(new MockClient(), $factory);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        $api->getManyByPieceId(...array_fill(0, 201, 'JD0146000046172307'));
+    }
+
+    public function testGetManyByReferenceEmitsAllRequiredParameters(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('multi-shipment.json')),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+        $api->getManyByReference(
+            shipmentReference: 'CustomerReference1',
+            shipperAccountNumber: new AccountNumber('123456789'),
+            dateRangeFrom: new DateTimeImmutable('2026-05-01'),
+            dateRangeTo: new DateTimeImmutable('2026-06-01'),
+            shipmentReferenceType: 'CU',
+            trackingView: TrackingView::ShipmentDetailsOnly,
+            levelOfDetail: TrackingLevelOfDetail::Shipment,
+        );
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('/tracking?', $uri);
+        self::assertStringContainsString('shipmentReference=CustomerReference1', $uri);
+        self::assertStringContainsString('shipperAccountNumber=123456789', $uri);
+        self::assertStringContainsString('dateRangeFrom=2026-05-01', $uri);
+        self::assertStringContainsString('dateRangeTo=2026-06-01', $uri);
+        self::assertStringContainsString('shipmentReferenceType=CU', $uri);
+        self::assertStringContainsString('trackingView=shipment-details-only', $uri);
+        self::assertStringContainsString('levelOfDetail=shipment', $uri);
+    }
+
+    public function testGetManyByReferenceAcceptsPayerAccountInsteadOfShipper(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('multi-shipment.json')),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+        $api->getManyByReference(
+            shipmentReference: 'CustomerReference1',
+            payerAccountNumber: new AccountNumber('987654321'),
+            dateRangeFrom: new DateTimeImmutable('2026-05-01'),
+            dateRangeTo: new DateTimeImmutable('2026-06-01'),
+        );
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('payerAccountNumber=987654321', $uri);
+        self::assertStringNotContainsString('shipperAccountNumber', $uri);
+    }
+
+    public function testGetManyByReferenceRequiresShipperOrPayerAccount(): void
+    {
+        $factory = new Psr17Factory();
+        $api = $this->makeApi(new MockClient(), $factory);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        $api->getManyByReference(
+            shipmentReference: 'CustomerReference1',
+            dateRangeFrom: new DateTimeImmutable('2026-05-01'),
+            dateRangeTo: new DateTimeImmutable('2026-06-01'),
+        );
     }
 
     private function makeApi(MockClient $mockClient, Psr17Factory $factory): TrackingApi
