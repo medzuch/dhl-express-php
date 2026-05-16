@@ -24,6 +24,12 @@ either modeled or explicitly deferred.
 
 #### New API surface
 
+- `TrackingApi::getManyByPieceId()` — per-piece tracking lookup (`GET /tracking` with `pieceTrackingNumber`).
+- `TrackingApi::getManyByReference()` — reference-based tracking lookup (`GET /tracking` with `shipmentReference`).
+- `TrackingApi::getByTrackingNumber()` gains optional `trackingView`, `levelOfDetail`, `requestControlledAccessDataCodes`, `requestGMTOffsetPerEvent` params.
+- `TrackingApi::getMany()` gains optional `trackingView`, `levelOfDetail`, `requestControlledAccessDataCodes` params.
+- `ProductsApi::list()` gains optional `requestEstimatedDeliveryDate` + `estimatedDeliveryDateType` params.
+- `RatesApi::quoteMany()` gains optional `strictValidation` query param.
 - `ShipmentApi::create()` now accepts `strictValidation` and `bypassPLTError` query-parameter flags.
 - `EarlyShipmentScreeningApi` — `POST /early-shipment-screening` for BBX baby-shipment Denied Party screening.
 - `InvoiceApi::uploadInvoiceData()` — standalone `POST /invoices/upload-invoice-data`.
@@ -45,13 +51,18 @@ either modeled or explicitly deferred.
 #### New value objects + enums
 
 - `YearMonth` value object.
-- Enums: `InvoicePartyTypeCode`, `WeightUom`, `DimensionsUom`, `ResultUom`, `ServicePointCapability`, `ServicePointStatus`, `ServicePointOpenDay`, `YesNoIndicator`, `TrueFalseFlag`, `ServicePointTypeFilter`, `BarcodeSymbology`, `CustomerLogoFileFormat`, `InvoiceImageType`, `IdentifierTypeCode`, `LabelBarcodePosition`, `LabelTextPosition`, `OnDemandDeliveryOption`, `OnDemandWhereToLeave`, `EstimatedDeliveryDateType`, `AdditionalInformationType`.
+- Enums: `GetImageDocumentTypeCode`, `GetImageEncodingFormat`, `DocumentFunction`, `ValueAddedServiceMethod`, `EstimatedDeliveryDateTypeCode` (used by `/rates` and `/products` query params; distinct from `EstimatedDeliveryDateType` below, which models the create-shipment request body), `TrackingView`, `TrackingLevelOfDetail`, `InvoicePartyTypeCode`, `WeightUom`, `DimensionsUom`, `ResultUom`, `ServicePointCapability`, `ServicePointStatus`, `ServicePointOpenDay`, `YesNoIndicator`, `TrueFalseFlag`, `ServicePointTypeFilter`, `BarcodeSymbology`, `CustomerLogoFileFormat`, `InvoiceImageType`, `IdentifierTypeCode`, `LabelBarcodePosition`, `LabelTextPosition`, `OnDemandDeliveryOption`, `OnDemandWhereToLeave`, `EstimatedDeliveryDateType`, `AdditionalInformationType`.
 
 ### Changed
 
 - **Breaking:** `ShipmentApi` get-image methods now accept `TrackingNumber` value objects instead of raw strings; the get-image request/response DTOs are now strongly typed. Migration: wrap any raw string in `new TrackingNumber(...)`.
-- **Breaking:** `/rates` endpoints — request shape and response hydration realigned to OpenAPI 3.2.2.
-- **Breaking:** `/products` and `/tracking` endpoints realigned to OpenAPI 3.2.2.
+- **Breaking:** `/rates` endpoints realigned to OpenAPI 3.2.2:
+  - `RatesApi::quote()` — `originCityName` and `destinationCityName` promoted from optional to **required positional** params.
+  - `RatesApi::quote()` — `?string $estimatedDeliveryDateType` is now `?EstimatedDeliveryDateTypeCode`.
+  - `ValueAddedServiceFilter::__construct()` — `$dgContent` parameter replaced by `$method` (`ValueAddedServiceMethod`).
+- **Breaking:** `/products` and `/tracking` realigned to OpenAPI 3.2.2:
+  - `ProductsApi::list()` — `originCityName` and `destinationCityName` promoted from optional to **required positional** params.
+  - `TrackingApi::getMany()` — first argument changed from variadic `TrackingNumber ...` to `array $trackingNumbers`.
 - **Breaking:** `/invoices` and `/servicepoints` realigned; `ServicePointApi::find()` refactored from a 30-line named-argument signature to `ServicePointFindCriteria` + `ServicePointFindCriteriaBuilder`.
 - **Breaking:** `dangerousGoods` no longer accepted at the `CreateShipmentRequest` root — it nests inside the matching `valueAddedServices[]` item per spec (`additionalProperties: false`). `CreateShipmentBuilder::withDangerousGoods()` is unchanged; it auto-attaches to the first DG-coded VAS.
 - **Breaking:** `Content::__construct()` requires `Incoterm` (was optional; spec marks it required).
@@ -62,6 +73,7 @@ either modeled or explicitly deferred.
 
 ### Removed
 
+- `ValueAddedServiceFilter::$dgContent` constructor parameter (replaced by `$method`).
 - `dangerousGoods` constructor parameter on `CreateShipmentRequest` (moved into `ValueAddedService`).
 - `renderDHLLogo` / `fitLabelsToA4` constructor parameters on `OutputImageProperties` (moved to `ImageOption`).
 - `CreateShipmentBuilder::withPickupRequested()` (replaced by `withPickup()`).
