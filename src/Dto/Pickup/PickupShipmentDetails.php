@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Medzuch\DhlExpress\Dto\Pickup;
 
 use Medzuch\DhlExpress\Dto\Common\Account;
-use Medzuch\DhlExpress\Dto\Shipment\ValueAddedService;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 
 /**
@@ -15,16 +14,16 @@ use Medzuch\DhlExpress\Enum\UnitSystem;
  * `supermodelIoLogisticsExpressPickupRequest`. A single pickup request
  * can cover 1–999 shipments (e.g. a consolidated depot pickup).
  *
- * @property list<PickupPackage> $packages
- * @property list<Account> $accounts
- * @property list<ValueAddedService> $valueAddedServices
+ * @property list<PickupPackage>             $packages
+ * @property list<Account>                   $accounts
+ * @property list<PickupValueAddedService>   $valueAddedServices
  */
 final readonly class PickupShipmentDetails
 {
     /**
-     * @param list<PickupPackage>       $packages
-     * @param list<Account>             $accounts
-     * @param list<ValueAddedService>   $valueAddedServices
+     * @param list<PickupPackage>             $packages
+     * @param list<Account>                   $accounts
+     * @param list<PickupValueAddedService>   $valueAddedServices
      */
     public function __construct(
         public string $productCode,
@@ -66,7 +65,7 @@ final readonly class PickupShipmentDetails
         }
         if ($this->valueAddedServices !== []) {
             $payload['valueAddedServices'] = array_map(
-                static fn (ValueAddedService $v): array => $v->toArray(),
+                static fn (PickupValueAddedService $v): array => $v->toArray(),
                 $this->valueAddedServices,
             );
         }
