@@ -7,6 +7,87 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.3.0] — 2026-05-16
+
+### Highlights
+
+Major spec-alignment pass: every code-touching DHL API domain
+(`/rates`, `/products`, `/tracking`, `/shipments`, `/pickups`,
+`/invoices`, `/servicepoints`, `/early-shipment-screening`, `/epod`,
+get-image) was reviewed against OpenAPI 3.2.2 and brought into
+compliance. This release contains many breaking changes — see below
+for the full migration list. After 0.3.0, all request and response
+DTOs match the DHL wire contract verbatim; any field on the spec is
+either modeled or explicitly deferred.
+
+### Added
+
+#### New API surface
+
+- `TrackingApi::getManyByPieceId()` — per-piece tracking lookup (`GET /tracking` with `pieceTrackingNumber`).
+- `TrackingApi::getManyByReference()` — reference-based tracking lookup (`GET /tracking` with `shipmentReference`).
+- `TrackingApi::getByTrackingNumber()` gains optional `trackingView`, `levelOfDetail`, `requestControlledAccessDataCodes`, `requestGMTOffsetPerEvent` params.
+- `TrackingApi::getMany()` gains optional `trackingView`, `levelOfDetail`, `requestControlledAccessDataCodes` params.
+- `ProductsApi::list()` gains optional `requestEstimatedDeliveryDate` + `estimatedDeliveryDateType` params.
+- `RatesApi::quoteMany()` gains optional `strictValidation` query param.
+- `ShipmentApi::create()` now accepts `strictValidation` and `bypassPLTError` query-parameter flags.
+- `EarlyShipmentScreeningApi` — `POST /early-shipment-screening` for BBX baby-shipment Denied Party screening.
+- `InvoiceApi::uploadInvoiceData()` — standalone `POST /invoices/upload-invoice-data`.
+- Round-trip integration test: create shipment → schedule pickup against the resulting tracking number → cancel pickup.
+
+#### New request DTOs
+
+- `CreateShipmentRequest`: `customerReferences`, `identifiers`, `documentImages`, `onDemandDelivery`, `requestOndemandDeliveryURL`, `shipmentNotification`, `prepaidCharges`, `getTransliteratedResponse`, `estimatedDeliveryDate`, `getAdditionalInformation`, `parentShipment`.
+- `CustomerDetails`: 8 optional party slots — buyer, importer, exporter, seller, payer, manufacturer, ultimateConsignee, broker (new `ShipmentParty` wrapper carrying `registrationNumbers`, `bankDetails`, `typeCode`).
+- `Content`: `areMorePackagesToBeAddedLater`, `USFilingTypeValue`.
+- `OutputImageProperties`: `customerBarcodes`, `customerLogos`, `splitTransportAndWaybillDocLabels`, `allDocumentsInOneImage`, `splitDocumentsByPages`, `splitInvoiceAndReceipt`, `receiptAndLabelsInOneImage`.
+- `ImageOption`: `invoiceType`, `languageCode`, `languageCountryCode`, `languageScriptCode`, `labelFreeText`, `labelCustomerDataText`, `shipmentReceiptCustomerDataText`.
+- `Package` / `AddPiecePackage`: `identifiers`, `labelBarcodes`, `labelText`; `AddPiecePackage` also gains `labelDescription`, `referenceNumber`, `isThisTheLastPackageAdded`.
+- `AddPieceOutputImageProperties`: `customerBarcodes`, `customerLogos`.
+- `Pickup` (create-shipment sub-block): `closeTime`, `location`, `specialInstructions`, `pickupDetails`, `pickupRequestorDetails`.
+- `ServicePointFindCriteria` + `ServicePointFindCriteriaBuilder` — exposes the full 30+ query-parameter surface of `GET /servicepoints`.
+- `PickupValueAddedService` — pickup-side VAS (with `localServiceCode`, no `dangerousGoods`).
+
+#### New value objects + enums
+
+- `YearMonth` value object.
+- Enums: `GetImageDocumentTypeCode`, `GetImageEncodingFormat`, `DocumentFunction`, `ValueAddedServiceMethod`, `TrackingView`, `TrackingLevelOfDetail`, `InvoicePartyTypeCode`, `WeightUom`, `DimensionsUom`, `ResultUom`, `ServicePointCapability`, `ServicePointStatus`, `ServicePointOpenDay`, `YesNoIndicator`, `TrueFalseFlag`, `ServicePointTypeFilter`, `BarcodeSymbology`, `CustomerLogoFileFormat`, `InvoiceImageType`, `IdentifierTypeCode`, `LabelBarcodePosition`, `LabelTextPosition`, `OnDemandDeliveryOption`, `OnDemandWhereToLeave`, `EstimatedDeliveryDateType`, `AdditionalInformationType`.
+
+### Changed
+
+- **Breaking:** `ShipmentApi` get-image methods now accept `TrackingNumber` value objects instead of raw strings; the get-image request/response DTOs are now strongly typed. Migration: wrap any raw string in `new TrackingNumber(...)`.
+- **Breaking:** `/rates` endpoints realigned to OpenAPI 3.2.2:
+  - `RatesApi::quote()` — `originCityName` and `destinationCityName` promoted from optional to **required positional** params.
+  - `RatesApi::quote()` — `?string $estimatedDeliveryDateType` is now `?EstimatedDeliveryDateTypeCode` (the existing enum from v0.1.0; `ProductsApi::list()`'s new `estimatedDeliveryDateType` param also uses it). Distinct from the new `EstimatedDeliveryDateType` enum that models the create-shipment request body — same QDDC/QDDF values, separate usage contexts.
+  - `ValueAddedServiceFilter::__construct()` — `$dgContent` parameter replaced by `$method` (`ValueAddedServiceMethod`).
+- **Breaking:** `/products` and `/tracking` realigned to OpenAPI 3.2.2:
+  - `ProductsApi::list()` — `originCityName` and `destinationCityName` promoted from optional to **required positional** params.
+  - `TrackingApi::getMany()` — first argument changed from variadic `TrackingNumber ...` to `array $trackingNumbers`.
+- **Breaking:** `/invoices` and `/servicepoints` realigned; `ServicePointApi::find()` refactored from a 30-line named-argument signature to `ServicePointFindCriteria` + `ServicePointFindCriteriaBuilder`.
+- **Breaking:** `dangerousGoods` no longer accepted at the `CreateShipmentRequest` root — it nests inside the matching `valueAddedServices[]` item per spec (`additionalProperties: false`). `CreateShipmentBuilder::withDangerousGoods()` is unchanged; it auto-attaches to the first DG-coded VAS.
+- **Breaking:** `Content::__construct()` requires `Incoterm` (was optional; spec marks it required).
+- **Breaking:** `OutputImageProperties::__construct()` no longer accepts `$renderDHLLogo` or `$fitLabelsToA4` — per spec they belong on each `ImageOption`.
+- **Breaking:** `EpodApi::get()` — `$shipperAccountNumber` is now nullable (spec marks it optional). Existing positional callers continue to work.
+- **Breaking:** `PickupShipmentDetails::$valueAddedServices` no longer accepts `Dto\Shipment\ValueAddedService`; use the new `Dto\Pickup\PickupValueAddedService` (carries `localServiceCode`, omits `dangerousGoods`).
+- **Breaking:** `CreateShipmentBuilder::withPickupRequested(bool)` is replaced by `CreateShipmentBuilder::withPickup(Pickup)` so callers can supply the full sub-block.
+
+### Removed
+
+- `ValueAddedServiceFilter::$dgContent` constructor parameter (replaced by `$method`).
+- `dangerousGoods` constructor parameter on `CreateShipmentRequest` (moved into `ValueAddedService`).
+- `renderDHLLogo` / `fitLabelsToA4` constructor parameters on `OutputImageProperties` (moved to `ImageOption`).
+- `CreateShipmentBuilder::withPickupRequested()` (replaced by `withPickup()`).
+
+---
+
+## [0.2.1] — 2026-05-15
+
+### Fixed
+
+- `GetImageRequest` now sends the `typeCode` query parameter in the spec-correct singular form (previously plural).
+
+---
+
 ## [0.2.0] — 2026-05-09
 
 ### Changed
