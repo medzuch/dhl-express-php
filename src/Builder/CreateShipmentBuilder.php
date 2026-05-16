@@ -15,6 +15,7 @@ use Medzuch\DhlExpress\Dto\Shipment\ExportDeclaration;
 use Medzuch\DhlExpress\Dto\Shipment\OutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
 use Medzuch\DhlExpress\Dto\Shipment\Pickup;
+use Medzuch\DhlExpress\Dto\Shipment\ShipmentParty;
 use Medzuch\DhlExpress\Dto\Shipment\ValueAddedService;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DangerousGoodsServiceCode;
@@ -110,6 +111,14 @@ final class CreateShipmentBuilder
     private ?string $localProductCode = null;
     private ?ContactAddress $shipper = null;
     private ?ContactAddress $receiver = null;
+    private ?ShipmentParty $buyer = null;
+    private ?ShipmentParty $importer = null;
+    private ?ShipmentParty $exporter = null;
+    private ?ShipmentParty $seller = null;
+    private ?ShipmentParty $payer = null;
+    private ?ShipmentParty $manufacturer = null;
+    private ?ShipmentParty $ultimateConsignee = null;
+    private ?ShipmentParty $broker = null;
     /** @var list<Account> */
     private array $accounts = [];
     /** @var list<Package> */
@@ -159,6 +168,62 @@ final class CreateShipmentBuilder
     public function withReceiver(ContactAddress $address): self
     {
         $this->receiver = $address;
+
+        return $this;
+    }
+
+    public function withBuyer(ShipmentParty $party): self
+    {
+        $this->buyer = $party;
+
+        return $this;
+    }
+
+    public function withImporter(ShipmentParty $party): self
+    {
+        $this->importer = $party;
+
+        return $this;
+    }
+
+    public function withExporter(ShipmentParty $party): self
+    {
+        $this->exporter = $party;
+
+        return $this;
+    }
+
+    public function withSeller(ShipmentParty $party): self
+    {
+        $this->seller = $party;
+
+        return $this;
+    }
+
+    public function withPayer(ShipmentParty $party): self
+    {
+        $this->payer = $party;
+
+        return $this;
+    }
+
+    public function withManufacturer(ShipmentParty $party): self
+    {
+        $this->manufacturer = $party;
+
+        return $this;
+    }
+
+    public function withUltimateConsignee(ShipmentParty $party): self
+    {
+        $this->ultimateConsignee = $party;
+
+        return $this;
+    }
+
+    public function withBroker(ShipmentParty $party): self
+    {
+        $this->broker = $party;
 
         return $this;
     }
@@ -470,7 +535,18 @@ final class CreateShipmentBuilder
             pickup: new Pickup($pickupIsRequested),
             productCode: $productCode,
             accounts: $this->accounts,
-            customerDetails: new CustomerDetails($shipper, $receiver),
+            customerDetails: new CustomerDetails(
+                shipperDetails: $shipper,
+                receiverDetails: $receiver,
+                buyerDetails: $this->buyer,
+                importerDetails: $this->importer,
+                exporterDetails: $this->exporter,
+                sellerDetails: $this->seller,
+                payerDetails: $this->payer,
+                manufacturerDetails: $this->manufacturer,
+                ultimateConsigneeDetails: $this->ultimateConsignee,
+                brokerDetails: $this->broker,
+            ),
             content: new Content(
                 packages: $this->packages,
                 isCustomsDeclarable: $isCustomsDeclarable,
