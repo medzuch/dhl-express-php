@@ -6,15 +6,24 @@ namespace Medzuch\DhlExpress\Builder;
 
 use DateTimeImmutable;
 use Medzuch\DhlExpress\Dto\Common\Account;
+use Medzuch\DhlExpress\Dto\Shipment\AdditionalInformationRequest;
 use Medzuch\DhlExpress\Dto\Shipment\ContactAddress;
 use Medzuch\DhlExpress\Dto\Shipment\Content;
 use Medzuch\DhlExpress\Dto\Shipment\CreateShipmentRequest;
 use Medzuch\DhlExpress\Dto\Shipment\CustomerDetails;
 use Medzuch\DhlExpress\Dto\Shipment\DangerousGoods;
+use Medzuch\DhlExpress\Dto\Shipment\DocumentImage;
+use Medzuch\DhlExpress\Dto\Shipment\EstimatedDeliveryDateRequest;
 use Medzuch\DhlExpress\Dto\Shipment\ExportDeclaration;
+use Medzuch\DhlExpress\Dto\Shipment\Identifier;
+use Medzuch\DhlExpress\Dto\Shipment\OnDemandDelivery;
 use Medzuch\DhlExpress\Dto\Shipment\OutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
+use Medzuch\DhlExpress\Dto\Shipment\PackageReference;
+use Medzuch\DhlExpress\Dto\Shipment\ParentShipment;
 use Medzuch\DhlExpress\Dto\Shipment\Pickup;
+use Medzuch\DhlExpress\Dto\Shipment\PrepaidCharge;
+use Medzuch\DhlExpress\Dto\Shipment\ShipmentNotification;
 use Medzuch\DhlExpress\Dto\Shipment\ShipmentParty;
 use Medzuch\DhlExpress\Dto\Shipment\ValueAddedService;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
@@ -137,6 +146,23 @@ final class CreateShipmentBuilder
     private ?string $declaredValueCurrency = null;
     private ?bool $areMorePackagesToBeAddedLater = null;
     private ?string $usFilingTypeValue = null;
+    /** @var list<PackageReference> */
+    private array $customerReferences = [];
+    /** @var list<Identifier> */
+    private array $shipmentIdentifiers = [];
+    /** @var list<DocumentImage> */
+    private array $documentImages = [];
+    private ?OnDemandDelivery $onDemandDelivery = null;
+    private ?bool $requestOndemandDeliveryURL = null;
+    /** @var list<ShipmentNotification> */
+    private array $shipmentNotifications = [];
+    /** @var list<PrepaidCharge> */
+    private array $prepaidCharges = [];
+    private ?bool $getTransliteratedResponse = null;
+    private ?EstimatedDeliveryDateRequest $estimatedDeliveryDate = null;
+    /** @var list<AdditionalInformationRequest> */
+    private array $additionalInformation = [];
+    private ?ParentShipment $parentShipment = null;
 
     public function withPlannedShippingDate(DateTimeImmutable $dateTime): self
     {
@@ -329,6 +355,83 @@ final class CreateShipmentBuilder
         return $this;
     }
 
+    public function withCustomerReference(PackageReference $reference): self
+    {
+        $this->customerReferences[] = $reference;
+
+        return $this;
+    }
+
+    public function withShipmentIdentifier(Identifier $identifier): self
+    {
+        $this->shipmentIdentifiers[] = $identifier;
+
+        return $this;
+    }
+
+    public function withDocumentImage(DocumentImage $image): self
+    {
+        $this->documentImages[] = $image;
+
+        return $this;
+    }
+
+    public function withOnDemandDelivery(OnDemandDelivery $onDemandDelivery): self
+    {
+        $this->onDemandDelivery = $onDemandDelivery;
+
+        return $this;
+    }
+
+    public function withRequestOndemandDeliveryURL(bool $flag): self
+    {
+        $this->requestOndemandDeliveryURL = $flag;
+
+        return $this;
+    }
+
+    public function withShipmentNotification(ShipmentNotification $notification): self
+    {
+        $this->shipmentNotifications[] = $notification;
+
+        return $this;
+    }
+
+    public function withPrepaidCharge(PrepaidCharge $charge): self
+    {
+        $this->prepaidCharges[] = $charge;
+
+        return $this;
+    }
+
+    public function withGetTransliteratedResponse(bool $flag): self
+    {
+        $this->getTransliteratedResponse = $flag;
+
+        return $this;
+    }
+
+    public function withEstimatedDeliveryDate(EstimatedDeliveryDateRequest $request): self
+    {
+        $this->estimatedDeliveryDate = $request;
+
+        return $this;
+    }
+
+    public function withAdditionalInformation(AdditionalInformationRequest $info): self
+    {
+        $this->additionalInformation[] = $info;
+
+        return $this;
+    }
+
+    public function withParentShipment(ParentShipment $parent): self
+    {
+        $this->parentShipment = $parent;
+
+        return $this;
+    }
+
     /**
      * @throws InvalidRequestException when one or more cross-field rules fail
      */
@@ -472,6 +575,15 @@ final class CreateShipmentBuilder
             }
         }
 
+        // ODD rule: onDemandDelivery requires buyerDetails to be populated
+        // (per spec note on the onDemandDelivery schema).
+        if ($this->onDemandDelivery !== null && $this->buyer === null) {
+            $errors[] = [
+                'field' => 'customerDetails.buyerDetails',
+                'message' => 'buyerDetails is required when onDemandDelivery is set',
+            ];
+        }
+
         // Line-item sum reconciliation: sum of (price × quantity) must equal
         // declaredValue within ±0.01 when both are provided.
         if ($this->exportDeclaration !== null && $this->declaredValue !== null) {
@@ -544,6 +656,7 @@ final class CreateShipmentBuilder
         if ($this->dangerousGoods !== null && $dgVasIndex !== null) {
             $valueAddedServices[$dgVasIndex] = $valueAddedServices[$dgVasIndex]
                 ->withDangerousGoods($this->dangerousGoods);
+            $valueAddedServices = array_values($valueAddedServices);
         }
 
         return new CreateShipmentRequest(
@@ -579,6 +692,17 @@ final class CreateShipmentBuilder
             valueAddedServices: $valueAddedServices,
             outputImageProperties: $this->outputImageProperties,
             getRateEstimates: $this->getRateEstimates,
+            customerReferences: $this->customerReferences,
+            identifiers: $this->shipmentIdentifiers,
+            documentImages: $this->documentImages,
+            onDemandDelivery: $this->onDemandDelivery,
+            requestOndemandDeliveryURL: $this->requestOndemandDeliveryURL,
+            shipmentNotification: $this->shipmentNotifications,
+            prepaidCharges: $this->prepaidCharges,
+            getTransliteratedResponse: $this->getTransliteratedResponse,
+            estimatedDeliveryDate: $this->estimatedDeliveryDate,
+            getAdditionalInformation: $this->additionalInformation,
+            parentShipment: $this->parentShipment,
         );
     }
 

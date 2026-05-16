@@ -524,6 +524,52 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
         self::assertNull($request->content->declaredValue);
     }
 
+    // ----- L1: onDemandDelivery requires buyerDetails -----
+
+    public function testOnDemandDeliveryWithoutBuyerFails(): void
+    {
+        $builder = $this->minimalDomesticBuilder()
+            ->withOnDemandDelivery(new \Medzuch\DhlExpress\Dto\Shipment\OnDemandDelivery(
+                deliveryOption: \Medzuch\DhlExpress\Enum\OnDemandDeliveryOption::Servicepoint,
+                servicePointId: 'SPL123',
+            ));
+
+        try {
+            $builder->build();
+            self::fail('Expected InvalidRequestException');
+        } catch (InvalidRequestException $exception) {
+            $fields = array_column($exception->errors(), 'field');
+            self::assertContains('customerDetails.buyerDetails', $fields);
+        }
+    }
+
+    public function testOnDemandDeliveryWithBuyerSucceeds(): void
+    {
+        $buyer = new \Medzuch\DhlExpress\Dto\Shipment\ShipmentParty(
+            contact: new ContactAddress(
+                countryCode: new CountryCode('CZ'),
+                postalCode: new PostalCode('14800'),
+                cityName: 'Prague',
+                addressLine1: 'Vaclavske namesti 1',
+                phone: new PhoneNumber('+420 222 333 444'),
+                companyName: 'Buyer s.r.o.',
+                fullName: 'Buyer Name',
+            ),
+        );
+
+        $request = $this->minimalDomesticBuilder()
+            ->withBuyer($buyer)
+            ->withOnDemandDelivery(new \Medzuch\DhlExpress\Dto\Shipment\OnDemandDelivery(
+                deliveryOption: \Medzuch\DhlExpress\Enum\OnDemandDeliveryOption::Servicepoint,
+                servicePointId: 'SPL123',
+            ))
+            ->build();
+
+        $payload = $request->toArray();
+        self::assertSame('SPL123', $payload['onDemandDelivery']['servicePointId']);
+        self::assertArrayHasKey('buyerDetails', $payload['customerDetails']);
+    }
+
     // ----- helpers -----
 
     private function makeExportDeclaration(): ExportDeclaration
