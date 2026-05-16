@@ -9,9 +9,6 @@ A standalone, framework-agnostic PHP 8.3 library wrapping the DHL Express MyDHL 
 
 ## Read first
 
-Full architecture, folder structure, and implementation roadmap:
-@PROJECT_PLAN.md
-
 DHL official documentation (precedence order — primary first):
 1. **Reference data workbook:** `docs/dhl/dhl_reference_data.xlsx` — machine-readable dump from DHL's Reference Data API. **Authoritative source for value lists** (enums, codes, error messages).
 2. OpenAPI spec: `docs/dhl/dhl_openapi.yaml` — authoritative for request/response shapes and field constraints.
