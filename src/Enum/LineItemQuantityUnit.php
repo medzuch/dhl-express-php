@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Unit of measurement for a line-item quantity.
  *
  * Matches the `quantity.unitOfMeasurement` enum in
- * `docs/dhl/dhl_openapi.yaml`. Wire codes that start with a digit
+ * `specs/dhl/dhl_openapi.yaml`. Wire codes that start with a digit
  * cannot be PHP case names — they get descriptive PascalCase names
  * while the original wire code remains as the backing `->value`
  * (same convention used by {@see DangerousGoodsContentId}).

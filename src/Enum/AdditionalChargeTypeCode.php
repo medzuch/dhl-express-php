@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Type code for an additional charge line on an export declaration.
  *
  * Matches the `additionalCharges[].typeCode` enum in
- * `docs/dhl/dhl_openapi.yaml`. Used inside
+ * `specs/dhl/dhl_openapi.yaml`. Used inside
  * {@see \Medzuch\DhlExpress\Dto\Shipment\AdditionalCharge} to
  * classify costs beyond the line-item goods value — freight, fuel
  * surcharge, insurance, VAT, and so on.

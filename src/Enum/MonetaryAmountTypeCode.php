@@ -10,7 +10,7 @@ namespace Medzuch\DhlExpress\Enum;
  *
  * Source: the `typeCode` enum nested in
  * `supermodelIoLogisticsExpressRateRequest.monetaryAmount` in
- * `docs/dhl/dhl_openapi.yaml`.
+ * `specs/dhl/dhl_openapi.yaml`.
  */
 enum MonetaryAmountTypeCode: string
 {

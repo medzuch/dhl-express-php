@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Extra blocks the caller can ask DHL to include in a rate response.
  *
  * Source: `supermodelIoLogisticsExpressRateRequest.getAdditionalInformation.typeCode`
- * in `docs/dhl/dhl_openapi.yaml`.
+ * in `specs/dhl/dhl_openapi.yaml`.
  */
 enum AdditionalInformationTypeCode: string
 {
