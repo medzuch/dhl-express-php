@@ -17,6 +17,9 @@ final readonly class AddPiecePackage
 {
     /**
      * @param list<PackageReference> $customerReferences
+     * @param list<Identifier>       $identifiers   max 3 entries per spec
+     * @param list<LabelBarcode>     $labelBarcodes max 2 entries per spec
+     * @param list<LabelText>        $labelText     max 6 entries per spec
      */
     public function __construct(
         public float $weight,
@@ -24,6 +27,12 @@ final readonly class AddPiecePackage
         public ?Dimensions $dimensions = null,
         public array $customerReferences = [],
         public ?string $description = null,
+        public array $identifiers = [],
+        public array $labelBarcodes = [],
+        public array $labelText = [],
+        public ?string $labelDescription = null,
+        public ?int $referenceNumber = null,
+        public ?bool $isThisTheLastPackageAdded = null,
     ) {
     }
 
@@ -54,6 +63,33 @@ final readonly class AddPiecePackage
         }
         if ($this->description !== null) {
             $payload['description'] = $this->description;
+        }
+        if ($this->identifiers !== []) {
+            $payload['identifiers'] = array_map(
+                static fn (Identifier $identifier): array => $identifier->toArray(),
+                $this->identifiers,
+            );
+        }
+        if ($this->labelBarcodes !== []) {
+            $payload['labelBarcodes'] = array_map(
+                static fn (LabelBarcode $barcode): array => $barcode->toArray(),
+                $this->labelBarcodes,
+            );
+        }
+        if ($this->labelText !== []) {
+            $payload['labelText'] = array_map(
+                static fn (LabelText $text): array => $text->toArray(),
+                $this->labelText,
+            );
+        }
+        if ($this->labelDescription !== null) {
+            $payload['labelDescription'] = $this->labelDescription;
+        }
+        if ($this->referenceNumber !== null) {
+            $payload['referenceNumber'] = $this->referenceNumber;
+        }
+        if ($this->isThisTheLastPackageAdded !== null) {
+            $payload['isThisTheLastPackageAdded'] = $this->isThisTheLastPackageAdded;
         }
 
         return $payload;
