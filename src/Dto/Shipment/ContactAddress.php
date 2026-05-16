@@ -22,10 +22,6 @@ use Medzuch\DhlExpress\ValueObject\PostalCode;
  * Distinct from {@see \Medzuch\DhlExpress\Dto\Common\RateAddress},
  * which has no contact fields — `/rates` only needs geography.
  *
- * Phase 4a covers shipper + receiver only. The other party types
- * (payer, buyer, importer, exporter, seller, manufacturer,
- * ultimateConsignee, broker, pickupRequestor) defer to Phase 4b
- * alongside the customs flow that uses them.
  */
 final readonly class ContactAddress
 {

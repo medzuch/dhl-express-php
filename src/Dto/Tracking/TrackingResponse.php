@@ -4,13 +4,7 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Dto\Tracking;
 
-/**
- * Response from `GET /shipments/{id}/tracking`.
- *
- * Phase 1 surface: tracking number, status, description, and the
- * ordered list of {@see ShipmentEvent}. Shipper and receiver details,
- * piece events, and the rest of DHL's tracking schema land in Phase 3.
- */
+/** Response from `GET /shipments/{id}/tracking`. */
 final readonly class TrackingResponse
 {
     /**

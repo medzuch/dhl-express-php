@@ -35,47 +35,29 @@ use Medzuch\DhlExpress\Exception\InvalidRequestException;
 /**
  * Fluent builder for {@see CreateShipmentRequest}.
  *
- * Second builder in the project (after
- * {@see RateRequestBuilder}). Embodies the §7 validation strategy:
- * constructor-level validation (VOs and DTOs) has already happened by
- * the time setters run; the builder enforces cross-field rules and
- * throws a single {@see InvalidRequestException} carrying every
- * issue.
+ * Embodies the validation strategy: constructor-level validation (VOs
+ * and DTOs) has already happened by the time setters run; the builder
+ * enforces cross-field rules and throws a single
+ * {@see InvalidRequestException} carrying every issue.
  *
- * Phase 4a rules:
+ * Cross-field rules enforced at `build()`:
  * - All required fields present (shipper, receiver,
  *   plannedShippingDateAndTime, productCode, ≥1 account, ≥1 package,
  *   contentDescription, unitOfMeasurement, isCustomsDeclarable, and
- *   pickup.isRequested all explicitly set).
- * - Accounts: 1–3.
- * - Packages: 1–999.
- * - Per-package weight unit consistency: every package's weight unit
- *   must share the shipment-level {@see UnitSystem}. Mixing metric
- *   and imperial within a single shipment is the canonical example
- *   of a rule DHL would otherwise reject server-side.
- * - Per-package dimension unit consistency: same check on dimensions
- *   when present.
- *
- * Phase 4b rules (shipped):
+ *   pickup all explicitly set).
+ * - Accounts: 1–3. Packages: 1–999.
+ * - Per-package weight/dimension unit must match the shipment-level {@see UnitSystem}.
  * - `isCustomsDeclarable=true` ⇒ `exportDeclaration` required.
  * - DG VAS code present ⇒ `dangerousGoods` block required.
  * - Insurance VAS (`II`) ⇒ `declaredValue` required.
  * - DDP incoterm ⇒ at least one `DutiesTaxes` account required.
  * - Cross-border outside EU customs territory ⇒ `isCustomsDeclarable=true` required
- *   (intra-EU shipments share a customs union and are exempt). The territory
- *   list covers 27 EU member states plus Monaco and French outermost regions
- *   (GP, MQ, GF, RE, YT). Northern Ireland (GB) is detected via its "BT"
- *   postal-code prefix. Known limitation: Canary Islands/Ceuta/Melilla (ES)
- *   share the ES code with mainland Spain and cannot be distinguished.
+ *   (intra-EU shipments are exempt). Territory list: 27 EU member states + Monaco +
+ *   French outermost regions (GP, MQ, GF, RE, YT). Northern Ireland (GB) detected
+ *   via "BT" postal-code prefix. Known limitation: Canary Islands/Ceuta/Melilla (ES)
+ *   cannot be distinguished from mainland Spain.
  * - Line-item price×quantity sum must equal `declaredValue` within ±0.01
  *   when both `exportDeclaration` and `declaredValue` are provided.
- *
- * Phase 4c note:
- * - No new builder rules; Phase 4c adds the `addPiece()` API method
- *   ({@see \Medzuch\DhlExpress\Api\ShipmentApi::addPiece()}) and the
- *   {@see OutputImageTemplate}, {@see ImageOptionTypeCode},
- *   {@see ServiceCode}, {@see CommodityCategory}, and
- *   {@see ShipmentReferenceTypeCode} enums.
  */
 final class CreateShipmentBuilder
 {

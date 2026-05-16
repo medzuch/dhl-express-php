@@ -20,22 +20,10 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
 use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 
 /**
- * Shipment endpoint.
- *
- * Phase 4a ships {@see self::create()} — the happy-path flow for a
- * domestic non-customs shipment.
- *
- * Phase 4b adds:
- * - {@see self::uploadImage()} — `PATCH /shipments/{id}/upload-image`
- *   for Paperless Trade (PLT) document images.
- * - {@see self::uploadInvoiceData()} — `PATCH /shipments/{id}/upload-invoice-data`
- *   for structured customs invoice data.
- * - {@see self::getImage()} — `GET /shipments/{id}/get-image`
- *   to retrieve uploaded document images.
- *
- * Phase 4c adds:
- * - {@see self::addPiece()} — `PATCH /shipments/{id}/add-piece`
- *   to attach extra pieces to a previously created shipment.
+ * Covers `POST /shipments`, `PATCH /shipments/{id}/upload-image`,
+ * `PATCH /shipments/{id}/upload-invoice-data`,
+ * `GET /shipments/{id}/get-image`, and
+ * `PATCH /shipments/{id}/add-piece`.
  */
 final class ShipmentApi
 {

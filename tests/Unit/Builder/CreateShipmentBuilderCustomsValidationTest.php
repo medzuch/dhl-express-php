@@ -32,9 +32,9 @@ use Medzuch\DhlExpress\ValueObject\PostalCode;
 use Medzuch\DhlExpress\ValueObject\Weight;
 use PHPUnit\Framework\TestCase;
 
-final class CreateShipmentBuilderPhase4bTest extends TestCase
+final class CreateShipmentBuilderCustomsValidationTest extends TestCase
 {
-    // ----- Phase 4b: exportDeclaration replaces customs guardrail -----
+    // ----- exportDeclaration required when isCustomsDeclarable -----
 
     public function testCustomsDeclarableWithExportDeclarationSucceeds(): void
     {
@@ -72,7 +72,7 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
         self::assertNull($request->content->exportDeclaration);
     }
 
-    // ----- Phase 4b: DG VAS rule -----
+    // ----- DG VAS rule -----
 
     public function testDangerousGoodsVasWithoutDgBlockFails(): void
     {
@@ -135,7 +135,7 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
         }
     }
 
-    // ----- Phase 4b: Insurance VAS rule -----
+    // ----- Insurance VAS rule -----
 
     public function testInsuranceVasWithoutDeclaredValueFails(): void
     {
@@ -162,7 +162,7 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
         self::assertSame('CZK', $request->content->declaredValueCurrency);
     }
 
-    // ----- Phase 4b: DDP incoterm rule -----
+    // ----- DDP incoterm rule -----
 
     public function testDdpIncotermWithoutDutiesTaxesAccountFails(): void
     {
@@ -204,7 +204,7 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
         self::assertSame(Incoterm::DAP, $request->content->incoterm);
     }
 
-    // ----- Phase 4b: withDeclaredValue -----
+    // ----- withDeclaredValue -----
 
     public function testWithDeclaredValueSetsContentFields(): void
     {
@@ -243,7 +243,7 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
         self::assertSame('901', $vas['dangerousGoods'][0]['contentId']);
     }
 
-    // ----- Phase 4b: exportDeclaration in content toArray -----
+    // ----- exportDeclaration in content toArray -----
 
     public function testExportDeclarationAppearsInContentToArray(): void
     {
@@ -259,7 +259,7 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
         self::assertArrayHasKey('lineItems', $content['exportDeclaration']);
     }
 
-    // ----- Phase 4b (missing): EU intra-zone exemption -----
+    // ----- EU intra-zone exemption -----
 
     public function testIntraEuCrossBorderDoesNotRequireCustoms(): void
     {
@@ -427,7 +427,7 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
         }
     }
 
-    // ----- Phase 4b (missing): line-item sum reconciliation -----
+    // ----- line-item sum reconciliation -----
 
     public function testLineItemSumMatchingDeclaredValueSucceeds(): void
     {
