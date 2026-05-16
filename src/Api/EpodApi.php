@@ -24,7 +24,7 @@ use Medzuch\DhlExpress\ValueObject\TrackingNumber;
  * {@see EpodDocument::decodeContent()} returns the raw bytes ready
  * to write to disk.
  */
-final class EpodApi
+final readonly class EpodApi
 {
     public function __construct(
         private readonly RequestBuilder $requestBuilder,

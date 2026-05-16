@@ -23,7 +23,7 @@ use Psr\Http\Message\ResponseInterface;
  *                            body fails to parse we still route by
  *                            HTTP status, with an empty body.
  */
-final class ResponseParser
+final readonly class ResponseParser
 {
     public function __construct(private readonly DhlErrorMapper $errorMapper)
     {

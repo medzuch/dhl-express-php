@@ -20,7 +20,7 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
  * a full create-shipment call. Helps surface shipments that need
  * compliance investigation early without delaying the rest.
  */
-final class EarlyShipmentScreeningApi
+final readonly class EarlyShipmentScreeningApi
 {
     public function __construct(
         private readonly RequestBuilder $requestBuilder,

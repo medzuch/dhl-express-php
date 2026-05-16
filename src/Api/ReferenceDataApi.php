@@ -25,7 +25,7 @@ use Medzuch\DhlExpress\Support\HydrationHelper;
  * live DHL service or for fetching datasets we deliberately did
  * not encode (e.g. `country`, `countryPostalcodeFormat`).
  */
-final class ReferenceDataApi
+final readonly class ReferenceDataApi
 {
     public function __construct(
         private readonly RequestBuilder $requestBuilder,

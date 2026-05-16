@@ -26,7 +26,7 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
  * Note: there is no `GET /pickups` in DHL API 3.2.2 — pickup confirmation
  * numbers are returned by {@see self::create()} and tracked by the caller.
  */
-final class PickupApi
+final readonly class PickupApi
 {
     public function __construct(
         private readonly RequestBuilder $requestBuilder,

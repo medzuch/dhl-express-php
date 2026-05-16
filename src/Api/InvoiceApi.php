@@ -19,7 +19,7 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
  * (`PATCH /shipments/{id}/upload-invoice-data`) lives on
  * {@see \Medzuch\DhlExpress\Api\ShipmentApi::uploadInvoiceData()}.
  */
-final class InvoiceApi
+final readonly class InvoiceApi
 {
     public function __construct(
         private readonly RequestBuilder $requestBuilder,

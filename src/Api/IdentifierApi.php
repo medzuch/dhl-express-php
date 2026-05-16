@@ -22,7 +22,7 @@ use Medzuch\DhlExpress\ValueObject\AccountNumber;
  * or Loose Break Bulk identifiers (SID, PID, HUID, ASID3..24) for
  * an account. Requires DHL-side authorization on the account.
  */
-final class IdentifierApi
+final readonly class IdentifierApi
 {
     public function __construct(
         private readonly RequestBuilder $requestBuilder,

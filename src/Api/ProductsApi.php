@@ -28,7 +28,7 @@ use Medzuch\DhlExpress\ValueObject\Weight;
  * Useful for surfacing product choice in checkout UIs without
  * paying for a full rate quote.
  */
-final class ProductsApi
+final readonly class ProductsApi
 {
     public function __construct(
         private readonly RequestBuilder $requestBuilder,

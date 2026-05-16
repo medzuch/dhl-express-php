@@ -23,7 +23,7 @@ use Medzuch\DhlExpress\ValueObject\PostalCode;
  * pickup or delivery coverage at a given address, and to resolve
  * the address into DHL's service-area dictionary.
  */
-final class AddressApi
+final readonly class AddressApi
 {
     public function __construct(
         private readonly RequestBuilder $requestBuilder,

@@ -261,8 +261,10 @@ final class PickupRequestBuilderTest extends TestCase
         }
 
         if ($withDateTime) {
-            // +2 days to avoid flakiness near midnight
-            $builder = $builder->withPlannedPickupDateTime(new DateTimeImmutable('+2 days'));
+            // Fixed 08:00 UTC avoids flakiness when wall-clock time exceeds a closeTime under test.
+            $builder = $builder->withPlannedPickupDateTime(
+                (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify('+2 days')->setTime(8, 0),
+            );
         }
 
         if ($withAccount) {

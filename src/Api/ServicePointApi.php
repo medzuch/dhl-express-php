@@ -41,7 +41,7 @@ use Medzuch\DhlExpress\Support\HydrationHelper;
  * subset is hydrated and the rest can be added incrementally when a
  * concrete caller needs them.
  */
-final class ServicePointApi
+final readonly class ServicePointApi
 {
     public function __construct(
         private readonly RequestBuilder $requestBuilder,

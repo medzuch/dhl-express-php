@@ -38,7 +38,7 @@ use Medzuch\DhlExpress\ValueObject\Weight;
  * returned by `/landed-cost`, so the hydrator is shared via
  * {@see RatesResponseHydrator}.
  */
-final class RatesApi
+final readonly class RatesApi
 {
     public function __construct(
         private readonly RequestBuilder $requestBuilder,
