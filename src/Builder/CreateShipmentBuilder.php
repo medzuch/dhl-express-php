@@ -115,7 +115,7 @@ final class CreateShipmentBuilder
         'GP', 'MQ', 'GF', 'RE', 'YT',
     ];
     private ?DateTimeImmutable $plannedShippingDateAndTime = null;
-    private ?bool $pickupIsRequested = null;
+    private ?Pickup $pickup = null;
     private ?string $productCode = null;
     private ?string $localProductCode = null;
     private ?ContactAddress $shipper = null;
@@ -171,9 +171,9 @@ final class CreateShipmentBuilder
         return $this;
     }
 
-    public function withPickupRequested(bool $isRequested): self
+    public function withPickup(Pickup $pickup): self
     {
-        $this->pickupIsRequested = $isRequested;
+        $this->pickup = $pickup;
 
         return $this;
     }
@@ -441,7 +441,7 @@ final class CreateShipmentBuilder
         $receiver = $this->receiver;
         $plannedShippingDateAndTime = $this->plannedShippingDateAndTime;
         $productCode = $this->productCode;
-        $pickupIsRequested = $this->pickupIsRequested;
+        $pickup = $this->pickup;
         $isCustomsDeclarable = $this->isCustomsDeclarable;
         $contentDescription = $this->contentDescription;
         $unitOfMeasurement = $this->unitOfMeasurement;
@@ -460,8 +460,8 @@ final class CreateShipmentBuilder
         if ($productCode === null) {
             $errors[] = ['field' => 'productCode', 'message' => 'productCode is required'];
         }
-        if ($pickupIsRequested === null) {
-            $errors[] = ['field' => 'pickup.isRequested', 'message' => 'pickup.isRequested is required'];
+        if ($pickup === null) {
+            $errors[] = ['field' => 'pickup', 'message' => 'pickup is required'];
         }
         if ($isCustomsDeclarable === null) {
             $errors[] = ['field' => 'isCustomsDeclarable', 'message' => 'isCustomsDeclarable is required'];
@@ -639,7 +639,7 @@ final class CreateShipmentBuilder
             $receiver === null
             || $plannedShippingDateAndTime === null
             || $productCode === null
-            || $pickupIsRequested === null
+            || $pickup === null
             || $isCustomsDeclarable === null
             || $contentDescription === null
             || $unitOfMeasurement === null
@@ -661,7 +661,7 @@ final class CreateShipmentBuilder
 
         return new CreateShipmentRequest(
             plannedShippingDateAndTime: $plannedShippingDateAndTime,
-            pickup: new Pickup($pickupIsRequested),
+            pickup: $pickup,
             productCode: $productCode,
             accounts: $this->accounts,
             customerDetails: new CustomerDetails(

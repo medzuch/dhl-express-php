@@ -14,6 +14,7 @@ use Medzuch\DhlExpress\Dto\Common\Account;
 use Medzuch\DhlExpress\Dto\Shipment\ContactAddress;
 use Medzuch\DhlExpress\Dto\Shipment\CreateShipmentResponse;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
+use Medzuch\DhlExpress\Dto\Shipment\Pickup;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\ApiEnvironment;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
@@ -212,7 +213,7 @@ final class ShipmentApiTest extends TestCase
             ))
             ->withPlannedShippingDate(new DateTimeImmutable('2026-06-01T13:00:00+00:00'))
             ->withProductCode('N')
-            ->withPickupRequested(false)
+            ->withPickup(new Pickup(false))
             ->withIsCustomsDeclarable(false)
             ->withContentDescription('Books')
             ->withUnitSystem(UnitSystem::Metric)

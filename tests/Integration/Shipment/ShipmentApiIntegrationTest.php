@@ -15,6 +15,7 @@ use Medzuch\DhlExpress\Dto\Shipment\LineItemQuantity;
 use Medzuch\DhlExpress\Dto\Shipment\LineItemWeight;
 use Medzuch\DhlExpress\Dto\Shipment\OutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
+use Medzuch\DhlExpress\Dto\Shipment\Pickup;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
 use Medzuch\DhlExpress\Enum\Incoterm;
@@ -85,7 +86,7 @@ final class ShipmentApiIntegrationTest extends IntegrationTestCase
             ))
             ->withPlannedShippingDate($this->nextBusinessDay(3)->setTime(13, 0, 0))
             ->withProductCode('N')
-            ->withPickupRequested(false)
+            ->withPickup(new Pickup(false))
             ->withIsCustomsDeclarable(false)
             ->withContentDescription('Books')
             ->withUnitSystem(UnitSystem::Metric)
@@ -158,7 +159,7 @@ final class ShipmentApiIntegrationTest extends IntegrationTestCase
             ))
             ->withPlannedShippingDate($this->nextBusinessDay(3)->setTime(13, 0, 0))
             ->withProductCode('P')
-            ->withPickupRequested(false)
+            ->withPickup(new Pickup(false))
             ->withIsCustomsDeclarable(true)
             ->withContentDescription('Electronics')
             ->withUnitSystem(UnitSystem::Metric)
