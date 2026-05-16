@@ -99,6 +99,26 @@ final class EpodApiTest extends TestCase
         self::assertStringNotContainsString('content=', $uri);
     }
 
+    public function testOmitsShipperAccountNumberWhenNotSupplied(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('single-pdf.json')),
+            ),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+        $api->get(new TrackingNumber('1234567890'));
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('/shipments/1234567890/proof-of-delivery', $uri);
+        self::assertStringNotContainsString('shipperAccountNumber=', $uri);
+    }
+
     public function testHandlesEmptyDocumentsArray(): void
     {
         $factory = new Psr17Factory();

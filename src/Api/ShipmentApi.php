@@ -55,19 +55,35 @@ final class ShipmentApi
      * tests against the sandbox so the suite doesn't accumulate real
      * shipments.
      *
+     * `strictValidation` enables strict address validation against the
+     * DHL reference database. `bypassPLTError` lets a PLT (Paperless
+     * Trade) shipment proceed even when DHL's document-image checks
+     * fail. Both default to DHL's server-side defaults when null.
+     *
      * @throws DhlApiException     for DHL-side errors
      * @throws DhlNetworkException for transport-level failures
      */
     public function create(
         CreateShipmentRequest $request,
         bool $validateDataOnly = false,
+        ?bool $strictValidation = null,
+        ?bool $bypassPLTError = null,
     ): CreateShipmentResponse {
-        $queryParams = $validateDataOnly ? ['validateDataOnly' => 'true'] : null;
+        $queryParams = [];
+        if ($validateDataOnly) {
+            $queryParams['validateDataOnly'] = 'true';
+        }
+        if ($strictValidation !== null) {
+            $queryParams['strictValidation'] = $strictValidation ? 'true' : 'false';
+        }
+        if ($bypassPLTError !== null) {
+            $queryParams['bypassPLTError'] = $bypassPLTError ? 'true' : 'false';
+        }
 
         $httpRequest = $this->requestBuilder->build(
             'POST',
             '/shipments',
-            queryParams: $queryParams,
+            queryParams: $queryParams === [] ? null : $queryParams,
             jsonBody: $request->toArray(),
         );
 

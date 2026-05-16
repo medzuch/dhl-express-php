@@ -18,7 +18,9 @@ use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
 final readonly class AddPieceOutputImageProperties
 {
     /**
-     * @param list<ImageOption> $imageOptions
+     * @param list<ImageOption>     $imageOptions
+     * @param list<CustomerBarcode> $customerBarcodes max 1 entry per spec
+     * @param list<CustomerLogo>    $customerLogos    max 1 entry per spec
      */
     public function __construct(
         public ?LabelEncodingFormat $encodingFormat = null,
@@ -28,6 +30,8 @@ final readonly class AddPieceOutputImageProperties
         public ?bool $splitTransportAndWaybillDocLabels = null,
         public ?bool $allDocumentsInOneImage = null,
         public ?bool $splitDocumentsByPages = null,
+        public array $customerBarcodes = [],
+        public array $customerLogos = [],
     ) {
     }
 
@@ -61,6 +65,18 @@ final readonly class AddPieceOutputImageProperties
         }
         if ($this->splitDocumentsByPages !== null) {
             $payload['splitDocumentsByPages'] = $this->splitDocumentsByPages;
+        }
+        if ($this->customerBarcodes !== []) {
+            $payload['customerBarcodes'] = array_map(
+                static fn (CustomerBarcode $barcode): array => $barcode->toArray(),
+                $this->customerBarcodes,
+            );
+        }
+        if ($this->customerLogos !== []) {
+            $payload['customerLogos'] = array_map(
+                static fn (CustomerLogo $logo): array => $logo->toArray(),
+                $this->customerLogos,
+            );
         }
 
         return $payload;

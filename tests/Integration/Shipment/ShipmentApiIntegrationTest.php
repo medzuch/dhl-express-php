@@ -17,6 +17,7 @@ use Medzuch\DhlExpress\Dto\Shipment\OutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
+use Medzuch\DhlExpress\Enum\Incoterm;
 use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
 use Medzuch\DhlExpress\Enum\LineItemQuantityUnit;
 use Medzuch\DhlExpress\Enum\UnitSystem;
@@ -88,6 +89,7 @@ final class ShipmentApiIntegrationTest extends IntegrationTestCase
             ->withIsCustomsDeclarable(false)
             ->withContentDescription('Books')
             ->withUnitSystem(UnitSystem::Metric)
+            ->withIncoterm(Incoterm::DAP)
             ->withAccount(new Account(AccountTypeCode::Shipper, $account))
             ->withPackage(new Package(
                 weight: new Weight(1.0, WeightUnit::KG),
@@ -160,6 +162,7 @@ final class ShipmentApiIntegrationTest extends IntegrationTestCase
             ->withIsCustomsDeclarable(true)
             ->withContentDescription('Electronics')
             ->withUnitSystem(UnitSystem::Metric)
+            ->withIncoterm(Incoterm::DAP)
             ->withAccount(new Account(AccountTypeCode::Shipper, $account))
             ->withPackage(new Package(
                 weight: new Weight(1.5, WeightUnit::KG),

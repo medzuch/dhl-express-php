@@ -17,6 +17,7 @@ use Medzuch\DhlExpress\Dto\Shipment\Package;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\ApiEnvironment;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
+use Medzuch\DhlExpress\Enum\Incoterm;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Enum\WeightUnit;
 use Medzuch\DhlExpress\Exception\DhlErrorMapper;
@@ -87,6 +88,82 @@ final class ShipmentApiTest extends TestCase
         self::assertStringContainsString('/shipments?validateDataOnly=true', (string) $sent->getUri());
     }
 
+    public function testCreateAppendsStrictValidationQueryWhenRequested(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(201)->withBody($factory->createStream($this->loadFixture('create-shipment-success.json'))),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+
+        $api->create($this->minimalDomesticBuilder()->build(), strictValidation: true);
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        self::assertStringContainsString('strictValidation=true', (string) $sent->getUri());
+    }
+
+    public function testCreateAppendsBypassPLTErrorQueryWhenRequested(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(201)->withBody($factory->createStream($this->loadFixture('create-shipment-success.json'))),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+
+        $api->create($this->minimalDomesticBuilder()->build(), bypassPLTError: true);
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        self::assertStringContainsString('bypassPLTError=true', (string) $sent->getUri());
+    }
+
+    public function testCreateCombinesAllOptionalQueryParams(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(201)->withBody($factory->createStream($this->loadFixture('create-shipment-success.json'))),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+
+        $api->create(
+            $this->minimalDomesticBuilder()->build(),
+            validateDataOnly: true,
+            strictValidation: false,
+            bypassPLTError: true,
+        );
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('validateDataOnly=true', $uri);
+        self::assertStringContainsString('strictValidation=false', $uri);
+        self::assertStringContainsString('bypassPLTError=true', $uri);
+    }
+
+    public function testCreateOmitsQueryStringWhenNoOptionsSet(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(201)->withBody($factory->createStream($this->loadFixture('create-shipment-success.json'))),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+
+        $api->create($this->minimalDomesticBuilder()->build());
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        self::assertStringNotContainsString('?', (string) $sent->getUri());
+    }
+
     public function testCreateHydratesResponse(): void
     {
         $factory = new Psr17Factory();
@@ -139,6 +216,7 @@ final class ShipmentApiTest extends TestCase
             ->withIsCustomsDeclarable(false)
             ->withContentDescription('Books')
             ->withUnitSystem(UnitSystem::Metric)
+            ->withIncoterm(Incoterm::DAP)
             ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber('123456789')))
             ->withPackage(new Package(
                 weight: new Weight(1.0, WeightUnit::KG),

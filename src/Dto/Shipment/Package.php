@@ -26,6 +26,9 @@ final readonly class Package
 {
     /**
      * @param list<PackageReference> $customerReferences
+     * @param list<Identifier>       $identifiers   max 3 entries per spec
+     * @param list<LabelBarcode>     $labelBarcodes max 2 entries per spec
+     * @param list<LabelText>        $labelText     max 6 entries per spec
      */
     public function __construct(
         public Weight $weight,
@@ -35,6 +38,9 @@ final readonly class Package
         public ?int $referenceNumber = null,
         public array $customerReferences = [],
         public ?string $labelDescription = null,
+        public array $identifiers = [],
+        public array $labelBarcodes = [],
+        public array $labelText = [],
     ) {
     }
 
@@ -71,6 +77,24 @@ final readonly class Package
         }
         if ($this->labelDescription !== null) {
             $payload['labelDescription'] = $this->labelDescription;
+        }
+        if ($this->identifiers !== []) {
+            $payload['identifiers'] = array_map(
+                static fn (Identifier $identifier): array => $identifier->toArray(),
+                $this->identifiers,
+            );
+        }
+        if ($this->labelBarcodes !== []) {
+            $payload['labelBarcodes'] = array_map(
+                static fn (LabelBarcode $barcode): array => $barcode->toArray(),
+                $this->labelBarcodes,
+            );
+        }
+        if ($this->labelText !== []) {
+            $payload['labelText'] = array_map(
+                static fn (LabelText $text): array => $text->toArray(),
+                $this->labelText,
+            );
         }
 
         return $payload;

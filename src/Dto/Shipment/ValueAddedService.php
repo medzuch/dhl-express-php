@@ -11,14 +11,17 @@ use Medzuch\DhlExpress\ValueObject\CurrencyCode;
  *
  * Mirrors `supermodelIoLogisticsExpressValueAddedServices`.
  *
- * Phase 4a keeps `serviceCode` as a free string. The `ServiceCode` enum
- * (~384 codes grouped by `serviceGroupCode`) is deferred to Phase 4b,
- * which will decide whether to ship one large enum or split per group
- * (W=Customs, H=DG, U=Temperature, …).
+ * The optional `dangerousGoods` sub-block belongs INSIDE each VAS item
+ * (the create-shipment root has no `dangerousGoods` field —
+ * `additionalProperties: false`). DHL accepts an array of at most one
+ * DG entry per VAS, so the DTO is wrapped in a single-element array on
+ * serialisation.
  *
- * The optional `dangerousGoods` sub-block is deferred to Phase 4b
- * alongside the DG VAS rule (DG service code present ⇒ DG block
- * required).
+ * Callers should usually let
+ * {@see \Medzuch\DhlExpress\Builder\CreateShipmentBuilder::withDangerousGoods()}
+ * attach the DG payload to the matching DG-coded VAS automatically;
+ * passing it explicitly on the constructor is supported for cases that
+ * skip the builder.
  */
 final readonly class ValueAddedService
 {
@@ -27,6 +30,7 @@ final readonly class ValueAddedService
         public ?float $value = null,
         public ?CurrencyCode $currency = null,
         public ?string $method = null,
+        public ?DangerousGoods $dangerousGoods = null,
     ) {
     }
 
@@ -48,7 +52,21 @@ final readonly class ValueAddedService
         if ($this->method !== null) {
             $payload['method'] = $this->method;
         }
+        if ($this->dangerousGoods !== null) {
+            $payload['dangerousGoods'] = [$this->dangerousGoods->toArray()];
+        }
 
         return $payload;
+    }
+
+    public function withDangerousGoods(DangerousGoods $dangerousGoods): self
+    {
+        return new self(
+            serviceCode: $this->serviceCode,
+            value: $this->value,
+            currency: $this->currency,
+            method: $this->method,
+            dangerousGoods: $dangerousGoods,
+        );
     }
 }

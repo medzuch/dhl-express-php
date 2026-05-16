@@ -4,20 +4,18 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Dto\Shipment;
 
+use Medzuch\DhlExpress\Enum\InvoiceImageType;
 use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
 
 /**
  * One entry in `outputImageProperties.imageOptions`.
  *
  * Mirrors the `imageOptions` array item under the
- * `supermodelIoLogisticsExpressOutputImageProperties` schema. `typeCode`
- * is kept as a string in Phase 4a — the value space (`label`,
- * `waybillDoc`, `invoice`, `qr-code`, `shipmentReceipt`) may become an
- * enum in Phase 4c when label-template support lands.
- *
- * `templateName` is also a free string in 4a; the
- * `OutputImageTemplate` enum (~66 templates from the workbook) ships in
- * Phase 4c at the point of consumption.
+ * `supermodelIoLogisticsExpressOutputImageProperties` schema. The
+ * `renderDHLLogo` and `fitLabelsToA4` toggles live here (not on the
+ * root `outputImageProperties` block) — they are per-document, e.g.
+ * a single shipment may want a DHL logo on the label but not on the
+ * waybill (spec lines 11021–11037).
  */
 final readonly class ImageOption
 {
@@ -28,6 +26,15 @@ final readonly class ImageOption
         public ?LabelEncodingFormat $encodingFormat = null,
         public ?bool $hideAccountNumber = null,
         public ?int $numberOfCopies = null,
+        public ?bool $renderDHLLogo = null,
+        public ?bool $fitLabelsToA4 = null,
+        public ?InvoiceImageType $invoiceType = null,
+        public ?string $languageCode = null,
+        public ?string $languageCountryCode = null,
+        public ?string $languageScriptCode = null,
+        public ?string $labelFreeText = null,
+        public ?string $labelCustomerDataText = null,
+        public ?string $shipmentReceiptCustomerDataText = null,
     ) {
     }
 
@@ -54,6 +61,33 @@ final readonly class ImageOption
         }
         if ($this->numberOfCopies !== null) {
             $payload['numberOfCopies'] = $this->numberOfCopies;
+        }
+        if ($this->renderDHLLogo !== null) {
+            $payload['renderDHLLogo'] = $this->renderDHLLogo;
+        }
+        if ($this->fitLabelsToA4 !== null) {
+            $payload['fitLabelsToA4'] = $this->fitLabelsToA4;
+        }
+        if ($this->invoiceType !== null) {
+            $payload['invoiceType'] = $this->invoiceType->value;
+        }
+        if ($this->languageCode !== null) {
+            $payload['languageCode'] = $this->languageCode;
+        }
+        if ($this->languageCountryCode !== null) {
+            $payload['languageCountryCode'] = $this->languageCountryCode;
+        }
+        if ($this->languageScriptCode !== null) {
+            $payload['languageScriptCode'] = $this->languageScriptCode;
+        }
+        if ($this->labelFreeText !== null) {
+            $payload['labelFreeText'] = $this->labelFreeText;
+        }
+        if ($this->labelCustomerDataText !== null) {
+            $payload['labelCustomerDataText'] = $this->labelCustomerDataText;
+        }
+        if ($this->shipmentReceiptCustomerDataText !== null) {
+            $payload['shipmentReceiptCustomerDataText'] = $this->shipmentReceiptCustomerDataText;
         }
 
         return $payload;
