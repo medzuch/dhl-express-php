@@ -11,7 +11,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
-- Converted 15 service classes from `final class` to `final readonly class`: all 13 `*Api` classes (`AddressApi`, `EarlyShipmentScreeningApi`, `EpodApi`, `IdentifierApi`, `InvoiceApi`, `LandedCostApi`, `PickupApi`, `ProductsApi`, `RatesApi`, `ReferenceDataApi`, `ServicePointApi`, `ShipmentApi`, `TrackingApi`), plus `RequestBuilder` and `ResponseParser`. All constructor-promoted properties were already `readonly`; the class-level modifier makes this explicit and enforced by PHP.
+- Converted 15 service classes from `final class` to `final readonly class`: all 13 `*Api` classes (`AddressApi`, `EarlyShipmentScreeningApi`, `EpodApi`, `IdentifierApi`, `InvoiceApi`, `LandedCostApi`, `PickupApi`, `ProductsApi`, `RatesApi`, `ReferenceDataApi`, `ServicePointApi`, `ShipmentApi`, `TrackingApi`), plus `RequestBuilder` and `ResponseParser`. The class-level `readonly` modifier makes immutability explicit and enforced by PHP; the now-redundant `readonly` keyword has been removed from all constructor-promoted properties in those classes.
+
+### Fixed
+
+- `PickupRequestBuilderTest`: use a fixed `08:00 UTC` time in `minimalBuilder()` instead of the current wall-clock time, preventing flaky failures when the test suite runs after 18:00.
 
 ---
 
