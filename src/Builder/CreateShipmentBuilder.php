@@ -135,6 +135,8 @@ final class CreateShipmentBuilder
     private ?DangerousGoods $dangerousGoods = null;
     private ?float $declaredValue = null;
     private ?string $declaredValueCurrency = null;
+    private ?bool $areMorePackagesToBeAddedLater = null;
+    private ?string $usFilingTypeValue = null;
 
     public function withPlannedShippingDate(DateTimeImmutable $dateTime): self
     {
@@ -309,6 +311,20 @@ final class CreateShipmentBuilder
     {
         $this->declaredValue = $value;
         $this->declaredValueCurrency = $currency;
+
+        return $this;
+    }
+
+    public function withAreMorePackagesToBeAddedLater(bool $flag): self
+    {
+        $this->areMorePackagesToBeAddedLater = $flag;
+
+        return $this;
+    }
+
+    public function withUSFilingTypeValue(string $value): self
+    {
+        $this->usFilingTypeValue = $value;
 
         return $this;
     }
@@ -556,6 +572,8 @@ final class CreateShipmentBuilder
                 declaredValue: $this->declaredValue,
                 declaredValueCurrency: $this->declaredValueCurrency,
                 exportDeclaration: $this->exportDeclaration,
+                areMorePackagesToBeAddedLater: $this->areMorePackagesToBeAddedLater,
+                USFilingTypeValue: $this->usFilingTypeValue,
             ),
             localProductCode: $this->localProductCode,
             valueAddedServices: $valueAddedServices,

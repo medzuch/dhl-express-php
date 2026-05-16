@@ -32,6 +32,8 @@ final readonly class Content
         public ?float $declaredValue = null,
         public ?string $declaredValueCurrency = null,
         public ?ExportDeclaration $exportDeclaration = null,
+        public ?bool $areMorePackagesToBeAddedLater = null,
+        public ?string $USFilingTypeValue = null,
     ) {
     }
 
@@ -59,6 +61,12 @@ final readonly class Content
         }
         if ($this->exportDeclaration !== null) {
             $payload['exportDeclaration'] = $this->exportDeclaration->toArray();
+        }
+        if ($this->areMorePackagesToBeAddedLater !== null) {
+            $payload['areMorePackagesToBeAddedLater'] = $this->areMorePackagesToBeAddedLater;
+        }
+        if ($this->USFilingTypeValue !== null) {
+            $payload['USFilingTypeValue'] = $this->USFilingTypeValue;
         }
 
         return $payload;
