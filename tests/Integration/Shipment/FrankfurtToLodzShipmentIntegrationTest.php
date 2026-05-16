@@ -13,6 +13,7 @@ use Medzuch\DhlExpress\Dto\Shipment\GetImageResponse;
 use Medzuch\DhlExpress\Dto\Shipment\ImageOption;
 use Medzuch\DhlExpress\Dto\Shipment\OutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
+use Medzuch\DhlExpress\Dto\Shipment\Pickup;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
 use Medzuch\DhlExpress\Enum\GetImageDocumentTypeCode;
@@ -187,7 +188,7 @@ final class FrankfurtToLodzShipmentIntegrationTest extends IntegrationTestCase
             ->withReceiver($this->makeReceiver())
             ->withPlannedShippingDate($plannedDate->setTime(13, 0, 0))
             ->withProductCode($productCode)
-            ->withPickupRequested(false)
+            ->withPickup(new Pickup(false))
             ->withIsCustomsDeclarable(false)
             ->withContentDescription('Personal items')
             ->withUnitSystem(UnitSystem::Metric)

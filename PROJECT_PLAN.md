@@ -254,9 +254,8 @@ Per-item checklists for shipped phases live in [`docs/PROJECT_HISTORY.md`](docs/
 - ✅ **Phase 4d — Invoices + ServicePoint expansion + EarlyShipmentScreening** — shipped 2026-05-15. `InvoiceApi::uploadInvoiceData()` (standalone `POST /invoices/upload-invoice-data`); `UploadInvoiceDataRequest` extended with `outputImageProperties` and 7-role `customerDetails` (seller/buyer/importer/exporter/manufacturer/ultimateConsignee/broker); `ServicePointApi::find()` refactored to `ServicePointFindCriteria` + `ServicePointFindCriteriaBuilder` exposing the full 30+ query-parameter surface (breaking change); `EarlyShipmentScreeningApi::screen()` for BBX baby-shipment Denied Party screening. New enums: `InvoicePartyTypeCode`, `WeightUom`, `DimensionsUom`, `ResultUom`, `ServicePointCapability`, `ServicePointStatus`, `ServicePointOpenDay`, `YesNoIndicator`, `TrueFalseFlag`.
 
 ### Phase 5 — Pickup & Operations (week 4-5)
-- [ ] `PickupApi` (create, update, cancel, list)
-- [ ] `PickupRequestBuilder`
-- [ ] Round-trip integration test: create shipment → schedule pickup → cancel pickup
+- ✅ **Phase 5a — PickupApi + builder** — shipped 2026-05-16 via PR #20. `PickupApi::create()` / `::update()` / `::cancel()` + `PickupRequestBuilder` with cross-field rules (account count, shipment count, pickup-date window, closeTime ordering). No `list()` — DHL spec exposes no `GET /pickups` (the GET on that path is misleadingly the `/identifiers` endpoint, already handled by `IdentifierApi`).
+- ✅ **Phase 5b — `/pickups` spec compliance + create-shipment Pickup block + round-trip** — shipped 2026-05-16. New `PickupValueAddedService` DTO (splits off from shipment-side VAS — adds `localServiceCode`, drops `dangerousGoods` per pickup-VAS schema with `additionalProperties: false`); create-shipment `Pickup` DTO extended with `closeTime`, `location`, `specialInstructions`, `pickupDetails`, `pickupRequestorDetails` (`ShipmentParty` reused); `withPickupRequested(bool)` builder shortcut replaced by `withPickup(Pickup)`; round-trip integration test `testCreateShipmentSchedulePickupAndCancel` exercises create-shipment → pickup → cancel.
 
 ### Phase 6 — Polish & Release (week 5-6)
 - [ ] Full README with usage examples

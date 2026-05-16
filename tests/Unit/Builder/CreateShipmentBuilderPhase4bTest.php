@@ -14,6 +14,7 @@ use Medzuch\DhlExpress\Dto\Shipment\ExportLineItem;
 use Medzuch\DhlExpress\Dto\Shipment\LineItemQuantity;
 use Medzuch\DhlExpress\Dto\Shipment\LineItemWeight;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
+use Medzuch\DhlExpress\Dto\Shipment\Pickup;
 use Medzuch\DhlExpress\Dto\Shipment\ValueAddedService;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DangerousGoodsContentId;
@@ -620,7 +621,7 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
             ))
             ->withPlannedShippingDate(new DateTimeImmutable('2026-06-01T13:00:00+00:00'))
             ->withProductCode('P')
-            ->withPickupRequested(false)
+            ->withPickup(new Pickup(false))
             ->withContentDescription('Electronics')
             ->withUnitSystem(UnitSystem::Metric)
             ->withIncoterm(Incoterm::DAP)
@@ -654,7 +655,7 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
             ))
             ->withPlannedShippingDate(new DateTimeImmutable('2026-06-01T13:00:00+00:00'))
             ->withProductCode('N')
-            ->withPickupRequested(false)
+            ->withPickup(new Pickup(false))
             ->withIsCustomsDeclarable(false)
             ->withContentDescription('Books')
             ->withUnitSystem(UnitSystem::Metric)

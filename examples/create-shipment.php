@@ -20,6 +20,7 @@ use Medzuch\DhlExpress\Dto\Shipment\ContactAddress;
 use Medzuch\DhlExpress\Dto\Shipment\ImageOption;
 use Medzuch\DhlExpress\Dto\Shipment\OutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
+use Medzuch\DhlExpress\Dto\Shipment\Pickup;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
 use Medzuch\DhlExpress\Enum\Incoterm;
@@ -60,7 +61,7 @@ try {
         ))
         ->withPlannedShippingDate(new DateTimeImmutable('+2 days'))
         ->withProductCode('N')
-        ->withPickupRequested(false)
+        ->withPickup(new Pickup(false))
         ->withIsCustomsDeclarable(false)
         ->withContentDescription('Books')
         ->withUnitSystem(UnitSystem::Metric)

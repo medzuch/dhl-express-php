@@ -11,6 +11,7 @@ use Medzuch\DhlExpress\Dto\Shipment\ContactAddress;
 use Medzuch\DhlExpress\Dto\Shipment\ImageOption;
 use Medzuch\DhlExpress\Dto\Shipment\OutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
+use Medzuch\DhlExpress\Dto\Shipment\Pickup;
 use Medzuch\DhlExpress\Dto\Shipment\ValueAddedService;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
@@ -56,7 +57,7 @@ final class CreateShipmentBuilderTest extends TestCase
             self::assertContains('receiver', $fields);
             self::assertContains('plannedShippingDateAndTime', $fields);
             self::assertContains('productCode', $fields);
-            self::assertContains('pickup.isRequested', $fields);
+            self::assertContains('pickup', $fields);
             self::assertContains('isCustomsDeclarable', $fields);
             self::assertContains('content.description', $fields);
             self::assertContains('unitOfMeasurement', $fields);
@@ -73,7 +74,7 @@ final class CreateShipmentBuilderTest extends TestCase
             ->withReceiver($this->receiverContact())
             ->withPlannedShippingDate(new DateTimeImmutable('2026-06-01T13:00:00+00:00'))
             ->withProductCode('N')
-            ->withPickupRequested(false)
+            ->withPickup(new Pickup(false))
             ->withIsCustomsDeclarable(false)
             ->withContentDescription('Books')
             ->withUnitSystem(UnitSystem::Metric)
@@ -207,7 +208,7 @@ final class CreateShipmentBuilderTest extends TestCase
             ->withReceiver($this->receiverContact())
             ->withPlannedShippingDate(new DateTimeImmutable('2026-06-01T13:00:00+00:00'))
             ->withProductCode('N')
-            ->withPickupRequested(false)
+            ->withPickup(new Pickup(false))
             ->withIsCustomsDeclarable(false)
             ->withContentDescription('Books')
             ->withUnitSystem(UnitSystem::Metric)
