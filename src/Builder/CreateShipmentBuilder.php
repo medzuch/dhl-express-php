@@ -317,17 +317,24 @@ final class CreateShipmentBuilder
         }
 
         // DG VAS rule: if any VAS has a DG service code, dangerousGoods block is required
-        $hasDgVas = false;
-        foreach ($this->valueAddedServices as $service) {
+        $dgVasIndex = null;
+        foreach ($this->valueAddedServices as $index => $service) {
             if (DangerousGoodsServiceCode::tryFrom($service->serviceCode) !== null) {
-                $hasDgVas = true;
+                $dgVasIndex = $index;
                 break;
             }
         }
-        if ($hasDgVas && $this->dangerousGoods === null) {
+        if ($dgVasIndex !== null && $this->dangerousGoods === null) {
             $errors[] = [
                 'field' => 'dangerousGoods',
                 'message' => 'dangerousGoods block is required when a dangerous-goods VAS service code is present',
+            ];
+        }
+        // Inverse: caller supplied a DG block but no DG-coded VAS to attach it to.
+        if ($this->dangerousGoods !== null && $dgVasIndex === null) {
+            $errors[] = [
+                'field' => 'valueAddedServices',
+                'message' => 'a dangerous-goods VAS service code is required when a dangerousGoods block is provided',
             ];
         }
 
@@ -446,6 +453,14 @@ final class CreateShipmentBuilder
             ]);
         }
 
+        // Attach the dangerousGoods payload to the matching DG-coded VAS.
+        // Validated above: either both are present or both are absent.
+        $valueAddedServices = $this->valueAddedServices;
+        if ($this->dangerousGoods !== null && $dgVasIndex !== null) {
+            $valueAddedServices[$dgVasIndex] = $valueAddedServices[$dgVasIndex]
+                ->withDangerousGoods($this->dangerousGoods);
+        }
+
         return new CreateShipmentRequest(
             plannedShippingDateAndTime: $plannedShippingDateAndTime,
             pickup: new Pickup($pickupIsRequested),
@@ -463,10 +478,9 @@ final class CreateShipmentBuilder
                 exportDeclaration: $this->exportDeclaration,
             ),
             localProductCode: $this->localProductCode,
-            valueAddedServices: $this->valueAddedServices,
+            valueAddedServices: $valueAddedServices,
             outputImageProperties: $this->outputImageProperties,
             getRateEstimates: $this->getRateEstimates,
-            dangerousGoods: $this->dangerousGoods,
         );
     }
 

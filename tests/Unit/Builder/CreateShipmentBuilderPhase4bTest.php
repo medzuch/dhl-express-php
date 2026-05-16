@@ -96,7 +96,13 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
             ))
             ->build();
 
-        self::assertNotNull($request->dangerousGoods);
+        // DG payload nests INSIDE the matching VAS; no root-level dangerousGoods.
+        self::assertCount(1, $request->valueAddedServices);
+        self::assertNotNull($request->valueAddedServices[0]->dangerousGoods);
+        self::assertSame(
+            DangerousGoodsContentId::BiologicalSubstanceUN3373,
+            $request->valueAddedServices[0]->dangerousGoods->contentId,
+        );
     }
 
     public function testNonDgVasDoesNotTriggerDgRule(): void
@@ -107,7 +113,25 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
             ->withDeclaredValue(100.0, 'EUR')
             ->build();
 
-        self::assertNull($request->dangerousGoods);
+        self::assertCount(1, $request->valueAddedServices);
+        self::assertNull($request->valueAddedServices[0]->dangerousGoods);
+    }
+
+    public function testDangerousGoodsBlockWithoutDgVasFails(): void
+    {
+        // Inverse of the DG VAS rule: a DG block must have a DG-coded VAS to ride on.
+        $builder = $this->minimalDomesticBuilder()
+            ->withDangerousGoods(new DangerousGoods(
+                contentId: DangerousGoodsContentId::DryIceUN1845,
+            ));
+
+        try {
+            $builder->build();
+            self::fail('Expected InvalidRequestException');
+        } catch (InvalidRequestException $exception) {
+            $fields = array_column($exception->errors(), 'field');
+            self::assertContains('valueAddedServices', $fields);
+        }
     }
 
     // ----- Phase 4b: Insurance VAS rule -----
@@ -191,9 +215,9 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
         self::assertSame('EUR', $request->content->declaredValueCurrency);
     }
 
-    // ----- Phase 4b: DangerousGoods in toArray -----
+    // ----- DangerousGoods nests inside valueAddedServices on the wire -----
 
-    public function testDangerousGoodsAppearsAsArrayInRequestToArray(): void
+    public function testDangerousGoodsAppearsNestedInsideValueAddedServices(): void
     {
         $request = $this->minimalDomesticBuilder()
             ->withValueAddedService(new ValueAddedService('HY'))
@@ -202,10 +226,20 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
 
         $payload = $request->toArray();
 
-        self::assertArrayHasKey('dangerousGoods', $payload);
-        self::assertIsArray($payload['dangerousGoods']);
-        self::assertCount(1, $payload['dangerousGoods']);
-        self::assertSame('901', $payload['dangerousGoods'][0]['contentId']);
+        // Root-level dangerousGoods must NOT exist — the spec marks the
+        // request schema as additionalProperties: false.
+        self::assertArrayNotHasKey('dangerousGoods', $payload);
+
+        self::assertArrayHasKey('valueAddedServices', $payload);
+        self::assertIsArray($payload['valueAddedServices']);
+        self::assertCount(1, $payload['valueAddedServices']);
+
+        $vas = $payload['valueAddedServices'][0];
+        self::assertSame('HY', $vas['serviceCode']);
+        self::assertArrayHasKey('dangerousGoods', $vas);
+        self::assertIsArray($vas['dangerousGoods']);
+        self::assertCount(1, $vas['dangerousGoods']);
+        self::assertSame('901', $vas['dangerousGoods'][0]['contentId']);
     }
 
     // ----- Phase 4b: exportDeclaration in content toArray -----

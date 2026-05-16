@@ -18,6 +18,11 @@ use Medzuch\DhlExpress\Dto\Common\Account;
  * Construct one of these directly, or — for cross-field validation
  * (account count, package count, weight-unit consistency, etc.) — via
  * {@see \Medzuch\DhlExpress\Builder\CreateShipmentBuilder}.
+ *
+ * Note: the spec schema has `additionalProperties: false` at the root.
+ * Fields like `dangerousGoods` that look top-level in older code
+ * actually live INSIDE the matching `valueAddedServices[]` item — see
+ * {@see ValueAddedService}.
  */
 final readonly class CreateShipmentRequest
 {
@@ -36,7 +41,6 @@ final readonly class CreateShipmentRequest
         public array $valueAddedServices = [],
         public ?OutputImageProperties $outputImageProperties = null,
         public ?bool $getRateEstimates = null,
-        public ?DangerousGoods $dangerousGoods = null,
     ) {
     }
 
@@ -73,9 +77,6 @@ final readonly class CreateShipmentRequest
         }
         if ($this->getRateEstimates !== null) {
             $payload['getRateEstimates'] = $this->getRateEstimates;
-        }
-        if ($this->dangerousGoods !== null) {
-            $payload['dangerousGoods'] = [$this->dangerousGoods->toArray()];
         }
 
         return $payload;
