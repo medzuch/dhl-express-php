@@ -28,8 +28,8 @@ use Medzuch\DhlExpress\Support\HydrationHelper;
 final readonly class ReferenceDataApi
 {
     public function __construct(
-        private readonly RequestBuilder $requestBuilder,
-        private readonly HttpTransport $transport,
+        private RequestBuilder $requestBuilder,
+        private HttpTransport $transport,
     ) {
     }
 

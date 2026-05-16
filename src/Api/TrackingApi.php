@@ -42,8 +42,8 @@ final readonly class TrackingApi
     private const MULTI_TRACKING_LIMIT = 200;
 
     public function __construct(
-        private readonly RequestBuilder $requestBuilder,
-        private readonly HttpTransport $transport,
+        private RequestBuilder $requestBuilder,
+        private HttpTransport $transport,
     ) {
     }
 

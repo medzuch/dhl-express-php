@@ -30,10 +30,10 @@ use RuntimeException;
 final readonly class RequestBuilder
 {
     public function __construct(
-        private readonly RequestFactoryInterface $requestFactory,
-        private readonly StreamFactoryInterface $streamFactory,
-        private readonly MessageReferenceGenerator $messageReferenceGenerator,
-        private readonly ClientConfig $config,
+        private RequestFactoryInterface $requestFactory,
+        private StreamFactoryInterface $streamFactory,
+        private MessageReferenceGenerator $messageReferenceGenerator,
+        private ClientConfig $config,
     ) {
     }
 

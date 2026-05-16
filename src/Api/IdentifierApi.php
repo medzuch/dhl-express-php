@@ -25,8 +25,8 @@ use Medzuch\DhlExpress\ValueObject\AccountNumber;
 final readonly class IdentifierApi
 {
     public function __construct(
-        private readonly RequestBuilder $requestBuilder,
-        private readonly HttpTransport $transport,
+        private RequestBuilder $requestBuilder,
+        private HttpTransport $transport,
     ) {
     }
 

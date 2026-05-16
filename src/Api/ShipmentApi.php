@@ -28,10 +28,10 @@ use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 final readonly class ShipmentApi
 {
     public function __construct(
-        private readonly RequestBuilder $requestBuilder,
-        private readonly HttpTransport $transport,
-        private readonly CreateShipmentResponseHydrator $hydrator = new CreateShipmentResponseHydrator(),
-        private readonly GetImageResponseHydrator $imageHydrator = new GetImageResponseHydrator(),
+        private RequestBuilder $requestBuilder,
+        private HttpTransport $transport,
+        private CreateShipmentResponseHydrator $hydrator = new CreateShipmentResponseHydrator(),
+        private GetImageResponseHydrator $imageHydrator = new GetImageResponseHydrator(),
     ) {
     }
 
