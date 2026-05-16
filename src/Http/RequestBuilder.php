@@ -27,7 +27,7 @@ use RuntimeException;
  * The HTTP transport is intentionally elsewhere — this class produces
  * requests but never sends them.
  */
-final class RequestBuilder
+final readonly class RequestBuilder
 {
     public function __construct(
         private readonly RequestFactoryInterface $requestFactory,

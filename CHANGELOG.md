@@ -7,6 +7,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.3.2] — 2026-05-16
+
+### Changed
+
+- Converted 15 service classes from `final class` to `final readonly class`: all 13 `*Api` classes (`AddressApi`, `EarlyShipmentScreeningApi`, `EpodApi`, `IdentifierApi`, `InvoiceApi`, `LandedCostApi`, `PickupApi`, `ProductsApi`, `RatesApi`, `ReferenceDataApi`, `ServicePointApi`, `ShipmentApi`, `TrackingApi`), plus `RequestBuilder` and `ResponseParser`. All constructor-promoted properties were already `readonly`; the class-level modifier makes this explicit and enforced by PHP.
+
+---
+
 ## [0.3.1] — 2026-05-16
 
 ### Fixed

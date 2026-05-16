@@ -21,7 +21,7 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
  * return — line-item-level breakdowns surface inside each
  * {@see \Medzuch\DhlExpress\Dto\Rate\QuotedProduct::$rawItems}.
  */
-final class LandedCostApi
+final readonly class LandedCostApi
 {
     public function __construct(
         private readonly RequestBuilder $requestBuilder,

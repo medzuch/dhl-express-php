@@ -25,7 +25,7 @@ use Medzuch\DhlExpress\ValueObject\TrackingNumber;
  * `GET /shipments/{id}/get-image`, and
  * `PATCH /shipments/{id}/add-piece`.
  */
-final class ShipmentApi
+final readonly class ShipmentApi
 {
     public function __construct(
         private readonly RequestBuilder $requestBuilder,
