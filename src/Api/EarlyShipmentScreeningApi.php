@@ -23,9 +23,9 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
 final readonly class EarlyShipmentScreeningApi
 {
     public function __construct(
-        private readonly RequestBuilder $requestBuilder,
-        private readonly HttpTransport $transport,
-        private readonly EarlyShipmentScreeningResponseHydrator $hydrator = new EarlyShipmentScreeningResponseHydrator(),
+        private RequestBuilder $requestBuilder,
+        private HttpTransport $transport,
+        private EarlyShipmentScreeningResponseHydrator $hydrator = new EarlyShipmentScreeningResponseHydrator(),
     ) {
     }
 

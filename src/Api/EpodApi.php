@@ -27,8 +27,8 @@ use Medzuch\DhlExpress\ValueObject\TrackingNumber;
 final readonly class EpodApi
 {
     public function __construct(
-        private readonly RequestBuilder $requestBuilder,
-        private readonly HttpTransport $transport,
+        private RequestBuilder $requestBuilder,
+        private HttpTransport $transport,
     ) {
     }
 

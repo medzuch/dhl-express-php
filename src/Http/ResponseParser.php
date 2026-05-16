@@ -25,7 +25,7 @@ use Psr\Http\Message\ResponseInterface;
  */
 final readonly class ResponseParser
 {
-    public function __construct(private readonly DhlErrorMapper $errorMapper)
+    public function __construct(private DhlErrorMapper $errorMapper)
     {
     }
 

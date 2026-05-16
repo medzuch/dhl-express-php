@@ -41,9 +41,9 @@ use Medzuch\DhlExpress\ValueObject\Weight;
 final readonly class RatesApi
 {
     public function __construct(
-        private readonly RequestBuilder $requestBuilder,
-        private readonly HttpTransport $transport,
-        private readonly RatesResponseHydrator $hydrator = new RatesResponseHydrator(),
+        private RequestBuilder $requestBuilder,
+        private HttpTransport $transport,
+        private RatesResponseHydrator $hydrator = new RatesResponseHydrator(),
     ) {
     }
 

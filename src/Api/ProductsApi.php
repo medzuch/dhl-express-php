@@ -31,8 +31,8 @@ use Medzuch\DhlExpress\ValueObject\Weight;
 final readonly class ProductsApi
 {
     public function __construct(
-        private readonly RequestBuilder $requestBuilder,
-        private readonly HttpTransport $transport,
+        private RequestBuilder $requestBuilder,
+        private HttpTransport $transport,
     ) {
     }
 

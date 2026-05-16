@@ -29,10 +29,10 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
 final readonly class PickupApi
 {
     public function __construct(
-        private readonly RequestBuilder $requestBuilder,
-        private readonly HttpTransport $transport,
-        private readonly CreatePickupResponseHydrator $createHydrator = new CreatePickupResponseHydrator(),
-        private readonly UpdatePickupResponseHydrator $updateHydrator = new UpdatePickupResponseHydrator(),
+        private RequestBuilder $requestBuilder,
+        private HttpTransport $transport,
+        private CreatePickupResponseHydrator $createHydrator = new CreatePickupResponseHydrator(),
+        private UpdatePickupResponseHydrator $updateHydrator = new UpdatePickupResponseHydrator(),
     ) {
     }
 
