@@ -7,8 +7,10 @@ namespace Medzuch\DhlExpress;
 use Http\Discovery\Psr17FactoryDiscovery;
 use Http\Discovery\Psr18ClientDiscovery;
 use Medzuch\DhlExpress\Api\AddressApi;
+use Medzuch\DhlExpress\Api\EarlyShipmentScreeningApi;
 use Medzuch\DhlExpress\Api\EpodApi;
 use Medzuch\DhlExpress\Api\IdentifierApi;
+use Medzuch\DhlExpress\Api\InvoiceApi;
 use Medzuch\DhlExpress\Api\LandedCostApi;
 use Medzuch\DhlExpress\Api\PickupApi;
 use Medzuch\DhlExpress\Api\ProductsApi;
@@ -56,6 +58,8 @@ final class DhlClient
     private readonly LandedCostApi $landedCost;
     private readonly ShipmentApi $shipments;
     private readonly PickupApi $pickups;
+    private readonly InvoiceApi $invoices;
+    private readonly EarlyShipmentScreeningApi $earlyShipmentScreening;
 
     public function __construct(
         ClientConfig $config,
@@ -93,6 +97,8 @@ final class DhlClient
         $this->landedCost = new LandedCostApi($requestBuilder, $transport);
         $this->shipments = new ShipmentApi($requestBuilder, $transport);
         $this->pickups = new PickupApi($requestBuilder, $transport);
+        $this->invoices = new InvoiceApi($requestBuilder, $transport);
+        $this->earlyShipmentScreening = new EarlyShipmentScreeningApi($requestBuilder, $transport);
     }
 
     public function tracking(): TrackingApi
@@ -148,5 +154,15 @@ final class DhlClient
     public function pickups(): PickupApi
     {
         return $this->pickups;
+    }
+
+    public function invoices(): InvoiceApi
+    {
+        return $this->invoices;
+    }
+
+    public function earlyShipmentScreening(): EarlyShipmentScreeningApi
+    {
+        return $this->earlyShipmentScreening;
     }
 }

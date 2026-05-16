@@ -251,11 +251,11 @@ Per-item checklists for shipped phases live in [`docs/PROJECT_HISTORY.md`](docs/
 - ✅ **Phase 4a — Shipment foundation** — shipped 2026-05-09, PR #16 (`1a39f51`). `ContactAddress`, `Package`, `OutputImageProperties`, `ValueAddedService`, `CreateShipmentRequest/Response`, `CreateShipmentBuilder`, `ShipmentApi::create()`.
 - ✅ **Phase 4b — Customs / DG / PLT** — shipped 2026-05-09, PR #17 (`0988bc1`) + fix PR #19 (`7812bcc`). `ExportDeclaration`, `DangerousGoods`, PLT upload endpoints, all builder cross-field rules (DG VAS, insurance VAS, DDP incoterm, EU customs territory + NI BT-postcode detection, line-item reconciliation).
 - ✅ **Phase 4c — Add-piece + label polish** — shipped 2026-05-09, PR #18 (`39c1a19`). `ShipmentApi::addPiece()`, `OutputImageTemplate` (35 templates), `ServiceCode` (383 codes), `CommodityCategory` (108 codes), `ShipmentReferenceTypeCode`.
+- ✅ **Phase 4d — Invoices + ServicePoint expansion + EarlyShipmentScreening** — shipped 2026-05-15. `InvoiceApi::uploadInvoiceData()` (standalone `POST /invoices/upload-invoice-data`); `UploadInvoiceDataRequest` extended with `outputImageProperties` and 7-role `customerDetails` (seller/buyer/importer/exporter/manufacturer/ultimateConsignee/broker); `ServicePointApi::find()` refactored to `ServicePointFindCriteria` + `ServicePointFindCriteriaBuilder` exposing the full 30+ query-parameter surface (breaking change); `EarlyShipmentScreeningApi::screen()` for BBX baby-shipment Denied Party screening. New enums: `InvoicePartyTypeCode`, `WeightUom`, `DimensionsUom`, `ResultUom`, `ServicePointCapability`, `ServicePointStatus`, `ServicePointOpenDay`, `YesNoIndicator`, `TrueFalseFlag`.
 
 ### Phase 5 — Pickup & Operations (week 4-5)
 - [ ] `PickupApi` (create, update, cancel, list)
 - [ ] `PickupRequestBuilder`
-- [ ] `EarlyShipmentScreeningApi`
 - [ ] Round-trip integration test: create shipment → schedule pickup → cancel pickup
 
 ### Phase 6 — Polish & Release (week 5-6)
@@ -357,8 +357,8 @@ recent entries are inlined below; older rationale is preserved verbatim there.
 
 | Date | Decision | Rationale |
 |---|---|---|
-| 2026-05-08 | Phase 4a `CustomerDetails` / `ContactAddress` / `Package` live under `Dto/Shipment/`, not reused from `Dto/Common/` | The rates-side `Dto/Common/CustomerDetails` pairs `RateAddress` (no contact info — `/rates` only needs geography). Shipment customer details require the address + contact composite (phone, companyName, fullName), so a separate `Dto/Shipment/CustomerDetails` wraps `ContactAddress`. Same naming is intentional — they fill the same conceptual slot in their respective request payloads. Same logic applied to `ContactAddress` (vs. `RateAddress`) and `Package` (vs. `RatePackage`) in 4a. |
-| 2026-05-08 | Phase 4a integration test uses `validateDataOnly=true` and accepts the `8009` "account not IMP-enabled" exception path | DHL's `POST /shipments?validateDataOnly=true` returns the same response shape as a real create but does not produce a real shipment. Using it keeps `make test-integration` re-runnable without polluting the sandbox account with accumulated test shipments. Common DHL sandbox accounts are not IMP-enabled for shipment booking and surface error code `8009`; rather than gate the test on a special account class, we accept that 8009 path as a valid pipeline exercise — same pattern as `IdentifierApiIntegrationTest` does for breakbulk-authorization (`3501`). |
+| 2026-05-15 | Phase 4d `ServicePointApi::find()` swapped from named arguments to a `ServicePointFindCriteria` + `ServicePointFindCriteriaBuilder` pair | The spec exposes 30+ optional query parameters on `/servicepoints`; carrying them all as named-argument scalars produced a 30-line signature that's painful to call and hides cross-field rules (search-mode mutual exclusivity, `weight`+`weightUom` pairing, `HH:MM` time format). A criteria DTO + builder matches the pattern already used for rates/landed-cost/shipment and centralises the cross-field validation. Accepted as a breaking change because this is pre-1.0 and the surface change is straightforward to migrate. |
+| 2026-05-15 | Invoice-upload `customerDetails` uses lowercase `typeCode` enum (`InvoicePartyTypeCode`) distinct from shipment-level `BusinessPartyTypeCode` | DHL maintains two parallel vocabularies for business-party types: shipment-level uses two-letter codes (`BU`, `DC`, …) while invoice-upload uses lowercase full words (`business`, `direct_consumer`, …). Same conceptual slot, different wire format. Mirroring DHL's split keeps wire-format mapping declarative and avoids per-call translation. |
 
 ---
 
