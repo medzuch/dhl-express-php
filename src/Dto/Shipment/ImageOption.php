@@ -10,14 +10,11 @@ use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
  * One entry in `outputImageProperties.imageOptions`.
  *
  * Mirrors the `imageOptions` array item under the
- * `supermodelIoLogisticsExpressOutputImageProperties` schema. `typeCode`
- * is kept as a string in Phase 4a — the value space (`label`,
- * `waybillDoc`, `invoice`, `qr-code`, `shipmentReceipt`) may become an
- * enum in Phase 4c when label-template support lands.
- *
- * `templateName` is also a free string in 4a; the
- * `OutputImageTemplate` enum (~66 templates from the workbook) ships in
- * Phase 4c at the point of consumption.
+ * `supermodelIoLogisticsExpressOutputImageProperties` schema. The
+ * `renderDHLLogo` and `fitLabelsToA4` toggles live here (not on the
+ * root `outputImageProperties` block) — they are per-document, e.g.
+ * a single shipment may want a DHL logo on the label but not on the
+ * waybill (spec lines 11021–11037).
  */
 final readonly class ImageOption
 {
@@ -28,6 +25,8 @@ final readonly class ImageOption
         public ?LabelEncodingFormat $encodingFormat = null,
         public ?bool $hideAccountNumber = null,
         public ?int $numberOfCopies = null,
+        public ?bool $renderDHLLogo = null,
+        public ?bool $fitLabelsToA4 = null,
     ) {
     }
 
@@ -54,6 +53,12 @@ final readonly class ImageOption
         }
         if ($this->numberOfCopies !== null) {
             $payload['numberOfCopies'] = $this->numberOfCopies;
+        }
+        if ($this->renderDHLLogo !== null) {
+            $payload['renderDHLLogo'] = $this->renderDHLLogo;
+        }
+        if ($this->fitLabelsToA4 !== null) {
+            $payload['fitLabelsToA4'] = $this->fitLabelsToA4;
         }
 
         return $payload;
