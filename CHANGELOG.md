@@ -7,6 +7,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.3.1] — 2026-05-16
+
+### Fixed
+
+- README: replace removed `withPickupRequested(bool)` with `withPickup(new Pickup(isRequested: false))` in both builder examples; add missing `Pickup` import.
+- README: add Early Shipment Screening to the Features table (was added in v0.3.0 but omitted).
+
+### Changed
+
+- Renamed `docs/dhl/` → `specs/dhl/` — the folder now only holds vendor API specifications; the new name makes its purpose explicit.
+- Removed internal session-scoped planning documents (`PROJECT_PLAN.md`, `docs/DECISIONS.md`, `docs/PROJECT_HISTORY.md`, `docs/ROADMAP.md`) and a stale DHL announcement email that were accidentally shipped in the repo.
+- Scrubbed "Phase N" labels from class/method docblocks and test section comments; renamed `CreateShipmentBuilderPhase4bTest` → `CreateShipmentBuilderCustomsValidationTest`.
+
+---
+
 ## [0.3.0] — 2026-05-16
 
 ### Highlights
@@ -192,4 +207,8 @@ Initial release of `medzuch/dhl-express-php`.
   - `plannedPickupDateAndTime` must be in the future and at most 10 days ahead
   - `closeTime` must be strictly after the pickup time when both are provided
 
+[0.3.1]: https://github.com/medzuch/dhl-express-php/releases/tag/v0.3.1
+[0.3.0]: https://github.com/medzuch/dhl-express-php/releases/tag/v0.3.0
+[0.2.1]: https://github.com/medzuch/dhl-express-php/releases/tag/v0.2.1
+[0.2.0]: https://github.com/medzuch/dhl-express-php/releases/tag/v0.2.0
 [0.1.0]: https://github.com/medzuch/dhl-express-php/releases/tag/v0.1.0
