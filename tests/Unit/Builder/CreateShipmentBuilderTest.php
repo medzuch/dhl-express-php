@@ -14,6 +14,7 @@ use Medzuch\DhlExpress\Dto\Shipment\Package;
 use Medzuch\DhlExpress\Dto\Shipment\ValueAddedService;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
+use Medzuch\DhlExpress\Enum\Incoterm;
 use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Enum\WeightUnit;
@@ -59,9 +60,43 @@ final class CreateShipmentBuilderTest extends TestCase
             self::assertContains('isCustomsDeclarable', $fields);
             self::assertContains('content.description', $fields);
             self::assertContains('unitOfMeasurement', $fields);
+            self::assertContains('content.incoterm', $fields);
             self::assertContains('accounts', $fields);
             self::assertContains('packages', $fields);
         }
+    }
+
+    public function testRejectsMissingIncoterm(): void
+    {
+        $builder = (new CreateShipmentBuilder())
+            ->withShipper($this->shipperContact())
+            ->withReceiver($this->receiverContact())
+            ->withPlannedShippingDate(new DateTimeImmutable('2026-06-01T13:00:00+00:00'))
+            ->withProductCode('N')
+            ->withPickupRequested(false)
+            ->withIsCustomsDeclarable(false)
+            ->withContentDescription('Books')
+            ->withUnitSystem(UnitSystem::Metric)
+            // no withIncoterm()
+            ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber('123456789')))
+            ->withPackage(new Package(weight: new Weight(1.0, WeightUnit::KG)));
+
+        try {
+            $builder->build();
+            self::fail('Expected InvalidRequestException');
+        } catch (InvalidRequestException $exception) {
+            $fields = array_column($exception->errors(), 'field');
+            self::assertContains('content.incoterm', $fields);
+        }
+    }
+
+    public function testToArrayIncludesIncoterm(): void
+    {
+        $payload = $this->minimalDomesticBuilder()->build()->toArray();
+
+        self::assertArrayHasKey('content', $payload);
+        self::assertArrayHasKey('incoterm', $payload['content']);
+        self::assertSame('DAP', $payload['content']['incoterm']);
     }
 
     public function testRejectsCustomsDeclarableWithoutExportDeclaration(): void
@@ -176,6 +211,7 @@ final class CreateShipmentBuilderTest extends TestCase
             ->withIsCustomsDeclarable(false)
             ->withContentDescription('Books')
             ->withUnitSystem(UnitSystem::Metric)
+            ->withIncoterm(Incoterm::DAP)
             ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber('123456789')))
             ->withPackage(new Package(
                 weight: new Weight(1.0, WeightUnit::KG),

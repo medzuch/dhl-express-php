@@ -22,6 +22,7 @@ use Medzuch\DhlExpress\Dto\Shipment\OutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
+use Medzuch\DhlExpress\Enum\Incoterm;
 use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Enum\WeightUnit;
@@ -63,6 +64,7 @@ try {
         ->withIsCustomsDeclarable(false)
         ->withContentDescription('Books')
         ->withUnitSystem(UnitSystem::Metric)
+        ->withIncoterm(Incoterm::DAP)
         ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber($accountNumber)))
         ->withPackage(new Package(
             weight: new Weight(1.0, WeightUnit::KG),

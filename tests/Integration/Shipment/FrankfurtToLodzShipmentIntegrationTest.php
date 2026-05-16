@@ -17,6 +17,7 @@ use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
 use Medzuch\DhlExpress\Enum\GetImageDocumentTypeCode;
 use Medzuch\DhlExpress\Enum\GetImageEncodingFormat;
+use Medzuch\DhlExpress\Enum\Incoterm;
 use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Enum\WeightUnit;
@@ -190,6 +191,7 @@ final class FrankfurtToLodzShipmentIntegrationTest extends IntegrationTestCase
             ->withIsCustomsDeclarable(false)
             ->withContentDescription('Personal items')
             ->withUnitSystem(UnitSystem::Metric)
+            ->withIncoterm(Incoterm::DAP)
             ->withAccount(new Account(AccountTypeCode::Shipper, $account))
             ->withPackage(new Package(
                 weight: $this->makeWeight(),

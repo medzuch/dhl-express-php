@@ -15,10 +15,7 @@ use Medzuch\DhlExpress\Enum\UnitSystem;
  * marks `packages`, `isCustomsDeclarable`, `description`, `incoterm`,
  * and `unitOfMeasurement` as required at the content level.
  *
- * Phase 4b adds `exportDeclaration` support for customs-declarable
- * shipments alongside the customs party types, `Invoice`, and
- * `LineItem` DTOs that populate it. The
- * {@see \Medzuch\DhlExpress\Builder\CreateShipmentBuilder} enforces
+ * The {@see \Medzuch\DhlExpress\Builder\CreateShipmentBuilder} enforces
  * that `exportDeclaration` is provided when `isCustomsDeclarable=true`.
  */
 final readonly class Content
@@ -30,8 +27,8 @@ final readonly class Content
         public array $packages,
         public bool $isCustomsDeclarable,
         public string $description,
+        public Incoterm $incoterm,
         public UnitSystem $unitOfMeasurement,
-        public ?Incoterm $incoterm = null,
         public ?float $declaredValue = null,
         public ?string $declaredValueCurrency = null,
         public ?ExportDeclaration $exportDeclaration = null,
@@ -50,12 +47,10 @@ final readonly class Content
             ),
             'isCustomsDeclarable' => $this->isCustomsDeclarable,
             'description' => $this->description,
+            'incoterm' => $this->incoterm->value,
             'unitOfMeasurement' => $this->unitOfMeasurement->value,
         ];
 
-        if ($this->incoterm !== null) {
-            $payload['incoterm'] = $this->incoterm->value;
-        }
         if ($this->declaredValue !== null) {
             $payload['declaredValue'] = $this->declaredValue;
         }

@@ -17,6 +17,7 @@ use Medzuch\DhlExpress\Dto\Shipment\Package;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\ApiEnvironment;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
+use Medzuch\DhlExpress\Enum\Incoterm;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Enum\WeightUnit;
 use Medzuch\DhlExpress\Exception\DhlErrorMapper;
@@ -139,6 +140,7 @@ final class ShipmentApiTest extends TestCase
             ->withIsCustomsDeclarable(false)
             ->withContentDescription('Books')
             ->withUnitSystem(UnitSystem::Metric)
+            ->withIncoterm(Incoterm::DAP)
             ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber('123456789')))
             ->withPackage(new Package(
                 weight: new Weight(1.0, WeightUnit::KG),

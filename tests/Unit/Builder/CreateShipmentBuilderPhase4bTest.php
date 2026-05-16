@@ -577,6 +577,7 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
             ->withPickupRequested(false)
             ->withContentDescription('Electronics')
             ->withUnitSystem(UnitSystem::Metric)
+            ->withIncoterm(Incoterm::DAP)
             ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber('123456789')))
             ->withPackage(new Package(
                 weight: new Weight(1.0, WeightUnit::KG),
@@ -611,6 +612,7 @@ final class CreateShipmentBuilderPhase4bTest extends TestCase
             ->withIsCustomsDeclarable(false)
             ->withContentDescription('Books')
             ->withUnitSystem(UnitSystem::Metric)
+            ->withIncoterm(Incoterm::DAP)
             ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber('123456789')))
             ->withPackage(new Package(
                 weight: new Weight(1.0, WeightUnit::KG),

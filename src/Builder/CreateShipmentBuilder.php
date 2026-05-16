@@ -288,6 +288,9 @@ final class CreateShipmentBuilder
         if ($unitOfMeasurement === null) {
             $errors[] = ['field' => 'unitOfMeasurement', 'message' => 'unitOfMeasurement is required'];
         }
+        if ($this->incoterm === null) {
+            $errors[] = ['field' => 'content.incoterm', 'message' => 'incoterm is required'];
+        }
 
         $accountCount = count($this->accounts);
         if ($accountCount < 1) {
@@ -447,6 +450,7 @@ final class CreateShipmentBuilder
             || $isCustomsDeclarable === null
             || $contentDescription === null
             || $unitOfMeasurement === null
+            || $this->incoterm === null
         ) {
             throw new InvalidRequestException([
                 ['field' => 'build', 'message' => 'internal: required field missing after validation'],
@@ -471,8 +475,8 @@ final class CreateShipmentBuilder
                 packages: $this->packages,
                 isCustomsDeclarable: $isCustomsDeclarable,
                 description: $contentDescription,
-                unitOfMeasurement: $unitOfMeasurement,
                 incoterm: $this->incoterm,
+                unitOfMeasurement: $unitOfMeasurement,
                 declaredValue: $this->declaredValue,
                 declaredValueCurrency: $this->declaredValueCurrency,
                 exportDeclaration: $this->exportDeclaration,
