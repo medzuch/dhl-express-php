@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Direction for a commodity (HS) code on an export line item.
  *
  * Matches the `commodityCodes[].typeCode` enum in
- * `docs/dhl/dhl_openapi.yaml`. Used inside
+ * `specs/dhl/dhl_openapi.yaml`. Used inside
  * {@see \Medzuch\DhlExpress\Dto\Shipment\CommodityCode}.
  */
 enum CommodityCodeType: string

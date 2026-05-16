@@ -31,7 +31,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 
 /**
- * Sandbox integration test for the pickup lifecycle (Phase 5a).
+ * Sandbox integration tests for the pickup lifecycle.
  *
  * Creates a pickup, then immediately cancels it to keep the sandbox
  * account clean. DHL sandbox may return various validation errors
@@ -103,8 +103,7 @@ final class PickupApiIntegrationTest extends IntegrationTestCase
      * doesn't accumulate live shipments), pick its tracking number off the
      * response, attach it to a pickup, schedule the pickup, then cancel.
      *
-     * Exercises the full pickup lifecycle as described in the Phase 5
-     * roadmap. As with testCreateAndCancelPickup, DHL sandbox may reject
+     * Exercises the full pickup lifecycle. As with testCreateAndCancelPickup, DHL sandbox may reject
      * specific account configurations at either step — any DhlApiException
      * still proves the pipeline.
      */

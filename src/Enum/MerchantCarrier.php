@@ -9,7 +9,7 @@ namespace Medzuch\DhlExpress\Enum;
  * landed-cost calculator to scope its rules.
  *
  * Source: `supermodelIoLogisticsExpressLandedCostRequest.merchantSelectedCarrierName`
- * in `docs/dhl/dhl_openapi.yaml`.
+ * in `specs/dhl/dhl_openapi.yaml`.
  */
 enum MerchantCarrier: string
 {

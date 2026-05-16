@@ -7,7 +7,7 @@ namespace Medzuch\DhlExpress\Enum;
 /**
  * DHL Express MyDHL API environment.
  *
- * Base URLs from `docs/dhl/dhl_openapi.yaml` (`servers:` section).
+ * Base URLs from `specs/dhl/dhl_openapi.yaml` (`servers:` section).
  */
 enum ApiEnvironment: string
 {

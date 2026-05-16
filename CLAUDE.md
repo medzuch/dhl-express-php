@@ -9,13 +9,10 @@ A standalone, framework-agnostic PHP 8.3 library wrapping the DHL Express MyDHL 
 
 ## Read first
 
-Full architecture, folder structure, and implementation roadmap:
-@PROJECT_PLAN.md
-
 DHL official documentation (precedence order — primary first):
-1. **Reference data workbook:** `docs/dhl/dhl_reference_data.xlsx` — machine-readable dump from DHL's Reference Data API. **Authoritative source for value lists** (enums, codes, error messages).
-2. OpenAPI spec: `docs/dhl/dhl_openapi.yaml` — authoritative for request/response shapes and field constraints.
-3. Reference data PDF: `docs/dhl/dhl_reference.pdf` — narrative reference; useful for context, but treated as secondary because it contains legacy/deprecated codes the live API no longer accepts.
+1. **Reference data workbook:** `specs/dhl/dhl_reference_data.xlsx` — machine-readable dump from DHL's Reference Data API. **Authoritative source for value lists** (enums, codes, error messages).
+2. OpenAPI spec: `specs/dhl/dhl_openapi.yaml` — authoritative for request/response shapes and field constraints.
+3. Reference data PDF: `specs/dhl/dhl_reference.pdf` — narrative reference; useful for context, but treated as secondary because it contains legacy/deprecated codes the live API no longer accepts.
 
 ALWAYS cross-reference these files when generating enums, DTOs, or error mappings. When the xlsx and the PDF disagree, the xlsx wins.
 
@@ -50,7 +47,7 @@ ALWAYS cross-reference these files when generating enums, DTOs, or error mapping
 ### Naming
 - Mirror DHL's own terminology exactly — `Shipment`, `Piece`, `Waybill`, `ServicePoint`, `Pickup`, `Incoterm`, `EPOD`
 - No abbreviations in public API — `getTrackingStatus()` not `getTrkStatus()`
-- Use ubiquitous language from `docs/dhl/` reference materials
+- Use ubiquitous language from `specs/dhl/` reference materials
 
 ### Testing (TDD)
 - **Write the test first**, then implementation
@@ -94,7 +91,7 @@ make shell          # enter container shell
 
 1. **TDD strict** — never write implementation before its test
 2. **PHPStan level max** from day one, not "later"
-3. **Cross-reference DHL docs** in `docs/dhl/` for any enum value, error code, or DTO field — do not invent values
+3. **Cross-reference DHL docs** in `specs/dhl/` for any enum value, error code, or DTO field — do not invent values
 4. **Conventional Commits** — every commit message
 5. **No framework code** in the library — keep it pure PHP
 6. **DHL terminology** — match their docs exactly, do not invent your own names

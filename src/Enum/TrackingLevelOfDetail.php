@@ -14,7 +14,7 @@ namespace Medzuch\DhlExpress\Enum;
  * and `all` to receive both levels in the same response.
  *
  * Source: `parameters.trackingLevelOfDetail` in
- * `docs/dhl/dhl_openapi.yaml` (lines 9713-9724).
+ * `specs/dhl/dhl_openapi.yaml` (lines 9713-9724).
  */
 enum TrackingLevelOfDetail: string
 {

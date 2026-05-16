@@ -35,7 +35,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RequiresEnvironmentVariable;
 
 /**
- * Sandbox check for `POST /shipments` (Phase 4a happy-path).
+ * Sandbox integration tests for `POST /shipments`.
  *
  * Uses `validateDataOnly=true` so the request exercises the full
  * request-build / transport / response-hydrate pipeline against the
@@ -125,7 +125,7 @@ final class ShipmentApiIntegrationTest extends IntegrationTestCase
     }
 
     /**
-     * CZ→DE cross-border customs-declarable shipment (Phase 4b).
+     * CZ→DE cross-border customs-declarable shipment.
      *
      * Validates a shipment with `isCustomsDeclarable=true` and a minimal
      * `ExportDeclaration` containing one line item. Uses

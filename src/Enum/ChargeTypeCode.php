@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Type of additional charge included in a Landed Cost calculation.
  *
  * Source: `supermodelIoLogisticsExpressLandedCostRequest.charges[].typeCode`
- * in `docs/dhl/dhl_openapi.yaml`.
+ * in `specs/dhl/dhl_openapi.yaml`.
  */
 enum ChargeTypeCode: string
 {

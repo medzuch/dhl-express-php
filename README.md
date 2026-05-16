@@ -23,6 +23,7 @@ A clean, framework-agnostic PHP 8.3 library for the **DHL Express MyDHL API 3.2.
 | **EPOD** | Electronic proof of delivery |
 | **Identifiers** | Resolve tracking identifiers |
 | **Reference Data** | Look up DHL code lists |
+| **Early Shipment Screening** | BBX Denied Party screening (`POST /early-shipment-screening`) |
 
 ---
 
@@ -141,6 +142,7 @@ use Medzuch\DhlExpress\Dto\Shipment\ContactAddress;
 use Medzuch\DhlExpress\Dto\Shipment\ImageOption;
 use Medzuch\DhlExpress\Dto\Shipment\OutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\Package;
+use Medzuch\DhlExpress\Dto\Shipment\Pickup;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
 use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
@@ -174,7 +176,7 @@ $request = (new CreateShipmentBuilder())
     ))
     ->withPlannedShippingDate(new DateTimeImmutable('+1 day'))
     ->withProductCode('N')
-    ->withPickupRequested(false)
+    ->withPickup(new Pickup(isRequested: false))
     ->withIsCustomsDeclarable(false)
     ->withContentDescription('Books')
     ->withUnitSystem(UnitSystem::Metric)
@@ -216,7 +218,7 @@ $request = (new CreateShipmentBuilder())
     ->withReceiver(/* ContactAddress */)
     ->withPlannedShippingDate(new DateTimeImmutable('+1 day'))
     ->withProductCode('P')
-    ->withPickupRequested(false)
+    ->withPickup(new Pickup(isRequested: false))
     ->withIsCustomsDeclarable(true)
     ->withContentDescription('Electronics')
     ->withUnitSystem(UnitSystem::Metric)

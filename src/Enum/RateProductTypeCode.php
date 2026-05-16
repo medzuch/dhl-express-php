@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Filter for the kinds of products to include in a rate response.
  *
  * Source: `supermodelIoLogisticsExpressRateRequest.productTypeCode`
- * in `docs/dhl/dhl_openapi.yaml`.
+ * in `specs/dhl/dhl_openapi.yaml`.
  */
 enum RateProductTypeCode: string
 {
