@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Medzuch\DhlExpress\Tests\Unit\Dto\Shipment;
 
 use Medzuch\DhlExpress\Dto\Shipment\ImageOption;
+use Medzuch\DhlExpress\Enum\InvoiceImageType;
 use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
 use PHPUnit\Framework\TestCase;
 
@@ -44,6 +45,40 @@ final class ImageOptionTest extends TestCase
             ],
             $dto->toArray(),
         );
+    }
+
+    public function testInvoiceAndLanguageFieldsSerialize(): void
+    {
+        $dto = new ImageOption(
+            typeCode: 'invoice',
+            invoiceType: InvoiceImageType::Proforma,
+            languageCode: 'eng',
+            languageCountryCode: 'us',
+            languageScriptCode: 'Latn',
+        );
+
+        $payload = $dto->toArray();
+
+        self::assertSame('proforma', $payload['invoiceType']);
+        self::assertSame('eng', $payload['languageCode']);
+        self::assertSame('us', $payload['languageCountryCode']);
+        self::assertSame('Latn', $payload['languageScriptCode']);
+    }
+
+    public function testLabelAndReceiptTextsSerialize(): void
+    {
+        $dto = new ImageOption(
+            typeCode: 'label',
+            labelFreeText: 'Free text on label',
+            labelCustomerDataText: 'Customer data',
+            shipmentReceiptCustomerDataText: 'Declaration text',
+        );
+
+        $payload = $dto->toArray();
+
+        self::assertSame('Free text on label', $payload['labelFreeText']);
+        self::assertSame('Customer data', $payload['labelCustomerDataText']);
+        self::assertSame('Declaration text', $payload['shipmentReceiptCustomerDataText']);
     }
 
     public function testRenderDHLLogoSerializesOnlyWhenSet(): void

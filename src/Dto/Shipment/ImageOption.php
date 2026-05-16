@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Dto\Shipment;
 
+use Medzuch\DhlExpress\Enum\InvoiceImageType;
 use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
 
 /**
@@ -27,6 +28,13 @@ final readonly class ImageOption
         public ?int $numberOfCopies = null,
         public ?bool $renderDHLLogo = null,
         public ?bool $fitLabelsToA4 = null,
+        public ?InvoiceImageType $invoiceType = null,
+        public ?string $languageCode = null,
+        public ?string $languageCountryCode = null,
+        public ?string $languageScriptCode = null,
+        public ?string $labelFreeText = null,
+        public ?string $labelCustomerDataText = null,
+        public ?string $shipmentReceiptCustomerDataText = null,
     ) {
     }
 
@@ -59,6 +67,27 @@ final readonly class ImageOption
         }
         if ($this->fitLabelsToA4 !== null) {
             $payload['fitLabelsToA4'] = $this->fitLabelsToA4;
+        }
+        if ($this->invoiceType !== null) {
+            $payload['invoiceType'] = $this->invoiceType->value;
+        }
+        if ($this->languageCode !== null) {
+            $payload['languageCode'] = $this->languageCode;
+        }
+        if ($this->languageCountryCode !== null) {
+            $payload['languageCountryCode'] = $this->languageCountryCode;
+        }
+        if ($this->languageScriptCode !== null) {
+            $payload['languageScriptCode'] = $this->languageScriptCode;
+        }
+        if ($this->labelFreeText !== null) {
+            $payload['labelFreeText'] = $this->labelFreeText;
+        }
+        if ($this->labelCustomerDataText !== null) {
+            $payload['labelCustomerDataText'] = $this->labelCustomerDataText;
+        }
+        if ($this->shipmentReceiptCustomerDataText !== null) {
+            $payload['shipmentReceiptCustomerDataText'] = $this->shipmentReceiptCustomerDataText;
         }
 
         return $payload;
