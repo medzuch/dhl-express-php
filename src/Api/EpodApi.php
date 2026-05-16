@@ -35,6 +35,11 @@ final class EpodApi
     /**
      * Fetches the electronic proof of delivery for a shipment.
      *
+     * `shipperAccountNumber` is optional per the DHL spec — DHL resolves
+     * the shipper from the tracking number when omitted. Pass it
+     * explicitly only when your API credentials cover multiple accounts
+     * and you need to disambiguate.
+     *
      * `content` is optional — DHL defaults to `epod-summary` when
      * unspecified.
      *
@@ -43,12 +48,14 @@ final class EpodApi
      */
     public function get(
         TrackingNumber $trackingNumber,
-        AccountNumber $shipperAccountNumber,
+        ?AccountNumber $shipperAccountNumber = null,
         ?EpodContent $content = null,
     ): EpodResponse {
-        $params = [
-            'shipperAccountNumber' => $shipperAccountNumber->value,
-        ];
+        $params = [];
+
+        if ($shipperAccountNumber !== null) {
+            $params['shipperAccountNumber'] = $shipperAccountNumber->value;
+        }
 
         if ($content !== null) {
             $params['content'] = $content->value;
