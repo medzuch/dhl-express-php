@@ -11,7 +11,7 @@ namespace Medzuch\DhlExpress\Exception;
  * Routing is by HTTP status only; the DHL-internal error code travels
  * inside the exception as `$dhlErrorCode` for callers that want to
  * branch on it. The DHL error response shape is documented in
- * `dhl_openapi.yaml::supermodelIoLogisticsExpressErrorResponse`.
+ * `dpdhl-express-api-3.4.0_9.yaml::supermodelIoLogisticsExpressErrorResponse`.
  *
  * @phpstan-type ResponseBody array<string, mixed>
  */

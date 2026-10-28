@@ -12,6 +12,7 @@ use Medzuch\DhlExpress\ClientConfig;
 use Medzuch\DhlExpress\Dto\Common\Account;
 use Medzuch\DhlExpress\Dto\Shipment\DocumentImage;
 use Medzuch\DhlExpress\Dto\Shipment\ExportDeclaration;
+use Medzuch\DhlExpress\Dto\Shipment\ExportInvoice;
 use Medzuch\DhlExpress\Dto\Shipment\ExportLineItem;
 use Medzuch\DhlExpress\Dto\Shipment\GetImageRequest;
 use Medzuch\DhlExpress\Dto\Shipment\GetImageResponse;
@@ -26,6 +27,8 @@ use Medzuch\DhlExpress\Enum\DocumentImageFormat;
 use Medzuch\DhlExpress\Enum\DocumentImageTypeCode;
 use Medzuch\DhlExpress\Enum\GetImageDocumentTypeCode;
 use Medzuch\DhlExpress\Enum\GetImageEncodingFormat;
+use Medzuch\DhlExpress\Enum\Incoterm;
+use Medzuch\DhlExpress\Enum\InvoiceFunction;
 use Medzuch\DhlExpress\Enum\LineItemQuantityUnit;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Exception\DhlErrorMapper;
@@ -132,6 +135,8 @@ final class ShipmentApiUploadGetTest extends TestCase
         self::assertSame('EUR', $body['content']['currency']);
         self::assertSame('metric', $body['content']['unitOfMeasurement']);
         self::assertCount(1, $body['content']['exportDeclaration']);
+        self::assertSame('DAP', $body['content']['exportDeclaration'][0]['incoterm']);
+        self::assertSame('INV-001', $body['content']['exportDeclaration'][0]['invoice']['number']);
     }
 
     public function testGetImageSendsGetRequestToCorrectEndpoint(): void
@@ -240,6 +245,12 @@ final class ShipmentApiUploadGetTest extends TestCase
         return new UploadInvoiceDataRequest(
             exportDeclarations: [
                 new ExportDeclaration(
+                    invoice: new ExportInvoice(
+                        number: 'INV-001',
+                        date: new DateTimeImmutable('2026-05-01'),
+                        function: InvoiceFunction::Export,
+                    ),
+                    incoterm: Incoterm::DAP,
                     lineItems: [
                         new ExportLineItem(
                             number: 1,

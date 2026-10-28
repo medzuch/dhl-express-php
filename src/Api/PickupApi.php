@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Api;
 
+use Medzuch\DhlExpress\Dto\Pickup\CancelPickupResponse;
+use Medzuch\DhlExpress\Dto\Pickup\CancelPickupResponseHydrator;
 use Medzuch\DhlExpress\Dto\Pickup\CreatePickupRequest;
 use Medzuch\DhlExpress\Dto\Pickup\CreatePickupResponse;
 use Medzuch\DhlExpress\Dto\Pickup\CreatePickupResponseHydrator;
@@ -23,7 +25,7 @@ use Medzuch\DhlExpress\Http\RequestBuilder;
  * - {@see self::update()} — `PATCH /pickups/{dispatchConfirmationNumber}`
  * - {@see self::cancel()} — `DELETE /pickups/{dispatchConfirmationNumber}`
  *
- * Note: there is no `GET /pickups` in DHL API 3.2.2 — pickup confirmation
+ * Note: there is no `GET /pickups` in DHL API 3.4.0 — pickup confirmation
  * numbers are returned by {@see self::create()} and tracked by the caller.
  */
 final readonly class PickupApi
@@ -33,6 +35,7 @@ final readonly class PickupApi
         private HttpTransport $transport,
         private CreatePickupResponseHydrator $createHydrator = new CreatePickupResponseHydrator(),
         private UpdatePickupResponseHydrator $updateHydrator = new UpdatePickupResponseHydrator(),
+        private CancelPickupResponseHydrator $cancelHydrator = new CancelPickupResponseHydrator(),
     ) {
     }
 
@@ -79,7 +82,10 @@ final readonly class PickupApi
      * Cancel a pickup booking via
      * `DELETE /pickups/{dispatchConfirmationNumber}`.
      *
-     * Returns void — DHL responds with 200 and an empty body on success.
+     * DHL answers 200 when the pickup is cancelled, was already cancelled
+     * or has already been completed; the returned
+     * {@see CancelPickupResponse} carries DHL's outcome text (empty when
+     * the body is empty).
      *
      * @throws DhlApiException     for DHL-side errors
      * @throws DhlNetworkException for transport-level failures
@@ -88,7 +94,7 @@ final readonly class PickupApi
         string $dispatchConfirmationNumber,
         string $requestorName,
         string $reason,
-    ): void {
+    ): CancelPickupResponse {
         $httpRequest = $this->requestBuilder->build(
             'DELETE',
             '/pickups/' . rawurlencode($dispatchConfirmationNumber),
@@ -98,6 +104,8 @@ final readonly class PickupApi
             ],
         );
 
-        $this->transport->send($httpRequest);
+        $body = $this->transport->send($httpRequest);
+
+        return $this->cancelHydrator->hydrate($body);
     }
 }

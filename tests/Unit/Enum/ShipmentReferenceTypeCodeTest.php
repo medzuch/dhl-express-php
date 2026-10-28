@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Medzuch\DhlExpress\Tests\Unit\Enum;
 
 use Medzuch\DhlExpress\Enum\ShipmentReferenceTypeCode;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ShipmentReferenceTypeCodeTest extends TestCase
 {
-    public function testCaseCountIs63(): void
+    public function testCaseCountMatchesWorkbook(): void
     {
-        self::assertCount(63, ShipmentReferenceTypeCode::cases());
+        self::assertCount(16, ShipmentReferenceTypeCode::cases());
     }
 
     public function testLcqHasCorrectWireValue(): void
@@ -19,19 +20,30 @@ final class ShipmentReferenceTypeCodeTest extends TestCase
         self::assertSame('LCQ', ShipmentReferenceTypeCode::LCQ->value);
     }
 
-    public function testMr1HasCorrectWireValue(): void
+    public function testAfmHasCorrectWireValue(): void
     {
-        self::assertSame('MR1', ShipmentReferenceTypeCode::MR1->value);
-    }
-
-    public function testHwbHasCorrectWireValue(): void
-    {
-        self::assertSame('HWB', ShipmentReferenceTypeCode::HWB->value);
+        self::assertSame('AFM', ShipmentReferenceTypeCode::AFM->value);
     }
 
     public function testFromCanResolveByWireValue(): void
     {
-        self::assertSame(ShipmentReferenceTypeCode::BOL, ShipmentReferenceTypeCode::from('BOL'));
+        self::assertSame(ShipmentReferenceTypeCode::UCN, ShipmentReferenceTypeCode::from('UCN'));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function retiredCodes(): iterable
+    {
+        foreach (['AAO', 'BOL', 'HWB', 'MR1', 'BOE', 'PBE'] as $code) {
+            yield $code => [$code];
+        }
+    }
+
+    #[DataProvider('retiredCodes')]
+    public function testRetiredCodesAreNotAccepted(string $code): void
+    {
+        self::assertNull(ShipmentReferenceTypeCode::tryFrom($code));
     }
 
     public function testIsStringBackedEnum(): void

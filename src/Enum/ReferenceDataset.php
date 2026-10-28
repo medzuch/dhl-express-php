@@ -9,7 +9,7 @@ namespace Medzuch\DhlExpress\Enum;
  *
  * The 20 values from the OpenAPI inline `enum` on the
  * `datasetName` query parameter — these are the same datasets
- * that ship as sheets in `dhl_reference_data.xlsx`. `All`
+ * that ship as sheets in `ExpressReferenceData_2026-10-25.xlsx`. `All`
  * (`'all'`) requests every dataset in one call.
  */
 enum ReferenceDataset: string

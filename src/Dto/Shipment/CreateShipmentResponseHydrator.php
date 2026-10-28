@@ -92,6 +92,7 @@ final class CreateShipmentResponseHydrator
             imageFormat: HydrationHelper::stringField($raw, 'imageFormat'),
             content: HydrationHelper::stringField($raw, 'content'),
             typeCode: HydrationHelper::stringField($raw, 'typeCode'),
+            invoiceNumber: HydrationHelper::nullableStringField($raw, 'invoiceNumber'),
         );
     }
 

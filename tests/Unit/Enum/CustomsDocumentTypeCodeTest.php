@@ -5,13 +5,30 @@ declare(strict_types=1);
 namespace Medzuch\DhlExpress\Tests\Unit\Enum;
 
 use Medzuch\DhlExpress\Enum\CustomsDocumentTypeCode;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CustomsDocumentTypeCodeTest extends TestCase
 {
-    public function testCoversFiftyFiveUniqueCustomsDocumentCodes(): void
+    public function testCoversFiftyThreeUniqueCustomsDocumentCodes(): void
     {
-        self::assertCount(55, CustomsDocumentTypeCode::cases());
+        self::assertCount(53, CustomsDocumentTypeCode::cases());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function retiredCodes(): iterable
+    {
+        foreach (['CHA', 'POA'] as $code) {
+            yield $code => [$code];
+        }
+    }
+
+    #[DataProvider('retiredCodes')]
+    public function testRetiredCodesAreNotAccepted(string $code): void
+    {
+        self::assertNull(CustomsDocumentTypeCode::tryFrom($code));
     }
 
     public function testRepresentativeCodesResolveToTheirBackingValues(): void

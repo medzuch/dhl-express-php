@@ -34,7 +34,7 @@ final class ClientConfigTest extends TestCase
         );
 
         self::assertSame('eng', $config->acceptLanguage);
-        self::assertSame('3.2.0', $config->xVersion);
+        self::assertSame('3.4.0', $config->xVersion);
         self::assertNull($config->integrationProfile);
     }
 
@@ -58,11 +58,11 @@ final class ClientConfigTest extends TestCase
             environment: ApiEnvironment::Production,
             credentials: new Credentials('user', 'pass'),
             acceptLanguage: 'fra',
-            xVersion: '3.2.0',
+            xVersion: '3.4.1',
         );
 
         self::assertSame('fra', $config->acceptLanguage);
-        self::assertSame('3.2.0', $config->xVersion);
+        self::assertSame('3.4.1', $config->xVersion);
     }
 
     public function testBaseUrlDelegatesToEnvironment(): void

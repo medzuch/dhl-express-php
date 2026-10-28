@@ -7,7 +7,7 @@ namespace Medzuch\DhlExpress\Enum;
 /**
  * DHL Express output image template names.
  *
- * Sourced from the `outputImageTemplate` sheet of `dhl_reference_data.xlsx`
+ * Sourced from the `outputImageTemplate` sheet of `ExpressReferenceData_2026-10-25.xlsx`
  * (serviceName = CreateShipment or AddPiece, deduplicated).
  * The backing value is the exact wire format expected by the API.
  *

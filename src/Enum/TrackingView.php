@@ -14,7 +14,7 @@ namespace Medzuch\DhlExpress\Enum;
  * status poll, `shipment-details-only` to skip events
  * entirely, or `bbx-children` for break-bulk children.
  *
- * Source: `parameters.trackingView` in `specs/dhl/dhl_openapi.yaml`
+ * Source: `parameters.trackingView` in `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`
  * (lines 9725-9739).
  */
 enum TrackingView: string

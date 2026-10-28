@@ -7,10 +7,11 @@ namespace Medzuch\DhlExpress\Enum;
 /**
  * Dangerous-goods content identifier.
  *
- * The 23 content classifications listed in the `dangerousGoods`
- * sheet of `dhl_reference_data.xlsx`, ranging from biological
- * substances and dry ice to the various lithium and sodium battery
- * packaging instructions. Wire codes that start with a digit get
+ * The 24 content classifications listed in the `dangerousGoods`
+ * sheet of `ExpressReferenceData_2026-10-25.xlsx`, ranging from
+ * biological substances and dry ice to the various lithium and sodium
+ * battery packaging instructions and `A08` (ADR Special Provision
+ * 188/400). Wire codes that start with a digit get
  * descriptive PascalCase case names (PHP does not allow case names
  * to start with a digit); alpha-prefixed codes keep their wire
  * identifiers.
@@ -43,4 +44,5 @@ enum DangerousGoodsContentId: string
     case HU2 = 'HU2';
     case HU6 = 'HU6';
     case YN1 = 'YN1';
+    case A08 = 'A08';
 }

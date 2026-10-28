@@ -61,13 +61,13 @@ final class CreateShipmentBuilderTest extends TestCase
             self::assertContains('isCustomsDeclarable', $fields);
             self::assertContains('content.description', $fields);
             self::assertContains('unitOfMeasurement', $fields);
-            self::assertContains('content.incoterm', $fields);
+            self::assertNotContains('content.incoterm', $fields);
             self::assertContains('accounts', $fields);
             self::assertContains('packages', $fields);
         }
     }
 
-    public function testRejectsMissingIncoterm(): void
+    public function testNonCustomsDeclarableShipmentWithoutIncotermOmitsIt(): void
     {
         $builder = (new CreateShipmentBuilder())
             ->withShipper($this->shipperContact())
@@ -82,13 +82,10 @@ final class CreateShipmentBuilderTest extends TestCase
             ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber('123456789')))
             ->withPackage(new Package(weight: new Weight(1.0, WeightUnit::KG)));
 
-        try {
-            $builder->build();
-            self::fail('Expected InvalidRequestException');
-        } catch (InvalidRequestException $exception) {
-            $fields = array_column($exception->errors(), 'field');
-            self::assertContains('content.incoterm', $fields);
-        }
+        $request = $builder->build();
+
+        self::assertNull($request->content->incoterm);
+        self::assertArrayNotHasKey('incoterm', $request->toArray()['content']);
     }
 
     public function testToArrayIncludesIncoterm(): void
@@ -111,7 +108,7 @@ final class CreateShipmentBuilderTest extends TestCase
         } catch (InvalidRequestException $exception) {
             $fields = array_column($exception->errors(), 'field');
 
-            self::assertContains('content.exportDeclaration', $fields);
+            self::assertContains('content.exportDeclarations', $fields);
         }
     }
 
@@ -145,6 +142,60 @@ final class CreateShipmentBuilderTest extends TestCase
             $fields = array_column($exception->errors(), 'field');
 
             self::assertContains('packages[1].dimensions.unit', $fields);
+        }
+    }
+
+    public function testImperialDimensionsWithMetricWeightsUsingDimensionUnitSystem(): void
+    {
+        $request = (new CreateShipmentBuilder())
+            ->withShipper($this->shipperContact())
+            ->withReceiver($this->receiverContact())
+            ->withPlannedShippingDate(new DateTimeImmutable('2026-06-01T13:00:00+00:00'))
+            ->withProductCode('N')
+            ->withPickup(new Pickup(false))
+            ->withIsCustomsDeclarable(false)
+            ->withContentDescription('Books')
+            ->withUnitSystem(UnitSystem::Metric)
+            ->withDimensionUnitSystem(UnitSystem::Imperial)
+            ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber('123456789')))
+            ->withPackage(new Package(
+                weight: new Weight(2.0, WeightUnit::KG),
+                dimensions: new Dimensions(10.0, 10.0, 10.0, DimensionUnit::IN),
+            ))
+            ->build();
+
+        $content = $request->toArray()['content'];
+
+        self::assertSame('metric', $content['unitOfMeasurement']);
+        self::assertSame('imperial', $content['dimensionUnitOfMeasurement']);
+    }
+
+    public function testDimensionsAreValidatedAgainstDimensionUnitSystemWhenSet(): void
+    {
+        $builder = (new CreateShipmentBuilder())
+            ->withShipper($this->shipperContact())
+            ->withReceiver($this->receiverContact())
+            ->withPlannedShippingDate(new DateTimeImmutable('2026-06-01T13:00:00+00:00'))
+            ->withProductCode('N')
+            ->withPickup(new Pickup(false))
+            ->withIsCustomsDeclarable(false)
+            ->withContentDescription('Books')
+            ->withUnitSystem(UnitSystem::Metric)
+            ->withDimensionUnitSystem(UnitSystem::Imperial)
+            ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber('123456789')))
+            ->withPackage(new Package(
+                weight: new Weight(2.0, WeightUnit::KG),
+                dimensions: new Dimensions(10.0, 10.0, 10.0, DimensionUnit::CM),
+            ));
+
+        try {
+            $builder->build();
+            self::fail('Expected InvalidRequestException');
+        } catch (InvalidRequestException $exception) {
+            $fields = array_column($exception->errors(), 'field');
+
+            self::assertContains('packages[0].dimensions.unit', $fields);
+            self::assertNotContains('packages[0].weight.unit', $fields);
         }
     }
 

@@ -14,7 +14,7 @@ namespace Medzuch\DhlExpress\Enum;
  *   constitute DHL's delivery commitment.
  *
  * Source: `supermodelIoLogisticsExpressRateRequest.estimatedDeliveryDate.typeCode`
- * in `specs/dhl/dhl_openapi.yaml`.
+ * in `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`.
  */
 enum EstimatedDeliveryDateTypeCode: string
 {

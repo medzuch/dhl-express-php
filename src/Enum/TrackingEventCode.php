@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Event type code returned in tracking responses.
  *
  * The 65 two-letter codes from the `trackingEventCode` sheet of
- * `dhl_reference_data.xlsx`. Each tracked shipment progression
+ * `ExpressReferenceData_2026-10-25.xlsx`. Each tracked shipment progression
  * step (`OK` delivered, `PU` shipment pick up, `CR` clearance
  * release, `RT` returned to consignor, …) carries one of these.
  *

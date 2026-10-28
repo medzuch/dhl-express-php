@@ -22,10 +22,6 @@ final class PackageTypeCodeTest extends TestCase
         yield '2BC' => [PackageTypeCode::Box2Cube, '2BC'];
         yield 'XPD' => [PackageTypeCode::XPD, 'XPD'];
         yield '2BP' => [PackageTypeCode::Box2Pizza, '2BP'];
-        yield 'WB1' => [PackageTypeCode::WB1, 'WB1'];
-        yield 'WB2' => [PackageTypeCode::WB2, 'WB2'];
-        yield 'WB3' => [PackageTypeCode::WB3, 'WB3'];
-        yield 'WB6' => [PackageTypeCode::WB6, 'WB6'];
         yield 'BB1' => [PackageTypeCode::BB1, 'BB1'];
         yield 'BB2' => [PackageTypeCode::BB2, 'BB2'];
         yield 'BB3' => [PackageTypeCode::BB3, 'BB3'];
@@ -45,9 +41,25 @@ final class PackageTypeCodeTest extends TestCase
         self::assertSame($expected, $case->value);
     }
 
-    public function testCoversAllTwentyTwoGlobalPackageTypes(): void
+    public function testCoversAllEighteenGlobalPackageTypes(): void
     {
-        self::assertCount(22, PackageTypeCode::cases());
+        self::assertCount(18, PackageTypeCode::cases());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function retiredCodes(): iterable
+    {
+        foreach (['WB1', 'WB2', 'WB3', 'WB6'] as $code) {
+            yield $code => [$code];
+        }
+    }
+
+    #[DataProvider('retiredCodes')]
+    public function testRetiredWineBoxCodesAreNotAccepted(string $code): void
+    {
+        self::assertNull(PackageTypeCode::tryFrom($code));
     }
 
     public function testFromCanResolveByDhlCode(): void

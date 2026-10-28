@@ -11,7 +11,7 @@ use Medzuch\DhlExpress\ValueObject\MessageReference;
  * via {@see random_bytes()}.
  *
  * The 36-character output fits DHL's 1-36 character header constraint
- * exactly and matches the example values in `dhl_openapi.yaml`.
+ * exactly and matches the example values in `dpdhl-express-api-3.4.0_9.yaml`.
  */
 final class RandomMessageReferenceGenerator implements MessageReferenceGenerator
 {

@@ -10,7 +10,7 @@ namespace Medzuch\DhlExpress\Enum;
  * (PULCL), or DHL's base currency (BASEC).
  *
  * Source: `supermodelIoLogisticsExpressRates.products[].totalPrice[].currencyType`
- * in `specs/dhl/dhl_openapi.yaml`.
+ * in `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`.
  */
 enum RateCurrencyType: string
 {

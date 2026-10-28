@@ -11,29 +11,38 @@ use Medzuch\DhlExpress\Enum\UnitSystem;
  * The `content` block on a create-shipment request.
  *
  * Mirrors the inline `content` object in
- * `supermodelIoLogisticsExpressCreateShipmentRequest`. The DHL spec
- * marks `packages`, `isCustomsDeclarable`, `description`, `incoterm`,
- * and `unitOfMeasurement` as required at the content level.
+ * `supermodelIoLogisticsExpressCreateShipmentRequest` (MyDHL API
+ * 3.4.0). The spec marks `packages`, `isCustomsDeclarable`,
+ * `description` and `unitOfMeasurement` as required at the content
+ * level; `incoterm` became optional in 3.4.0 and, when set, acts as
+ * the default for export declarations without their own.
  *
- * The {@see \Medzuch\DhlExpress\Builder\CreateShipmentBuilder} enforces
- * that `exportDeclaration` is provided when `isCustomsDeclarable=true`.
+ * Export declarations serialize as the `exportDeclarations` list
+ * (3.4.0 replaced the single `exportDeclaration` object). The
+ * {@see \Medzuch\DhlExpress\Builder\CreateShipmentBuilder} enforces
+ * at least one declaration when `isCustomsDeclarable=true`.
+ *
+ * `dimensionUnitOfMeasurement` lets package dimensions use a different
+ * unit system from the weights (`unitOfMeasurement`).
  */
 final readonly class Content
 {
     /**
-     * @param list<Package> $packages
+     * @param list<Package>           $packages
+     * @param list<ExportDeclaration> $exportDeclarations
      */
     public function __construct(
         public array $packages,
         public bool $isCustomsDeclarable,
         public string $description,
-        public Incoterm $incoterm,
+        public ?Incoterm $incoterm,
         public UnitSystem $unitOfMeasurement,
         public ?float $declaredValue = null,
         public ?string $declaredValueCurrency = null,
-        public ?ExportDeclaration $exportDeclaration = null,
+        public array $exportDeclarations = [],
         public ?bool $areMorePackagesToBeAddedLater = null,
         public ?string $USFilingTypeValue = null,
+        public ?UnitSystem $dimensionUnitOfMeasurement = null,
     ) {
     }
 
@@ -49,9 +58,15 @@ final readonly class Content
             ),
             'isCustomsDeclarable' => $this->isCustomsDeclarable,
             'description' => $this->description,
-            'incoterm' => $this->incoterm->value,
-            'unitOfMeasurement' => $this->unitOfMeasurement->value,
         ];
+
+        if ($this->incoterm !== null) {
+            $payload['incoterm'] = $this->incoterm->value;
+        }
+        $payload['unitOfMeasurement'] = $this->unitOfMeasurement->value;
+        if ($this->dimensionUnitOfMeasurement !== null) {
+            $payload['dimensionUnitOfMeasurement'] = $this->dimensionUnitOfMeasurement->value;
+        }
 
         if ($this->declaredValue !== null) {
             $payload['declaredValue'] = $this->declaredValue;
@@ -59,8 +74,11 @@ final readonly class Content
         if ($this->declaredValueCurrency !== null) {
             $payload['declaredValueCurrency'] = $this->declaredValueCurrency;
         }
-        if ($this->exportDeclaration !== null) {
-            $payload['exportDeclaration'] = $this->exportDeclaration->toArray();
+        if ($this->exportDeclarations !== []) {
+            $payload['exportDeclarations'] = array_map(
+                static fn (ExportDeclaration $declaration): array => $declaration->toArray(),
+                $this->exportDeclarations,
+            );
         }
         if ($this->areMorePackagesToBeAddedLater !== null) {
             $payload['areMorePackagesToBeAddedLater'] = $this->areMorePackagesToBeAddedLater;

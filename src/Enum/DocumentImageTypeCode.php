@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Document type code for PLT (Paperless Trade) image uploads.
  *
  * Matches the `documentImages[].typeCode` enum in
- * `specs/dhl/dhl_openapi.yaml`. Used inside
+ * `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`. Used inside
  * {@see \Medzuch\DhlExpress\Dto\Shipment\DocumentImage} when
  * uploading customs documents via
  * {@see \Medzuch\DhlExpress\Api\ShipmentApi::uploadImage()}.

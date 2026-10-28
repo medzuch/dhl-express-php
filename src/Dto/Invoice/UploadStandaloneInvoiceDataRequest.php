@@ -42,6 +42,22 @@ final readonly class UploadStandaloneInvoiceDataRequest
         public ?InvoiceOutputImageProperties $outputImageProperties = null,
         public ?InvoiceCustomerDetails $customerDetails = null,
     ) {
+        // The upload schema requires incoterm and invoice.function on every
+        // declaration (there is no shipment-level incoterm to inherit) and
+        // rejects the Create-Shipment-only fields; never drop them silently.
+        foreach ($exportDeclarations as $index => $declaration) {
+            $errors = $declaration->invoiceDataUploadErrors();
+            if ($errors !== []) {
+                throw new \InvalidArgumentException(sprintf(
+                    'UploadStandaloneInvoiceDataRequest exportDeclarations[%d] is not valid for an invoice-data upload: %s.',
+                    $index,
+                    implode(', ', array_map(
+                        static fn (string $field): string => "exportDeclarations[{$index}].{$field}",
+                        $errors,
+                    )),
+                ));
+            }
+        }
     }
 
     /**
@@ -68,7 +84,7 @@ final readonly class UploadStandaloneInvoiceDataRequest
 
         $payload['content'] = [
             'exportDeclaration' => array_map(
-                static fn (ExportDeclaration $declaration): array => $declaration->toArray(),
+                static fn (ExportDeclaration $declaration): array => $declaration->toInvoiceDataArray(),
                 $this->exportDeclarations,
             ),
             'currency' => $this->currency,

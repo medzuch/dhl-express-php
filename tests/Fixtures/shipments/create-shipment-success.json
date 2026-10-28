@@ -28,6 +28,12 @@
             "imageFormat": "PDF",
             "content": "JVBERi0xLjQKJeLjz9MK",
             "typeCode": "waybillDoc"
+        },
+        {
+            "imageFormat": "PDF",
+            "content": "JVBERi0xLjQKJeLjz9MK",
+            "typeCode": "invoice",
+            "invoiceNumber": "INV-1"
         }
     ]
 }

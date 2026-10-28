@@ -46,18 +46,25 @@ use Medzuch\DhlExpress\Exception\InvalidRequestException;
  *   contentDescription, unitOfMeasurement, isCustomsDeclarable, and
  *   pickup all explicitly set).
  * - Accounts: 1–3. Packages: 1–999.
- * - Per-package weight/dimension unit must match the shipment-level {@see UnitSystem}.
- * - `isCustomsDeclarable=true` ⇒ `exportDeclaration` required.
+ * - Per-package weight unit must match the shipment-level {@see UnitSystem};
+ *   dimension units must match `dimensionUnitOfMeasurement` when set,
+ *   otherwise the shipment-level unit.
+ * - `isCustomsDeclarable=true` ⇒ at least one export declaration; at most 100.
+ * - Each export declaration without its own incoterm inherits the
+ *   shipment-level incoterm; a declaration with neither is rejected.
+ * - Invoice numbers must be unique across export declarations (DHL 7188).
+ * - Content description must not be empty or only whitespace/pipes (DHL 7191).
  * - DG VAS code present ⇒ `dangerousGoods` block required.
  * - Insurance VAS (`II`) ⇒ `declaredValue` required.
- * - DDP incoterm ⇒ at least one `DutiesTaxes` account required.
+ * - DDP incoterm (shipment-level or on any declaration) ⇒ at least one
+ *   `DutiesTaxes` account required.
  * - Cross-border outside EU customs territory ⇒ `isCustomsDeclarable=true` required
  *   (intra-EU shipments are exempt). Territory list: 27 EU member states + Monaco +
  *   French outermost regions (GP, MQ, GF, RE, YT). Northern Ireland (GB) detected
  *   via "BT" postal-code prefix. Known limitation: Canary Islands/Ceuta/Melilla (ES)
  *   cannot be distinguished from mainland Spain.
- * - Line-item price×quantity sum must equal `declaredValue` within ±0.01
- *   when both `exportDeclaration` and `declaredValue` are provided.
+ * - Line-item price×quantity sum across all export declarations must equal
+ *   `declaredValue` within ±0.01 when both are provided.
  */
 final class CreateShipmentBuilder
 {
@@ -96,6 +103,10 @@ final class CreateShipmentBuilder
         // French outermost regions (own ISO codes, part of EU customs territory)
         'GP', 'MQ', 'GF', 'RE', 'YT',
     ];
+
+    /** Schema maximum of `content.exportDeclarations` (DHL's account default is 5). */
+    private const MAX_EXPORT_DECLARATIONS = 100;
+
     private ?DateTimeImmutable $plannedShippingDateAndTime = null;
     private ?Pickup $pickup = null;
     private ?string $productCode = null;
@@ -117,12 +128,14 @@ final class CreateShipmentBuilder
     private ?bool $isCustomsDeclarable = null;
     private ?string $contentDescription = null;
     private ?UnitSystem $unitOfMeasurement = null;
+    private ?UnitSystem $dimensionUnitOfMeasurement = null;
     private ?Incoterm $incoterm = null;
     /** @var list<ValueAddedService> */
     private array $valueAddedServices = [];
     private ?OutputImageProperties $outputImageProperties = null;
     private ?bool $getRateEstimates = null;
-    private ?ExportDeclaration $exportDeclaration = null;
+    /** @var list<ExportDeclaration> */
+    private array $exportDeclarations = [];
     private ?DangerousGoods $dangerousGoods = null;
     private ?float $declaredValue = null;
     private ?string $declaredValueCurrency = null;
@@ -273,6 +286,21 @@ final class CreateShipmentBuilder
         return $this;
     }
 
+    /**
+     * Unit system for package dimensions when it differs from the
+     * weight unit set by {@see self::withUnitSystem()}.
+     */
+    public function withDimensionUnitSystem(UnitSystem $unitSystem): self
+    {
+        $this->dimensionUnitOfMeasurement = $unitSystem;
+
+        return $this;
+    }
+
+    /**
+     * Shipment-level incoterm. Optional; when set it is also the default
+     * for export declarations that carry no incoterm of their own.
+     */
     public function withIncoterm(Incoterm $incoterm): self
     {
         $this->incoterm = $incoterm;
@@ -301,9 +329,13 @@ final class CreateShipmentBuilder
         return $this;
     }
 
-    public function withExportDeclaration(ExportDeclaration $declaration): self
+    /**
+     * Appends an export declaration (MyDHL API 3.4.0 accepts 1–100 per
+     * shipment; DHL's account default limit is 5).
+     */
+    public function addExportDeclaration(ExportDeclaration $declaration): self
     {
-        $this->exportDeclaration = $declaration;
+        $this->exportDeclarations[] = $declaration;
 
         return $this;
     }
@@ -450,12 +482,14 @@ final class CreateShipmentBuilder
         }
         if ($contentDescription === null) {
             $errors[] = ['field' => 'content.description', 'message' => 'content description is required'];
+        } elseif (preg_match('/^[\s|]*$/', $contentDescription) === 1) {
+            $errors[] = [
+                'field' => 'content.description',
+                'message' => 'content description must not be empty or consist only of whitespace and "|" characters',
+            ];
         }
         if ($unitOfMeasurement === null) {
             $errors[] = ['field' => 'unitOfMeasurement', 'message' => 'unitOfMeasurement is required'];
-        }
-        if ($this->incoterm === null) {
-            $errors[] = ['field' => 'content.incoterm', 'message' => 'incoterm is required'];
         }
 
         $accountCount = count($this->accounts);
@@ -478,11 +512,54 @@ final class CreateShipmentBuilder
             ];
         }
 
-        if ($isCustomsDeclarable === true && $this->exportDeclaration === null) {
+        $declarationCount = count($this->exportDeclarations);
+        if ($isCustomsDeclarable === true && $declarationCount === 0) {
             $errors[] = [
-                'field' => 'content.exportDeclaration',
-                'message' => 'exportDeclaration is required when isCustomsDeclarable is true',
+                'field' => 'content.exportDeclarations',
+                'message' => 'at least one export declaration is required when isCustomsDeclarable is true',
             ];
+        } elseif ($declarationCount > self::MAX_EXPORT_DECLARATIONS) {
+            $errors[] = [
+                'field' => 'content.exportDeclarations',
+                'message' => sprintf(
+                    'at most %d export declarations allowed; got %d',
+                    self::MAX_EXPORT_DECLARATIONS,
+                    $declarationCount,
+                ),
+            ];
+        }
+
+        // Incoterm defaulting: declarations without their own incoterm
+        // inherit the shipment-level one; with neither, the wire payload
+        // would violate the 3.4.0 schema.
+        $exportDeclarations = [];
+        $seenInvoiceNumbers = [];
+        foreach ($this->exportDeclarations as $index => $declaration) {
+            if ($declaration->incoterm === null) {
+                if ($this->incoterm === null) {
+                    $errors[] = [
+                        'field' => "content.exportDeclarations[{$index}].incoterm",
+                        'message' => 'incoterm is required on the export declaration when no shipment-level incoterm is set',
+                    ];
+                } else {
+                    $declaration = $declaration->withIncoterm($this->incoterm);
+                }
+            }
+            $exportDeclarations[] = $declaration;
+
+            $invoiceNumber = $declaration->invoice->number;
+            if (isset($seenInvoiceNumbers[$invoiceNumber])) {
+                $errors[] = [
+                    'field' => "content.exportDeclarations[{$index}].invoice.number",
+                    'message' => sprintf(
+                        'invoice number "%s" is already used by export declaration %d',
+                        $invoiceNumber,
+                        $seenInvoiceNumbers[$invoiceNumber],
+                    ),
+                ];
+            } else {
+                $seenInvoiceNumbers[$invoiceNumber] = $index;
+            }
         }
 
         // DG VAS rule: if any VAS has a DG service code, dangerousGoods block is required
@@ -522,8 +599,13 @@ final class CreateShipmentBuilder
             ];
         }
 
-        // DDP incoterm rule: at least one DutiesTaxes account required
-        if ($this->incoterm === Incoterm::DDP) {
+        // DDP incoterm rule: at least one DutiesTaxes account required when the
+        // shipment-level incoterm or any declaration's incoterm is DDP.
+        $isDdp = $this->incoterm === Incoterm::DDP;
+        foreach ($exportDeclarations as $declaration) {
+            $isDdp = $isDdp || $declaration->incoterm === Incoterm::DDP;
+        }
+        if ($isDdp) {
             $hasDutiesTaxesAccount = false;
             foreach ($this->accounts as $account) {
                 if ($account->typeCode === AccountTypeCode::DutiesTaxes) {
@@ -566,16 +648,18 @@ final class CreateShipmentBuilder
             ];
         }
 
-        // Line-item sum reconciliation: sum of (price × quantity) must equal
-        // declaredValue within ±0.01 when both are provided.
-        if ($this->exportDeclaration !== null && $this->declaredValue !== null) {
+        // Line-item sum reconciliation: sum of (price × quantity) across all
+        // declarations must equal declaredValue within ±0.01 when both are provided.
+        if ($exportDeclarations !== [] && $this->declaredValue !== null) {
             $lineItemTotal = 0.0;
-            foreach ($this->exportDeclaration->lineItems as $item) {
-                $lineItemTotal += $item->price * $item->quantity->value;
+            foreach ($exportDeclarations as $declaration) {
+                foreach ($declaration->lineItems as $item) {
+                    $lineItemTotal += $item->price * $item->quantity->value;
+                }
             }
             if (abs($lineItemTotal - $this->declaredValue) > 0.01) {
                 $errors[] = [
-                    'field' => 'content.exportDeclaration.lineItems',
+                    'field' => 'content.exportDeclarations.lineItems',
                     'message' => sprintf(
                         'line-item total (%.2f) does not match declaredValue (%.2f)',
                         $lineItemTotal,
@@ -586,6 +670,10 @@ final class CreateShipmentBuilder
         }
 
         if ($unitOfMeasurement !== null) {
+            $dimensionUnit = $this->dimensionUnitOfMeasurement ?? $unitOfMeasurement;
+            $dimensionUnitField = $this->dimensionUnitOfMeasurement !== null
+                ? 'dimensionUnitOfMeasurement'
+                : 'unitOfMeasurement';
             foreach ($this->packages as $index => $package) {
                 if ($package->weight->system() !== $unitOfMeasurement) {
                     $errors[] = [
@@ -597,13 +685,14 @@ final class CreateShipmentBuilder
                         ),
                     ];
                 }
-                if ($package->dimensions !== null && $package->dimensions->system() !== $unitOfMeasurement) {
+                if ($package->dimensions !== null && $package->dimensions->system() !== $dimensionUnit) {
                     $errors[] = [
                         'field' => "packages[{$index}].dimensions.unit",
                         'message' => sprintf(
-                            'package dimension unit (%s) does not match shipment unitOfMeasurement (%s)',
+                            'package dimension unit (%s) does not match shipment %s (%s)',
                             $package->dimensions->unit->value,
-                            $unitOfMeasurement->value,
+                            $dimensionUnitField,
+                            $dimensionUnit->value,
                         ),
                     ];
                 }
@@ -625,7 +714,6 @@ final class CreateShipmentBuilder
             || $isCustomsDeclarable === null
             || $contentDescription === null
             || $unitOfMeasurement === null
-            || $this->incoterm === null
         ) {
             throw new InvalidRequestException([
                 ['field' => 'build', 'message' => 'internal: required field missing after validation'],
@@ -666,9 +754,10 @@ final class CreateShipmentBuilder
                 unitOfMeasurement: $unitOfMeasurement,
                 declaredValue: $this->declaredValue,
                 declaredValueCurrency: $this->declaredValueCurrency,
-                exportDeclaration: $this->exportDeclaration,
+                exportDeclarations: $exportDeclarations,
                 areMorePackagesToBeAddedLater: $this->areMorePackagesToBeAddedLater,
                 USFilingTypeValue: $this->usFilingTypeValue,
+                dimensionUnitOfMeasurement: $this->dimensionUnitOfMeasurement,
             ),
             localProductCode: $this->localProductCode,
             valueAddedServices: $valueAddedServices,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Medzuch\DhlExpress\Tests\Unit\Api;
 
+use DateTimeImmutable;
 use Http\Mock\Client as MockClient;
 use Medzuch\DhlExpress\Api\InvoiceApi;
 use Medzuch\DhlExpress\Auth\Credentials;
@@ -11,11 +12,14 @@ use Medzuch\DhlExpress\ClientConfig;
 use Medzuch\DhlExpress\Dto\Common\Account;
 use Medzuch\DhlExpress\Dto\Invoice\UploadStandaloneInvoiceDataRequest;
 use Medzuch\DhlExpress\Dto\Shipment\ExportDeclaration;
+use Medzuch\DhlExpress\Dto\Shipment\ExportInvoice;
 use Medzuch\DhlExpress\Dto\Shipment\ExportLineItem;
 use Medzuch\DhlExpress\Dto\Shipment\LineItemQuantity;
 use Medzuch\DhlExpress\Dto\Shipment\LineItemWeight;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\ApiEnvironment;
+use Medzuch\DhlExpress\Enum\Incoterm;
+use Medzuch\DhlExpress\Enum\InvoiceFunction;
 use Medzuch\DhlExpress\Enum\LineItemQuantityUnit;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Exception\DhlErrorMapper;
@@ -67,6 +71,8 @@ final class InvoiceApiTest extends TestCase
         self::assertSame('metric', $body['content']['unitOfMeasurement']);
         self::assertCount(1, $body['accounts']);
         self::assertSame('shipper', $body['accounts'][0]['typeCode']);
+        self::assertSame('DAP', $body['content']['exportDeclaration'][0]['incoterm']);
+        self::assertSame('INV-001', $body['content']['exportDeclaration'][0]['invoice']['number']);
     }
 
     private function makeRequest(): UploadStandaloneInvoiceDataRequest
@@ -74,6 +80,12 @@ final class InvoiceApiTest extends TestCase
         return new UploadStandaloneInvoiceDataRequest(
             exportDeclarations: [
                 new ExportDeclaration(
+                    invoice: new ExportInvoice(
+                        number: 'INV-001',
+                        date: new DateTimeImmutable('2026-05-01'),
+                        function: InvoiceFunction::Export,
+                    ),
+                    incoterm: Incoterm::DAP,
                     lineItems: [
                         new ExportLineItem(
                             number: 1,

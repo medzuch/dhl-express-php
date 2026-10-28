@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Image format for PLT (Paperless Trade) document uploads.
  *
  * Matches the `documentImages[].imageFormat` enum in
- * `specs/dhl/dhl_openapi.yaml`. Used inside
+ * `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`. Used inside
  * {@see \Medzuch\DhlExpress\Dto\Shipment\DocumentImage}.
  */
 enum DocumentImageFormat: string

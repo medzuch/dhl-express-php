@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Unit of measurement used on customs line items.
  *
  * The 59 codes from the `unitOfMeasurement` sheet of
- * `dhl_reference_data.xlsx`. Distinct from the shipment-level
+ * `ExpressReferenceData_2026-10-25.xlsx`. Distinct from the shipment-level
  * {@see WeightUnit} / {@see DimensionUnit} pairing — this covers
  * the per-line-item quantity unit on commercial invoices (DOZ,
  * PCS, M3, GLI, …) where the customs framework needs a precise

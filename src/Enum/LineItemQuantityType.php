@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Quantity classification for a line item — `prt` (parts) or `box`.
  *
  * Source: `supermodelIoLogisticsExpressLandedCostRequest.items[].quantityType`
- * in `specs/dhl/dhl_openapi.yaml`.
+ * in `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`.
  */
 enum LineItemQuantityType: string
 {

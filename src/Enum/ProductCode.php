@@ -9,7 +9,7 @@ namespace Medzuch\DhlExpress\Enum;
  *
  * The 36 single-character wire codes that identify a DHL Express
  * shipping product, drawn from the `productCode` sheet of
- * `dhl_reference_data.xlsx`. Wire values are single chars (digits
+ * `ExpressReferenceData_2026-10-25.xlsx`. Wire values are single chars (digits
  * or uppercase letters); case names are descriptive PascalCase
  * because single-character case names hurt readability.
  *

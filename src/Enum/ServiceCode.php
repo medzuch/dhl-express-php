@@ -7,14 +7,17 @@ namespace Medzuch\DhlExpress\Enum;
 /**
  * DHL Express Value Added Service codes.
  *
- * Sourced from the `serviceCode` sheet of `dhl_reference_data.xlsx`
- * (384 unique codes). The backing value is the exact wire code.
+ * Sourced from the `serviceCode` sheet of
+ * `ExpressReferenceData_2026-10-25.xlsx` (464 unique codes). The
+ * backing value is the exact wire code. The ambient shipper boxes
+ * `U7`/`U8`/`U9` were retired by DHL and are no longer modelled.
  *
  * Cases whose wire code begins with a digit use a descriptive PascalCase
  * name. Cases with all-letter codes use the descriptive name from the
  * reference workbook.
  *
- * Duplicate code TZ (DirectToServicePoint) is represented once.
+ * Where the workbook gives two codes the same name, the later code
+ * appends its wire code to the case name (e.g. `AmbientExtremeMF`).
  *
  * @see \Medzuch\DhlExpress\Dto\Shipment\ValueAddedService
  */
@@ -172,8 +175,6 @@ enum ServiceCode: string
     case ReturnPackagingMaterial = '57';
     /** UV — Cryogenic Container XL */
     case CryogenicContainerXL = 'UV';
-    /** U7 — Ambient Shipper Box S */
-    case AmbientShipperBoxS = 'U7';
     /** PI — Trusted Customer Data */
     case TrustedCustomerData = 'PI';
     /** CJ — Onboard Courier */
@@ -258,8 +259,6 @@ enum ServiceCode: string
     case TimeWindowDelivery1113 = '42';
     /** U1 — Cryogenic Container S */
     case CryogenicContainerS = 'U1';
-    /** U9 — Ambient Shipper Box L */
-    case AmbientShipperBoxL = 'U9';
     /** 1F — Reusable Shipper Box XL */
     case ReusableShipperBoxXL = '1F';
     /** 1G — Used Medical Device Box EP250 */
@@ -726,8 +725,6 @@ enum ServiceCode: string
     case EmergencySituationCQ = 'CQ';
     /** U5 — Medium Shipper Box 1525C */
     case MediumShipperBox1525C = 'U5';
-    /** U8 — Ambient Shipper Box M */
-    case AmbientShipperBoxM = 'U8';
     /** 1B — Reusable Shipper Box XS */
     case ReusableShipperBoxXS = '1B';
     /** 0B — Mailroom Management */
@@ -786,4 +783,172 @@ enum ServiceCode: string
     case ThirdCountryDomestic = '32';
     /** 3V — Explosive 14S */
     case Explosive14S = '3V';
+    /** 1T — Temp-Controlled Van PUD */
+    case TempControlledVanPud = '1T';
+    /** 5A — Active Temperature Controlled Syst. */
+    case ActiveTemperatureControlledSystem = '5A';
+    /** 5B — ALLOTMENT */
+    case Allotment = '5B';
+    /** 5C — Aircraft on Ground */
+    case AircraftOnGround = '5C';
+    /** 5D — Goods Attached to Air Waybill */
+    case GoodsAttachedToAirWaybill = '5D';
+    /** 5E — Outsized */
+    case Outsized = '5E';
+    /** 5F — Cargo Aircraft Only */
+    case CargoAircraftOnly = '5F';
+    /** 5G — Cargo Attendant Accompanying shpmnt */
+    case CargoAttendantAccompanyingShipment = '5G';
+    /** 5H — May be loaded in the psngr cabin */
+    case MayBeLoadedInPassengerCabin = '5H';
+    /** 5I — Cool Goods Temperature +2°C to +8 */
+    case CoolGoodsPlus2To8 = '5I';
+    /** 5J — Control Room Temp. +15°C to +25°C */
+    case ControlRoomTemperaturePlus15To25 = '5J';
+    /** 5K — Diplomatic Mail */
+    case DiplomaticMail = '5K';
+    /** 5L — e-freight Consignm.with Paper Docs */
+    case EFreightWithPaperDocuments = '5L';
+    /** 5M — e-freight Cmnt. with No Paper Docs */
+    case EFreightWithoutPaperDocuments = '5M';
+    /** 5N — With paper AWB printed under eAWB */
+    case PaperAirWaybillPrintedUnderEAwb = '5N';
+    /** 5O — EMD on/in Cargo/Container */
+    case EmdOnCargoOrContainer = '5O';
+    /** 5P — Extended Room Temperature */
+    case ExtendedRoomTemperature = '5P';
+    /** 5Q — Undeveloped/Unexposed Film */
+    case UndevelopedUnexposedFilm = '5Q';
+    /** 5R — Frozen Goods Subj. to Vet/Phyt Insp */
+    case FrozenGoodsSubjectToInspection = '5R';
+    /** 5S — Frozen Goods */
+    case FrozenGoods = '5S';
+    /** 5T — Hanging Garments */
+    case HangingGarments = '5T';
+    /** 5U — License Required */
+    case LicenseRequired = '5U';
+    /** 5V — Not Secured Yet for Pas-AllCargo AC */
+    case NotSecuredYetForPassengerAircraft = '5V';
+    /** 5W — Non stackable cargo */
+    case NonStackableCargo = '5W';
+    /** 5X — Passenger and Cargo */
+    case PassengerAndCargo = '5X';
+    /** 5Y — Hunt. troph.skin ..of spcs in CITES */
+    case HuntingTrophiesCites = '5Y';
+    /** 5Z — Animal prd for non-human consumpt. */
+    case AnimalProductsNotForHumanConsumption = '5Z';
+    /** 6A — Goods subject to phyt. inspections */
+    case GoodsSubjectToPhytosanitaryInspection = '6A';
+    /** 6B — Passive Insulated Packaging */
+    case PassiveInsulatedPackaging = '6B';
+    /** 6C — Quick Ramp Transfer */
+    case QuickRampTransfer = '6C';
+    /** 6D — Reserved Air Cargo */
+    case ReservedAirCargo = '6D';
+    /** 6E — Explosives 1.3C */
+    case Explosives13C = '6E';
+    /** 6F — Flammable gas */
+    case FlammableGas = '6F';
+    /** 6G — Dangerous when wet */
+    case DangerousWhenWet = '6G';
+    /** 6H — Explosives 1.3G */
+    case Explosives13G = '6H';
+    /** 6I — Non-flammable non-toxic gas */
+    case NonFlammableNonToxicGas = '6I';
+    /** 6J — Spontaneously combustible */
+    case SpontaneouslyCombustible = '6J';
+    /** 6K — Vhcl, Batt.Pwrd UN 3556, 3557, 3558 */
+    case VehicleBatteryPowered = '6K';
+    /** 6L — Vhcl, Flam.gas/liquid pwrd UN 3166 */
+    case VehicleFlammableGasOrLiquidPowered = '6L';
+    /** 6M — Vehicle, Hybrid (UN 3166) */
+    case VehicleHybrid = '6M';
+    /** 6N — Explosive 1.4B */
+    case Explosives14B = '6N';
+    /** 6O — Explosive 1.4C */
+    case Explosives14C = '6O';
+    /** 6P — Explosive 1.4E */
+    case Explosives14E = '6P';
+    /** 6Q — Explosive 1.4S */
+    case Explosives14S = '6Q';
+    /** 6R — Cargo Secure for All-Cargo AC only */
+    case SecureForAllCargoAircraftOnly = '6R';
+    /** 6S — Save Human Life */
+    case SaveHumanLife = '6S';
+    /** 6T — Secure for Pgr AllCargo AllMail AC */
+    case SecureForPassengerAllCargoAllMailAircraft = '6T';
+    /** 6U — Laboratory Animals */
+    case LaboratoryAnimals = '6U';
+    /** 6V — Secure for Psgr and All-Cargo AC */
+    case SecureForPassengerAndAllCargoAircraft = '6V';
+    /** 6W — Surface Transportation */
+    case SurfaceTransportation = '6W';
+    /** 6X — Valuable Cargo */
+    case ValuableCargo = '6X';
+    /** 6Y — Wet Mtrl not Pckd in Watertght Cont */
+    case WetMaterialNotInWatertightContainer = '6Y';
+    /** CU — Cleared Cargo Acceptance */
+    case ClearedCargoAcceptance = 'CU';
+    /** CV — Secure Protection High Value */
+    case SecureProtectionHighValue = 'CV';
+    /** F1 — GoGreen Plus - Carbon Reduced */
+    case GoGreenPlusCarbonReduced = 'F1';
+    /** FQ — GoGreen Plus - Carbon Reduced */
+    case GoGreenPlusCarbonReducedFQ = 'FQ';
+    /** GI — Pallet Box */
+    case PalletBox = 'GI';
+    /** LK — Controlled Room Temp. +15C to +25C */
+    case ControlledRoomTemperaturePlus15To25 = 'LK';
+    /** LL — Frozen -25C to -15C */
+    case FrozenMinus25ToMinus15 = 'LL';
+    /** LN — Deep Frozen -80C to -20C */
+    case DeepFrozenMinus80ToMinus20 = 'LN';
+    /** LO — Cryogenic -196C to -150C */
+    case CryogenicMinus196ToMinus150 = 'LO';
+    /** LP — Ambient */
+    case Ambient = 'LP';
+    /** MC — Ambient Vialsafe */
+    case AmbientVialsafeMC = 'MC';
+    /** MD — Ambient Non-Insulated */
+    case AmbientNonInsulatedMD = 'MD';
+    /** ME — Ambient Insulated */
+    case AmbientInsulatedME = 'ME';
+    /** MF — Ambient Extreme */
+    case AmbientExtremeMF = 'MF';
+    /** MG — Combination Ambient and Frozen */
+    case CombinationAmbientAndFrozen = 'MG';
+    /** MH — Deep Frozen - S */
+    case DeepFrozenS = 'MH';
+    /** MI — Deep Frozen - S (Extended) */
+    case DeepFrozenSExtended = 'MI';
+    /** MJ — Deep Frozen - M */
+    case DeepFrozenM = 'MJ';
+    /** MK — Deep Frozen - M (Extended) */
+    case DeepFrozenMExtended = 'MK';
+    /** ML — Deep Frozen - L */
+    case DeepFrozenL = 'ML';
+    /** MM — Standard TCP - S */
+    case StandardTcpS = 'MM';
+    /** MN — Standard TCP - M */
+    case StandardTcpM = 'MN';
+    /** MO — Standard TCP - L */
+    case StandardTcpL = 'MO';
+    /** MP — Customer-owned packaging */
+    case CustomerOwnedPackaging = 'MP';
+    /** MQ — Standard TCP - S neutral */
+    case StandardTcpSNeutral = 'MQ';
+    /** MR — Standard TCP - M neutral */
+    case StandardTcpMNeutral = 'MR';
+    /** MS — Standard TCP - L neutral */
+    case StandardTcpLNeutral = 'MS';
+    /** P3 — Secure Bagging */
+    case SecureBagging = 'P3';
+    /** W8 — Radiometric Control */
+    case RadiometricControl = 'W8';
+    /** W9 — DHL Internal Clearance Instruction */
+    case DhlInternalClearanceInstruction = 'W9';
+    /** YA — Additional Handling Surcharge */
+    case AdditionalHandlingSurcharge = 'YA';
+    /** YL — Non Conveyable Piece - Irregular */
+    case NonConveyablePieceIrregular = 'YL';
 }

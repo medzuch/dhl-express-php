@@ -1,0 +1,152 @@
+{
+    "plannedShippingDateAndTime": "2026-11-02T13:00:00GMT+01:00",
+    "pickup": {
+        "isRequested": false
+    },
+    "productCode": "P",
+    "accounts": [
+        {
+            "typeCode": "shipper",
+            "number": "123456789"
+        }
+    ],
+    "customerDetails": {
+        "shipperDetails": {
+            "postalAddress": {
+                "postalCode": "14800",
+                "cityName": "Prague",
+                "countryCode": "CZ",
+                "addressLine1": "Vaclavske namesti 1"
+            },
+            "contactInformation": {
+                "phone": "+420 222 333 444",
+                "companyName": "Alfa Trading s.r.o.",
+                "fullName": "Jan Novak"
+            }
+        },
+        "receiverDetails": {
+            "postalAddress": {
+                "postalCode": "10001",
+                "cityName": "New York",
+                "countryCode": "US",
+                "addressLine1": "350 Fifth Avenue"
+            },
+            "contactInformation": {
+                "phone": "+1 212 555 0100",
+                "companyName": "Receiver Inc.",
+                "fullName": "John Smith"
+            }
+        }
+    },
+    "content": {
+        "packages": [
+            {
+                "weight": 2.5,
+                "dimensions": {
+                    "length": 10,
+                    "width": 8,
+                    "height": 6
+                }
+            }
+        ],
+        "isCustomsDeclarable": true,
+        "description": "Cotton T-shirts | dry ice",
+        "incoterm": "DAP",
+        "unitOfMeasurement": "metric",
+        "dimensionUnitOfMeasurement": "imperial",
+        "declaredValue": 100,
+        "declaredValueCurrency": "EUR",
+        "exportDeclarations": [
+            {
+                "lineItems": [
+                    {
+                        "number": 1,
+                        "description": "Cotton T-shirt",
+                        "price": 20,
+                        "quantity": {
+                            "value": 3,
+                            "unitOfMeasurement": "PCS"
+                        },
+                        "manufacturerCountry": "CZ",
+                        "weight": {
+                            "netValue": 0.2,
+                            "grossValue": 0.25
+                        },
+                        "exportReasonType": "permanent",
+                        "additionalInformation": [
+                            "100% cotton"
+                        ]
+                    }
+                ],
+                "invoice": {
+                    "number": "INV-1",
+                    "date": "2026-11-02",
+                    "signatureName": "Jane Doe",
+                    "signatureTitle": "Export Manager",
+                    "totalNetWeight": 1.5,
+                    "totalGrossWeight": 1.8,
+                    "termsOfPayment": "30 days"
+                },
+                "incoterm": "DAP",
+                "exportReason": "Sale of goods",
+                "declarationNotes": [
+                    {
+                        "value": "First shipment of the season"
+                    }
+                ],
+                "packageMarks": "Fragile"
+            },
+            {
+                "lineItems": [
+                    {
+                        "number": 1,
+                        "description": "Cotton socks",
+                        "price": 10,
+                        "quantity": {
+                            "value": 4,
+                            "unitOfMeasurement": "PCS"
+                        },
+                        "manufacturerCountry": "CZ",
+                        "weight": {
+                            "netValue": 0.2,
+                            "grossValue": 0.25
+                        },
+                        "exportReasonType": "permanent",
+                        "additionalInformation": [
+                            "100% cotton"
+                        ]
+                    }
+                ],
+                "invoice": {
+                    "number": "INV-2",
+                    "date": "2026-11-02",
+                    "instructions": [
+                        "Keep dry"
+                    ],
+                    "customerDataTextEntries": [
+                        "Order 4711"
+                    ]
+                },
+                "incoterm": "EXW",
+                "payerVATNumber": "12345ED"
+            }
+        ]
+    },
+    "valueAddedServices": [
+        {
+            "serviceCode": "HC",
+            "dangerousGoods": [
+                {
+                    "contentId": "901",
+                    "dryIceTotalNetWeight": 1,
+                    "packagesCount": 1,
+                    "dryIceUnitOfMeasurement": "metric"
+                }
+            ]
+        }
+    ],
+    "parentShipment": {
+        "productCode": "P",
+        "packagesCount": 2
+    }
+}

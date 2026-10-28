@@ -14,7 +14,7 @@ namespace Medzuch\DhlExpress\Enum;
  * has no behavioural effect on rate quoting.
  *
  * Source: `supermodelIoLogisticsExpressValueAddedServicesRates.method`
- * in `specs/dhl/dhl_openapi.yaml`.
+ * in `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`.
  */
 enum ValueAddedServiceMethod: string
 {

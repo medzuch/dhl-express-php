@@ -8,12 +8,15 @@ use DateTimeImmutable;
 use Medzuch\DhlExpress\Dto\Common\Account;
 use Medzuch\DhlExpress\Dto\Invoice\UploadStandaloneInvoiceDataRequest;
 use Medzuch\DhlExpress\Dto\Shipment\ExportDeclaration;
+use Medzuch\DhlExpress\Dto\Shipment\ExportInvoice;
 use Medzuch\DhlExpress\Dto\Shipment\ExportLineItem;
 use Medzuch\DhlExpress\Dto\Shipment\InvoiceImageOption;
 use Medzuch\DhlExpress\Dto\Shipment\InvoiceOutputImageProperties;
 use Medzuch\DhlExpress\Dto\Shipment\LineItemQuantity;
 use Medzuch\DhlExpress\Dto\Shipment\LineItemWeight;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
+use Medzuch\DhlExpress\Enum\Incoterm;
+use Medzuch\DhlExpress\Enum\InvoiceFunction;
 use Medzuch\DhlExpress\Enum\LineItemQuantityUnit;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\ValueObject\AccountNumber;
@@ -25,6 +28,12 @@ final class UploadStandaloneInvoiceDataRequestTest extends TestCase
     private function makeDeclaration(): ExportDeclaration
     {
         return new ExportDeclaration(
+            invoice: new ExportInvoice(
+                number: 'INV-001',
+                date: new DateTimeImmutable('2026-05-01'),
+                function: InvoiceFunction::Export,
+            ),
+            incoterm: Incoterm::DAP,
             lineItems: [
                 new ExportLineItem(
                     number: 1,
@@ -36,6 +45,91 @@ final class UploadStandaloneInvoiceDataRequestTest extends TestCase
                 ),
             ],
         );
+    }
+
+    public function testDeclarationWithoutIncotermIsRejected(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('exportDeclarations[1].incoterm');
+
+        new UploadStandaloneInvoiceDataRequest(
+            exportDeclarations: [
+                $this->makeDeclaration(),
+                new ExportDeclaration(
+                    lineItems: $this->makeDeclaration()->lineItems,
+                    invoice: $this->makeDeclaration()->invoice,
+                ),
+            ],
+            currency: 'EUR',
+            unitOfMeasurement: UnitSystem::Metric,
+            shipmentTrackingNumber: new TrackingNumber('1234567890'),
+        );
+    }
+
+    public function testDeclarationWithoutInvoiceFunctionIsRejected(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('exportDeclarations[0].invoice.function');
+
+        new UploadStandaloneInvoiceDataRequest(
+            exportDeclarations: [
+                new ExportDeclaration(
+                    lineItems: $this->makeDeclaration()->lineItems,
+                    invoice: new ExportInvoice(number: 'INV-001', date: new DateTimeImmutable('2026-05-01')),
+                    incoterm: Incoterm::DAP,
+                ),
+            ],
+            currency: 'EUR',
+            unitOfMeasurement: UnitSystem::Metric,
+            shipmentTrackingNumber: new TrackingNumber('1234567890'),
+        );
+    }
+
+    public function testCreateShipmentOnlyFieldIsRejected(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('exportDeclarations[0].packageMarks');
+
+        new UploadStandaloneInvoiceDataRequest(
+            exportDeclarations: [
+                new ExportDeclaration(
+                    lineItems: $this->makeDeclaration()->lineItems,
+                    invoice: $this->makeDeclaration()->invoice,
+                    incoterm: Incoterm::DAP,
+                    packageMarks: 'Fragile',
+                ),
+            ],
+            currency: 'EUR',
+            unitOfMeasurement: UnitSystem::Metric,
+            shipmentTrackingNumber: new TrackingNumber('1234567890'),
+        );
+    }
+
+    public function testSerializedInvoiceCarriesFunction(): void
+    {
+        $request = new UploadStandaloneInvoiceDataRequest(
+            exportDeclarations: [$this->makeDeclaration()],
+            currency: 'EUR',
+            unitOfMeasurement: UnitSystem::Metric,
+            shipmentTrackingNumber: new TrackingNumber('1234567890'),
+        );
+
+        self::assertSame('export', $request->toArray()['content']['exportDeclaration'][0]['invoice']['function']);
+    }
+
+    public function testEverySerializedDeclarationCarriesItsIncoterm(): void
+    {
+        $request = new UploadStandaloneInvoiceDataRequest(
+            exportDeclarations: [$this->makeDeclaration(), $this->makeDeclaration()->withIncoterm(Incoterm::DDP)],
+            currency: 'EUR',
+            unitOfMeasurement: UnitSystem::Metric,
+            shipmentTrackingNumber: new TrackingNumber('1234567890'),
+        );
+
+        $declarations = $request->toArray()['content']['exportDeclaration'];
+
+        self::assertSame('DAP', $declarations[0]['incoterm']);
+        self::assertSame('DDP', $declarations[1]['incoterm']);
     }
 
     public function testToArrayProducesExpectedShape(): void

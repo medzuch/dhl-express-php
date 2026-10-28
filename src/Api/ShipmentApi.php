@@ -46,8 +46,14 @@ final readonly class ShipmentApi
      * `strictValidation` enables strict address validation against the
      * DHL reference database. `bypassPLTError` lets a PLT (Paperless
      * Trade) shipment proceed even when DHL's document-image checks
-     * fail. Both default to DHL's server-side defaults when null.
+     * fail. `bypassLabelfreeError` (3.4.0) lets a shipment proceed when
+     * DHL's labelfree checks fail; DHL ignores it unless the `PZ`
+     * service is requested (warning 7981). All three default to DHL's
+     * server-side defaults when null.
      *
+     * @throws \InvalidArgumentException when both `bypassLabelfreeError` and
+     *                                   `bypassPLTError` are true (DHL rejects
+     *                                   that combination with error 7183)
      * @throws DhlApiException     for DHL-side errors
      * @throws DhlNetworkException for transport-level failures
      */
@@ -56,7 +62,14 @@ final readonly class ShipmentApi
         bool $validateDataOnly = false,
         ?bool $strictValidation = null,
         ?bool $bypassPLTError = null,
+        ?bool $bypassLabelfreeError = null,
     ): CreateShipmentResponse {
+        if ($bypassLabelfreeError === true && $bypassPLTError === true) {
+            throw new \InvalidArgumentException(
+                'bypassLabelfreeError and bypassPLTError cannot both be true (DHL error 7183).',
+            );
+        }
+
         $queryParams = [];
         if ($validateDataOnly) {
             $queryParams['validateDataOnly'] = 'true';
@@ -66,6 +79,9 @@ final readonly class ShipmentApi
         }
         if ($bypassPLTError !== null) {
             $queryParams['bypassPLTError'] = $bypassPLTError ? 'true' : 'false';
+        }
+        if ($bypassLabelfreeError !== null) {
+            $queryParams['bypassLabelfreeError'] = $bypassLabelfreeError ? 'true' : 'false';
         }
 
         $httpRequest = $this->requestBuilder->build(
