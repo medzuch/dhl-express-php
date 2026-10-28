@@ -24,7 +24,7 @@ final readonly class ClientConfig
         public ApiEnvironment $environment,
         public Credentials $credentials,
         public string $acceptLanguage = 'eng',
-        public string $xVersion = '3.2.0',
+        public string $xVersion = '3.4.0',
         public ?IntegrationProfile $integrationProfile = null,
     ) {
         if (strlen($acceptLanguage) !== 3) {

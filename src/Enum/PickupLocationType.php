@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Type of location from which a DHL Express pickup will be collected.
  *
  * Source: `supermodelIoLogisticsExpressPickupRequest.locationType`
- * in `specs/dhl/dhl_openapi.yaml`.
+ * in `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`.
  */
 enum PickupLocationType: string
 {

@@ -7,9 +7,11 @@ namespace Medzuch\DhlExpress\Enum;
 /**
  * Reference type code allowed at the line-item level.
  *
- * 41 codes drawn from the `invoiceItemReferenceType` sheet of
- * `dhl_reference_data.xlsx` — ECCN, DDTC fields, brand / model /
- * part-number identifiers, and various tariff and origin references.
+ * 44 codes drawn from the `invoiceItemReferenceType` sheet of
+ * `ExpressReferenceData_2026-10-25.xlsx` — ECCN, DDTC fields, brand / model /
+ * part-number identifiers (`SRV` standardized and `MF`
+ * non-standardized manufacturer product IDs), `AKO` (Destination Tax
+ * Right-To-Use), and various tariff and origin references.
  * Distinct value space from {@see InvoiceReferenceTypeCode} despite
  * some overlap (PON, TAR, TCO appear in both).
  */
@@ -56,4 +58,7 @@ enum LineItemReferenceTypeCode: string
     case AEA = 'AEA';
     case PTA = 'PTA';
     case CLN = 'CLN';
+    case AKO = 'AKO';
+    case MF = 'MF';
+    case SRV = 'SRV';
 }

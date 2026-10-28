@@ -1,6 +1,6 @@
 # DHL Express PHP Library — Claude Instructions
 
-A standalone, framework-agnostic PHP 8.3 library wrapping the DHL Express MyDHL API 3.2.2.
+A standalone, framework-agnostic PHP 8.3 library wrapping the DHL Express MyDHL API 3.4.0.
 
 - **Package:** `medzuch/dhl-express-php`
 - **Namespace:** `Medzuch\DhlExpress`
@@ -10,11 +10,15 @@ A standalone, framework-agnostic PHP 8.3 library wrapping the DHL Express MyDHL 
 ## Read first
 
 DHL official documentation (precedence order — primary first):
-1. **Reference data workbook:** `specs/dhl/dhl_reference_data.xlsx` — machine-readable dump from DHL's Reference Data API. **Authoritative source for value lists** (enums, codes, error messages).
-2. OpenAPI spec: `specs/dhl/dhl_openapi.yaml` — authoritative for request/response shapes and field constraints.
-3. Reference data PDF: `specs/dhl/dhl_reference.pdf` — narrative reference; useful for context, but treated as secondary because it contains legacy/deprecated codes the live API no longer accepts.
+1. **Reference data workbook:** `specs/dhl/ExpressReferenceData_2026-10-25.xlsx` — machine-readable dump from DHL's Reference Data API. **Authoritative source for value lists** (enums, codes, error messages).
+2. OpenAPI spec: `specs/dhl/dpdhl-express-api-3.4.0_9.yaml` (MyDHL API 3.4.0) — authoritative for request/response shapes and field constraints.
+3. Reference data guide: `specs/dhl/MyDHL API Reference data guide (3.4.0).pdf` — narrative reference; useful for context, but secondary to the workbook.
 
-ALWAYS cross-reference these files when generating enums, DTOs, or error mappings. When the xlsx and the PDF disagree, the xlsx wins.
+When the three sources disagree on a code, keep it if at least two of them list it, and note the sources in the enum case's docblock (e.g. `PackageTypeCode::CE1`, `PackageReferenceTypeCode::AAJ`). Run `php tools/check-enums-against-workbook.php` after updating the workbook to list enum drift.
+
+Historical (3.2.2-era, kept for reference only — do not cite in new code): `specs/dhl/dhl_reference_data.xlsx`, `specs/dhl/dhl_openapi.yaml`, `specs/dhl/dhl_reference.pdf`.
+
+ALWAYS cross-reference the current files when generating enums, DTOs, or error mappings. When the xlsx and the PDF disagree, the xlsx wins (subject to the two-of-three rule above).
 
 ## Hard rules — apply to every change
 
@@ -42,7 +46,7 @@ ALWAYS cross-reference these files when generating enums, DTOs, or error mapping
 ### Error handling
 - **Never leak Guzzle exceptions** — always wrap in `DhlException` hierarchy
 - Map both HTTP status codes AND DHL error codes to specific exceptions
-- The raw DHL error code is always carried on `DhlApiException::$dhlErrorCode`. The full canonical list (~780 entries) lives in `dhl_reference_data.xlsx#returnStatusMessage`; we curate a `DhlErrorCode` enum on demand for codes callers want to branch on (e.g. `9001`, `7012`, `422`)
+- The raw DHL error code is always carried on `DhlApiException::$dhlErrorCode`. The full canonical list (~660 unique codes) lives in `ExpressReferenceData_2026-10-25.xlsx#returnStatusMessage`; we curate a `DhlErrorCode` enum on demand for codes callers want to branch on (e.g. `9001`, `7012`, `422`)
 
 ### Naming
 - Mirror DHL's own terminology exactly — `Shipment`, `Piece`, `Waybill`, `ServicePoint`, `Pickup`, `Incoterm`, `EPOD`

@@ -123,6 +123,59 @@ final class ShipmentApiTest extends TestCase
         self::assertStringContainsString('bypassPLTError=true', (string) $sent->getUri());
     }
 
+    public function testCreateAppendsBypassLabelfreeErrorQueryWhenRequested(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(201)->withBody($factory->createStream($this->loadFixture('create-shipment-success.json'))),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+
+        $api->create($this->minimalDomesticBuilder()->build(), bypassLabelfreeError: true, bypassPLTError: false);
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('bypassLabelfreeError=true', $uri);
+        self::assertStringContainsString('bypassPLTError=false', $uri);
+    }
+
+    public function testCreateOmitsBypassLabelfreeErrorQueryWhenUnset(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(201)->withBody($factory->createStream($this->loadFixture('create-shipment-success.json'))),
+        );
+
+        $api = $this->makeApi($mockClient, $factory);
+
+        $api->create($this->minimalDomesticBuilder()->build(), bypassPLTError: true);
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        self::assertStringNotContainsString('bypassLabelfreeError', (string) $sent->getUri());
+    }
+
+    public function testCreateRejectsBothBypassFlagsWithoutSendingRequest(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $api = $this->makeApi($mockClient, $factory);
+
+        try {
+            $api->create($this->minimalDomesticBuilder()->build(), bypassPLTError: true, bypassLabelfreeError: true);
+            self::fail('Expected InvalidArgumentException');
+        } catch (\InvalidArgumentException $exception) {
+            self::assertStringContainsString('bypassLabelfreeError', $exception->getMessage());
+            self::assertStringContainsString('bypassPLTError', $exception->getMessage());
+        }
+
+        self::assertSame([], $mockClient->getRequests());
+    }
+
     public function testCreateCombinesAllOptionalQueryParams(): void
     {
         $factory = new Psr17Factory();
@@ -185,7 +238,7 @@ final class ShipmentApiTest extends TestCase
         self::assertSame(1.5, $response->packages[0]->volumetricWeight);
         self::assertCount(1, $response->packages[0]->documents);
         self::assertSame('qr-code', $response->packages[0]->documents[0]->typeCode);
-        self::assertCount(2, $response->documents);
+        self::assertCount(3, $response->documents);
         self::assertSame('label', $response->documents[0]->typeCode);
         self::assertSame('PDF', $response->documents[0]->imageFormat);
     }

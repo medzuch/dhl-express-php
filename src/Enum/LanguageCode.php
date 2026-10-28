@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Three-letter language code accepted by the DHL Express API.
  *
  * 46 codes from the `languageCode` sheet of
- * `dhl_reference_data.xlsx`. Used for the `Accept-Language`
+ * `ExpressReferenceData_2026-10-25.xlsx`. Used for the `Accept-Language`
  * request header (default `eng`) and for per-document language
  * selection on commercial invoices and shipment paperwork.
  *

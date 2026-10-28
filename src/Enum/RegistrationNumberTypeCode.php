@@ -7,8 +7,9 @@ namespace Medzuch\DhlExpress\Enum;
 /**
  * Type of registration number that identifies a shipping party.
  *
- * 25 codes drawn from the `registrationNumberTypeCode` sheet of
- * `dhl_reference_data.xlsx`. Each code carries country and
+ * 26 codes drawn from the `registrationNumberTypeCode` sheet of
+ * `ExpressReferenceData_2026-10-25.xlsx` (including `FSR`, Food Safety
+ * Registration). Each code carries country and
  * shipping-role applicability constraints (e.g. CNP is BR-only,
  * SDT is shipper-only, SUB is DE-only) — those constraints belong
  * in the shipment builder, not the enum, since they depend on the
@@ -41,4 +42,5 @@ enum RegistrationNumberTypeCode: string
     case PEP = 'PEP';
     case FII = 'FII';
     case SUB = 'SUB';
+    case FSR = 'FSR';
 }

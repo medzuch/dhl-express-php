@@ -9,6 +9,7 @@ use Medzuch\DhlExpress\Dto\Common\Account;
 use Medzuch\DhlExpress\Dto\Shipment\ContactAddress;
 use Medzuch\DhlExpress\Dto\Shipment\CreateShipmentResponse;
 use Medzuch\DhlExpress\Dto\Shipment\ExportDeclaration;
+use Medzuch\DhlExpress\Dto\Shipment\ExportInvoice;
 use Medzuch\DhlExpress\Dto\Shipment\ExportLineItem;
 use Medzuch\DhlExpress\Dto\Shipment\ImageOption;
 use Medzuch\DhlExpress\Dto\Shipment\LineItemQuantity;
@@ -19,6 +20,7 @@ use Medzuch\DhlExpress\Dto\Shipment\Pickup;
 use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
 use Medzuch\DhlExpress\Enum\Incoterm;
+use Medzuch\DhlExpress\Enum\InvoiceFunction;
 use Medzuch\DhlExpress\Enum\LabelEncodingFormat;
 use Medzuch\DhlExpress\Enum\LineItemQuantityUnit;
 use Medzuch\DhlExpress\Enum\UnitSystem;
@@ -169,7 +171,12 @@ final class ShipmentApiIntegrationTest extends IntegrationTestCase
                 weight: new Weight(1.5, WeightUnit::KG),
                 dimensions: new Dimensions(25.0, 20.0, 10.0, DimensionUnit::CM),
             ))
-            ->withExportDeclaration(new ExportDeclaration(
+            ->addExportDeclaration(new ExportDeclaration(
+                invoice: new ExportInvoice(
+                    number: 'INV-' . date('YmdHis'),
+                    date: $this->nextBusinessDay(3),
+                    function: InvoiceFunction::Export,
+                ),
                 lineItems: [
                     new ExportLineItem(
                         number: 1,

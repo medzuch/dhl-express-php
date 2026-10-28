@@ -19,7 +19,7 @@ use Medzuch\DhlExpress\Support\HydrationHelper;
  * Reference data domain endpoint.
  *
  * Targets `GET /reference-data` to retrieve the same lookup
- * tables that ship as sheets in `dhl_reference_data.xlsx`. The
+ * tables that ship as sheets in `ExpressReferenceData_2026-10-25.xlsx`. The
  * library bundles the workbook for offline use, so this endpoint
  * is mostly useful for verifying that local enums match the
  * live DHL service or for fetching datasets we deliberately did

@@ -9,7 +9,7 @@ namespace Medzuch\DhlExpress\Enum;
  * (B2C) reasons. Influences duty/tax calculation in landed-cost.
  *
  * Source: `supermodelIoLogisticsExpressLandedCostRequest.shipmentPurpose`
- * in `specs/dhl/dhl_openapi.yaml`.
+ * in `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`.
  */
 enum ShipmentPurpose: string
 {

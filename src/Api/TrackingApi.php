@@ -32,10 +32,9 @@ use Medzuch\DhlExpress\ValueObject\TrackingNumber;
  * - {@see self::getManyByReference()} performs the reference-based
  *   lookup (`shipmentReference` + account + date range).
  *
- * All four operations support the same response-shaping options
- * (`trackingView`, `levelOfDetail`, `requestControlledAccessDataCodes`).
- * {@see self::getByTrackingNumber()} additionally exposes
- * `requestGMTOffsetPerEvent`.
+ * All four operations support the same response-shaping
+ * options (`trackingView`, `levelOfDetail`,
+ * `requestControlledAccessDataCodes`, `requestGMTOffsetPerEvent`).
  */
 final readonly class TrackingApi
 {
@@ -67,10 +66,8 @@ final readonly class TrackingApi
             $trackingView,
             $levelOfDetail,
             $requestControlledAccessDataCodes,
+            $requestGMTOffsetPerEvent,
         );
-        if ($requestGMTOffsetPerEvent !== null) {
-            $queryParams['requestGMTOffsetPerEvent'] = $requestGMTOffsetPerEvent ? 'true' : 'false';
-        }
 
         $request = $this->requestBuilder->build(
             'GET',
@@ -107,6 +104,7 @@ final readonly class TrackingApi
         ?TrackingView $trackingView = null,
         ?TrackingLevelOfDetail $levelOfDetail = null,
         ?bool $requestControlledAccessDataCodes = null,
+        ?bool $requestGMTOffsetPerEvent = null,
     ): array {
         if ($trackingNumbers === []) {
             throw new InvalidArgumentException('getMany() requires at least one tracking number.');
@@ -128,6 +126,7 @@ final readonly class TrackingApi
             $trackingView,
             $levelOfDetail,
             $requestControlledAccessDataCodes,
+            $requestGMTOffsetPerEvent,
         );
 
         return $this->sendMultiTracking($queryParams);
@@ -136,6 +135,8 @@ final readonly class TrackingApi
     /**
      * Fetches tracking histories looked up by piece tracking number(s).
      *
+     * @param list<string> $pieceTrackingNumbers
+     *
      * @return list<TrackingResponse>
      *
      * @throws InvalidArgumentException when called with no piece IDs or more than 200
@@ -143,7 +144,11 @@ final readonly class TrackingApi
      * @throws DhlNetworkException for transport-level failures
      */
     public function getManyByPieceId(
-        string ...$pieceTrackingNumbers,
+        array $pieceTrackingNumbers,
+        ?TrackingView $trackingView = null,
+        ?TrackingLevelOfDetail $levelOfDetail = null,
+        ?bool $requestControlledAccessDataCodes = null,
+        ?bool $requestGMTOffsetPerEvent = null,
     ): array {
         if ($pieceTrackingNumbers === []) {
             throw new InvalidArgumentException('getManyByPieceId() requires at least one piece tracking number.');
@@ -155,9 +160,15 @@ final readonly class TrackingApi
             );
         }
 
-        return $this->sendMultiTracking([
-            'pieceTrackingNumber' => array_values($pieceTrackingNumbers),
-        ]);
+        $queryParams = ['pieceTrackingNumber' => $pieceTrackingNumbers];
+        $queryParams += $this->buildViewParams(
+            $trackingView,
+            $levelOfDetail,
+            $requestControlledAccessDataCodes,
+            $requestGMTOffsetPerEvent,
+        );
+
+        return $this->sendMultiTracking($queryParams);
     }
 
     /**
@@ -182,6 +193,7 @@ final readonly class TrackingApi
         ?TrackingView $trackingView = null,
         ?TrackingLevelOfDetail $levelOfDetail = null,
         ?bool $requestControlledAccessDataCodes = null,
+        ?bool $requestGMTOffsetPerEvent = null,
     ): array {
         if ($shipperAccountNumber === null && $payerAccountNumber === null) {
             throw new InvalidArgumentException(
@@ -207,6 +219,7 @@ final readonly class TrackingApi
             $trackingView,
             $levelOfDetail,
             $requestControlledAccessDataCodes,
+            $requestGMTOffsetPerEvent,
         );
 
         return $this->sendMultiTracking($queryParams);
@@ -219,6 +232,7 @@ final readonly class TrackingApi
         ?TrackingView $trackingView,
         ?TrackingLevelOfDetail $levelOfDetail,
         ?bool $requestControlledAccessDataCodes,
+        ?bool $requestGMTOffsetPerEvent,
     ): array {
         $params = [];
         if ($trackingView !== null) {
@@ -229,6 +243,9 @@ final readonly class TrackingApi
         }
         if ($requestControlledAccessDataCodes !== null) {
             $params['requestControlledAccessDataCodes'] = $requestControlledAccessDataCodes ? 'true' : 'false';
+        }
+        if ($requestGMTOffsetPerEvent !== null) {
+            $params['requestGMTOffsetPerEvent'] = $requestGMTOffsetPerEvent ? 'true' : 'false';
         }
 
         return $params;

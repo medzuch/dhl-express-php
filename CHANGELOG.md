@@ -7,6 +7,85 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.4.0] — Unreleased
+
+### Highlights
+
+Hard switch to **MyDHL API 3.4.0**. The library now sends `x-version: 3.4.0`, and every Create Shipment and invoice-data payload follows the 3.4.0 schemas (built payloads are validated against `specs/dhl/dpdhl-express-api-3.4.0_9.yaml` in the test suite). Code enums are regenerated from DHL's 2026-10-25 reference data workbook (`ExpressReferenceData_2026-10-25.xlsx`), which removes codes the live API now rejects (error 7021). The 3.2.2-era spec files stay in `specs/dhl/` as historical references. This release contains breaking changes; see **Migrating from 0.3.x**.
+
+### Added
+
+- `CreateShipmentBuilder::addExportDeclaration()`: a shipment carries 1–100 export declarations, serialized as `content.exportDeclarations[]`.
+- `ExportDeclaration`: `incoterm`, `exportReason` (≤ 30 chars), `declarationNotes` (new `DeclarationNote` DTO, ≤ 3), `packageMarks`, `payerVATNumber`, and the `withIncoterm()` copy method.
+- `ExportInvoice`: `signatureName`, `signatureTitle`, `signatureImage`, `instructions`, `customerDataTextEntries`, `totalNetWeight`, `totalGrossWeight`, `termsOfPayment`, plus `toInvoiceDataArray()` and `shipmentOnlyFields()`.
+- `ExportLineItem::$additionalInformation` (≤ 8 entries).
+- `ExportDeclaration::toInvoiceDataArray()` and `invoiceDataUploadErrors()`.
+- `Content::$dimensionUnitOfMeasurement` and `CreateShipmentBuilder::withDimensionUnitSystem()`: dimensions may use a different unit system from weights.
+- `DangerousGoods`: `packagesCount` (1–999) and `dryIceUnitOfMeasurement`; `customDescription` is limited to the schema maximum of 1000 characters.
+- `ShipmentApi::create()` gains `?bool $bypassLabelfreeError`.
+- `ShipmentDocument::$invoiceNumber`, hydrated from the Create Shipment response.
+- `CancelPickupResponse` DTO and `CancelPickupResponseHydrator`.
+- `TrackingApi::getMany()` and `getManyByReference()` gain `requestGMTOffsetPerEvent`; `getManyByPieceId()` gains the full set of view options.
+- Enum cases from the 2026-10-25 workbook:
+  - `ServiceCode`: 84 new codes, including `YL` (temperature-controlled `1T`, `5A`–`5Z`, `6A`–`6Y`, `LK`–`LP`, `MC`–`MS`; GoGreen Plus `F1`/`FQ`; `CU`, `CV`, `GI`, `P3`, `W8`, `W9`, `YA`, `YL`).
+  - `DangerousGoodsContentId::A08` and `DangerousGoodsServiceCode::H8` (ADR Special Provision 188/400).
+  - `RegistrationNumberTypeCode::FSR` (Food Safety Registration).
+  - `InvoiceReferenceTypeCode::AKO`.
+  - `LineItemReferenceTypeCode::AKO`, `MF`, `SRV`.
+- Pre-send checks for errors DHL is certain to return:
+  - 7183: `bypassLabelfreeError` and `bypassPLTError` both true (`InvalidArgumentException`).
+  - 7188: duplicate invoice numbers across export declarations (`InvalidRequestException`).
+  - 7191: a content description made only of whitespace and `|` characters (`InvalidRequestException`).
+- `tools/check-enums-against-workbook.php`: a dev-only drift check between the code enums and a reference data workbook (not shipped in the package).
+
+### Changed
+
+- **BREAKING** The default `ClientConfig::$xVersion` is `3.4.0` (was `3.2.0`).
+- **BREAKING** `Content::$exportDeclaration` (`?ExportDeclaration`) is replaced by `Content::$exportDeclarations` (`list<ExportDeclaration>`).
+- **BREAKING** `ExportDeclaration::$invoice` is required.
+- **BREAKING** The invoice-data upload requests (`UploadInvoiceDataRequest`, `UploadStandaloneInvoiceDataRequest`) require an `incoterm` and an `invoice.function` on every declaration. They reject the Create-Shipment-only fields listed under **Added**.
+- **BREAKING** `PickupApi::cancel()` returns `CancelPickupResponse` (was `void`).
+- **BREAKING** `TrackingApi::getManyByPieceId()` takes `list<string>` instead of variadic strings.
+- `Content::$incoterm` and the builder's shipment-level incoterm are optional. When set, the shipment-level incoterm is the default for declarations without their own; a declarable shipment needs an incoterm on every declaration, inherited or explicit.
+- `ExportInvoice::$function` is optional.
+- `LineItemWeight` requires `netValue` or `grossValue`, as 3.4.0 does (already enforced by the constructor in 0.3.x).
+- The DDP duties/taxes-account rule considers the shipment-level incoterm and every declaration's incoterm. The declared-value check sums line items across all declarations.
+- CLAUDE.md and README cite the 3.4.0 OpenAPI spec, the 2026-10-25 workbook and the 3.4.0 reference data guide, and enum docblocks cite the new workbook.
+
+### Fixed
+
+- Create Shipment no longer sends `invoice.function`, which the Create Shipment schema rejects (3.2.2 and 3.4.0).
+- The invoice-data upload endpoints now send the `incoterm` that their schema requires on every declaration.
+
+### Removed
+
+- **BREAKING** `CreateShipmentBuilder::withExportDeclaration()`; use `addExportDeclaration()`.
+- **BREAKING** `ParentShipment::$typeCode`, `$number` and `$issuerCountryCode` (3.4.0 removed them).
+- **BREAKING** `OnDemandDelivery::$requestedDeliveryDate` (3.4.0 removed it).
+- **BREAKING** Enum cases retired by DHL in the 2026-10-25 workbook:
+  - `ShipmentReferenceTypeCode` (47): `AAM`, `AAO`, `AAP`, `ABT`, `ACR`, `ACS`, `ADA`, `AFD`, `AHX`, `ANT`, `BKN`, `BOE`, `BOL`, `CDN`, `CO`, `COD`, `CR`, `CRN`, `CTN`, `DSC`, `FF`, `FN`, `GRS`, `HWB`, `IBC`, `LLR`, `MAB`, `MR1`, `MR2`, `MR3`, `MR4`, `MR5`, `MR6`, `MWB`, `NET`, `OBC`, `PBE`, `PD`, `PRN`, `RTL`, `SID`, `SP`, `SRN`, `SS`, `STD`, `SWN`, `UCI`.
+  - `PackageReferenceTypeCode` (41): `AAM`, `AAO`, `AAP`, `ABT`, `ACR`, `ACS`, `ADA`, `AFD`, `AHX`, `ANT`, `BKN`, `BOL`, `CDN`, `CO`, `COD`, `CR`, `CRN`, `CTN`, `DSC`, `FF`, `FN`, `GRS`, `HWB`, `IBC`, `IME`, `IPP`, `LLR`, `MAB`, `MWB`, `NET`, `OBC`, `PD`, `PRN`, `RTL`, `SID`, `SP`, `SRN`, `SS`, `STD`, `SWN`, `UCI`.
+  - `PackageTypeCode`: `WB1`, `WB2`, `WB3`, `WB6`.
+  - `CustomsDocumentTypeCode`: `CHA`, `POA`.
+  - `ServiceCode`: `AmbientShipperBoxS` (`U7`), `AmbientShipperBoxM` (`U8`), `AmbientShipperBoxL` (`U9`).
+
+### Migrating from 0.3.x
+
+- **x-version:** requests now carry `x-version: 3.4.0`. To keep sending 3.2.0 headers, pass `xVersion: '3.2.0'` to `ClientConfig`; payloads are 3.4.0-shaped either way.
+- **Export declarations:** replace `->withExportDeclaration($declaration)` with `->addExportDeclaration($declaration)`, and call it once per declaration. Read `$content->exportDeclarations` (a list) instead of `$content->exportDeclaration`.
+- **Invoice on declarations:** every `new ExportDeclaration(...)` needs `invoice: new ExportInvoice(...)`.
+- **Incoterm on declarations:** for Create Shipment, either keep `->withIncoterm(...)` on the builder (declarations inherit it) or pass `incoterm:` to each `ExportDeclaration`. For invoice-data uploads, pass `incoterm:` to each declaration and keep `function:` on each `ExportInvoice`.
+- **Invoice-data uploads:** don't set the Create-Shipment-only fields on declarations you upload; the request constructors now reject them with `InvalidArgumentException`.
+- **`LineItemWeight`:** a weight needs `netValue`, `grossValue` or both. The constructor already enforced this in 0.3.x, so code that runs on 0.3.x needs no change; 3.4.0 now also requires it on the wire.
+- **`ParentShipment`:** pass only `productCode` and `packagesCount`.
+- **`OnDemandDelivery`:** drop the `requestedDeliveryDate` argument.
+- **`PickupApi::cancel()`:** the return value is now a `CancelPickupResponse`. Existing calls that ignore it keep working; read `$result->message` for DHL's outcome text.
+- **`TrackingApi::getManyByPieceId()`:** change `getManyByPieceId('a', 'b')` to `getManyByPieceId(['a', 'b'])`.
+- **Removed enum cases:** replace any case listed under **Removed** with a current code. DHL rejects the retired codes with error 7021, and PHPStan reports the references. `PackageTypeCode::CardEnvelopeImperial` (`CE1`) and `PackageReferenceTypeCode::AAJ` are kept, because two of DHL's three sources still list them.
+- **New pre-send checks:** builds that duplicate an invoice number across declarations, or use a description such as `" || "`, now fail in `build()` (7188, 7191). Calling `create()` with both bypass flags set to `true` throws before sending (7183).
+
+---
+
 ## [0.3.2] — 2026-05-16
 
 ### Changed

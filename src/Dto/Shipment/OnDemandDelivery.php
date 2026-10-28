@@ -12,8 +12,9 @@ use Medzuch\DhlExpress\Enum\OnDemandWhereToLeave;
  * create-shipment request.
  *
  * Mirrors the inline `onDemandDelivery` object in
- * `supermodelIoLogisticsExpressCreateShipmentRequest` (spec lines
- * 12450–12539). When set, the spec also requires `buyerDetails` on the
+ * `supermodelIoLogisticsExpressCreateShipmentRequest` (MyDHL API
+ * 3.4.0, `additionalProperties: false`; the 3.2.x
+ * `requestedDeliveryDate` was removed). When set, the spec also requires `buyerDetails` on the
  * customerDetails block — that cross-field rule lives in the builder,
  * not this DTO.
  *
@@ -33,7 +34,6 @@ final readonly class OnDemandDelivery
         public ?string $neighbourHouseNumber = null,
         public ?string $authorizerName = null,
         public ?string $servicePointId = null,
-        public ?string $requestedDeliveryDate = null,
     ) {
     }
 
@@ -67,9 +67,6 @@ final readonly class OnDemandDelivery
         }
         if ($this->servicePointId !== null) {
             $payload['servicePointId'] = $this->servicePointId;
-        }
-        if ($this->requestedDeliveryDate !== null) {
-            $payload['requestedDeliveryDate'] = $this->requestedDeliveryDate;
         }
 
         return $payload;

@@ -7,8 +7,9 @@ namespace Medzuch\DhlExpress\Enum;
 /**
  * Customs document type code.
  *
- * 55 codes drawn from the `documentTypeCode` sheet of
- * `dhl_reference_data.xlsx`. The same value space applies at the
+ * 53 codes drawn from the `documentTypeCode` sheet of
+ * `ExpressReferenceData_2026-10-25.xlsx` (`CHA` and `POA` were
+ * retired by DHL and are no longer modelled). The same value space applies at the
  * invoice level and the line-item level so a single enum covers
  * both contexts. The wire code `972` cannot start a PHP case name
  * so it gets a descriptive name (`T2LFDispense`) — the wire code
@@ -22,7 +23,6 @@ enum CustomsDocumentTypeCode: string
     case APP = 'APP';
     case ATA = 'ATA';
     case BEX = 'BEX';
-    case CHA = 'CHA';
     case CIT = 'CIT';
     case CIV = 'CIV';
     case CI2 = 'CI2';
@@ -55,7 +55,6 @@ enum CustomsDocumentTypeCode: string
     case PFI = 'PFI';
     case PHY = 'PHY';
     case PLI = 'PLI';
-    case POA = 'POA';
     case PCH = 'PCH';
     case PPY = 'PPY';
     case ROD = 'ROD';

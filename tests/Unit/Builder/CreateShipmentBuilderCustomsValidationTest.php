@@ -10,6 +10,7 @@ use Medzuch\DhlExpress\Dto\Common\Account;
 use Medzuch\DhlExpress\Dto\Shipment\ContactAddress;
 use Medzuch\DhlExpress\Dto\Shipment\DangerousGoods;
 use Medzuch\DhlExpress\Dto\Shipment\ExportDeclaration;
+use Medzuch\DhlExpress\Dto\Shipment\ExportInvoice;
 use Medzuch\DhlExpress\Dto\Shipment\ExportLineItem;
 use Medzuch\DhlExpress\Dto\Shipment\LineItemQuantity;
 use Medzuch\DhlExpress\Dto\Shipment\LineItemWeight;
@@ -20,6 +21,7 @@ use Medzuch\DhlExpress\Enum\AccountTypeCode;
 use Medzuch\DhlExpress\Enum\DangerousGoodsContentId;
 use Medzuch\DhlExpress\Enum\DimensionUnit;
 use Medzuch\DhlExpress\Enum\Incoterm;
+use Medzuch\DhlExpress\Enum\InvoiceFunction;
 use Medzuch\DhlExpress\Enum\LineItemQuantityUnit;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Enum\WeightUnit;
@@ -30,6 +32,7 @@ use Medzuch\DhlExpress\ValueObject\Dimensions;
 use Medzuch\DhlExpress\ValueObject\PhoneNumber;
 use Medzuch\DhlExpress\ValueObject\PostalCode;
 use Medzuch\DhlExpress\ValueObject\Weight;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CreateShipmentBuilderCustomsValidationTest extends TestCase
@@ -40,11 +43,11 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
     {
         $request = $this->minimalDomesticBuilder()
             ->withIsCustomsDeclarable(true)
-            ->withExportDeclaration($this->makeExportDeclaration())
+            ->addExportDeclaration($this->makeExportDeclaration())
             ->build();
 
         self::assertTrue($request->content->isCustomsDeclarable);
-        self::assertNotNull($request->content->exportDeclaration);
+        self::assertCount(1, $request->content->exportDeclarations);
     }
 
     public function testCustomsDeclarableWithoutExportDeclarationFails(): void
@@ -57,7 +60,7 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
             self::fail('Expected InvalidRequestException');
         } catch (InvalidRequestException $exception) {
             $fields = array_column($exception->errors(), 'field');
-            self::assertContains('content.exportDeclaration', $fields);
+            self::assertContains('content.exportDeclarations', $fields);
         }
     }
 
@@ -69,7 +72,7 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
             ->build();
 
         self::assertFalse($request->content->isCustomsDeclarable);
-        self::assertNull($request->content->exportDeclaration);
+        self::assertSame([], $request->content->exportDeclarations);
     }
 
     // ----- DG VAS rule -----
@@ -169,7 +172,7 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
         $builder = $this->minimalDomesticBuilder()
             ->withIncoterm(Incoterm::DDP)
             ->withIsCustomsDeclarable(true)
-            ->withExportDeclaration($this->makeExportDeclaration());
+            ->addExportDeclaration($this->makeExportDeclaration());
 
         try {
             $builder->build();
@@ -188,7 +191,7 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
         $request = $this->minimalDomesticBuilder()
             ->withIncoterm(Incoterm::DDP)
             ->withIsCustomsDeclarable(true)
-            ->withExportDeclaration($this->makeExportDeclaration())
+            ->addExportDeclaration($this->makeExportDeclaration())
             ->withAccount(new Account(AccountTypeCode::DutiesTaxes, new AccountNumber('999999999')))
             ->build();
 
@@ -249,14 +252,196 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
     {
         $request = $this->minimalDomesticBuilder()
             ->withIsCustomsDeclarable(true)
-            ->withExportDeclaration($this->makeExportDeclaration())
+            ->addExportDeclaration($this->makeExportDeclaration())
             ->build();
 
         $payload = $request->toArray();
         $content = $payload['content'];
 
-        self::assertArrayHasKey('exportDeclaration', $content);
-        self::assertArrayHasKey('lineItems', $content['exportDeclaration']);
+        self::assertArrayHasKey('exportDeclarations', $content);
+        self::assertArrayNotHasKey('exportDeclaration', $content);
+        self::assertCount(1, $content['exportDeclarations']);
+        self::assertArrayHasKey('lineItems', $content['exportDeclarations'][0]);
+    }
+
+    // ----- multiple export declarations (3.4.0) -----
+
+    public function testThreeDeclarationsAreSerializedInOrder(): void
+    {
+        $request = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(true)
+            ->addExportDeclaration($this->makeExportDeclaration('INV-1'))
+            ->addExportDeclaration($this->makeExportDeclaration('INV-2'))
+            ->addExportDeclaration($this->makeExportDeclaration('INV-3'))
+            ->build();
+
+        $declarations = $request->toArray()['content']['exportDeclarations'];
+
+        self::assertCount(3, $declarations);
+        self::assertSame('INV-1', $declarations[0]['invoice']['number']);
+        self::assertSame('INV-2', $declarations[1]['invoice']['number']);
+        self::assertSame('INV-3', $declarations[2]['invoice']['number']);
+    }
+
+    public function testMoreThanOneHundredDeclarationsFail(): void
+    {
+        $builder = $this->minimalDomesticBuilder()->withIsCustomsDeclarable(true);
+        for ($i = 1; $i <= 101; $i++) {
+            $builder->addExportDeclaration($this->makeExportDeclaration('INV-' . $i));
+        }
+
+        $fields = $this->buildErrorFields($builder);
+
+        self::assertContains('content.exportDeclarations', $fields);
+    }
+
+    public function testOneHundredDeclarationsAreAccepted(): void
+    {
+        $builder = $this->minimalDomesticBuilder()->withIsCustomsDeclarable(true);
+        for ($i = 1; $i <= 100; $i++) {
+            $builder->addExportDeclaration($this->makeExportDeclaration('INV-' . $i));
+        }
+
+        self::assertCount(100, $builder->build()->content->exportDeclarations);
+    }
+
+    // ----- incoterm defaulting (3.4.0) -----
+
+    public function testDeclarationWithoutIncotermInheritsShipmentIncoterm(): void
+    {
+        $request = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(true)
+            ->addExportDeclaration($this->makeExportDeclaration(incoterm: null))
+            ->build();
+
+        $content = $request->toArray()['content'];
+
+        self::assertSame('DAP', $content['incoterm']);
+        self::assertSame('DAP', $content['exportDeclarations'][0]['incoterm']);
+    }
+
+    public function testExplicitDeclarationIncotermWins(): void
+    {
+        $request = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(true)
+            ->addExportDeclaration($this->makeExportDeclaration(incoterm: Incoterm::EXW))
+            ->build();
+
+        $content = $request->toArray()['content'];
+
+        self::assertSame('DAP', $content['incoterm']);
+        self::assertSame('EXW', $content['exportDeclarations'][0]['incoterm']);
+    }
+
+    public function testDeclarationWithoutAnyIncotermFails(): void
+    {
+        $builder = $this->minimalDomesticBuilderWithoutIncoterm()
+            ->withIsCustomsDeclarable(true)
+            ->addExportDeclaration($this->makeExportDeclaration('INV-1', Incoterm::DAP))
+            ->addExportDeclaration($this->makeExportDeclaration('INV-2', null));
+
+        $fields = $this->buildErrorFields($builder);
+
+        self::assertContains('content.exportDeclarations[1].incoterm', $fields);
+        self::assertNotContains('content.exportDeclarations[0].incoterm', $fields);
+    }
+
+    public function testDeclarationsWithOwnIncotermsNeedNoShipmentIncoterm(): void
+    {
+        $request = $this->minimalDomesticBuilderWithoutIncoterm()
+            ->withIsCustomsDeclarable(true)
+            ->addExportDeclaration($this->makeExportDeclaration(incoterm: Incoterm::DAP))
+            ->build();
+
+        $content = $request->toArray()['content'];
+
+        self::assertArrayNotHasKey('incoterm', $content);
+        self::assertSame('DAP', $content['exportDeclarations'][0]['incoterm']);
+    }
+
+    public function testDdpOnADeclarationOnlyRequiresDutiesTaxesAccount(): void
+    {
+        $builder = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(true)
+            ->addExportDeclaration($this->makeExportDeclaration(incoterm: Incoterm::DDP));
+
+        $fields = $this->buildErrorFields($builder);
+
+        self::assertContains('accounts', $fields);
+    }
+
+    public function testDeclaredValueIsSummedAcrossDeclarations(): void
+    {
+        $request = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(true)
+            ->addExportDeclaration($this->makeExportDeclaration('INV-1', price: 60.00))
+            ->addExportDeclaration($this->makeExportDeclaration('INV-2', price: 40.00))
+            ->withDeclaredValue(100.00, 'EUR')
+            ->build();
+
+        self::assertSame(100.00, $request->content->declaredValue);
+    }
+
+    public function testDeclaredValueMismatchAcrossDeclarationsFails(): void
+    {
+        $builder = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(true)
+            ->addExportDeclaration($this->makeExportDeclaration('INV-1', price: 60.00))
+            ->addExportDeclaration($this->makeExportDeclaration('INV-2', price: 40.00))
+            ->withDeclaredValue(60.00, 'EUR');
+
+        $fields = $this->buildErrorFields($builder);
+
+        self::assertContains('content.exportDeclarations.lineItems', $fields);
+    }
+
+    // ----- duplicate invoice numbers (DHL 7188) -----
+
+    public function testDuplicateInvoiceNumbersAcrossDeclarationsFail(): void
+    {
+        $builder = $this->minimalDomesticBuilder()
+            ->withIsCustomsDeclarable(true)
+            ->addExportDeclaration($this->makeExportDeclaration('INV-1'))
+            ->addExportDeclaration($this->makeExportDeclaration('INV-2'))
+            ->addExportDeclaration($this->makeExportDeclaration('INV-1'));
+
+        $fields = $this->buildErrorFields($builder);
+
+        self::assertContains('content.exportDeclarations[2].invoice.number', $fields);
+        self::assertNotContains('content.exportDeclarations[0].invoice.number', $fields);
+        self::assertNotContains('content.exportDeclarations[1].invoice.number', $fields);
+    }
+
+    // ----- content description (DHL 7191) -----
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function meaninglessDescriptions(): iterable
+    {
+        yield 'pipes and spaces' => [' || '];
+        yield 'pipes only' => ['|||'];
+        yield 'whitespace only' => ["  \t "];
+        yield 'empty' => [''];
+    }
+
+    #[DataProvider('meaninglessDescriptions')]
+    public function testMeaninglessContentDescriptionFails(string $description): void
+    {
+        $builder = $this->minimalDomesticBuilder()->withContentDescription($description);
+
+        $fields = $this->buildErrorFields($builder);
+
+        self::assertContains('content.description', $fields);
+    }
+
+    public function testDescriptionContainingPipeIsAcceptedUnchanged(): void
+    {
+        $request = $this->minimalDomesticBuilder()
+            ->withContentDescription('Cotton T-shirts | 3 pcs')
+            ->build();
+
+        self::assertSame('Cotton T-shirts | 3 pcs', $request->content->description);
     }
 
     // ----- EU intra-zone exemption -----
@@ -306,7 +491,7 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
         // CZ → CH with isCustomsDeclarable=true + exportDeclaration → valid
         $request = $this->minimalCrossBorderBuilder('CZ', 'CH')
             ->withIsCustomsDeclarable(true)
-            ->withExportDeclaration($this->makeExportDeclaration())
+            ->addExportDeclaration($this->makeExportDeclaration())
             ->withDeclaredValue(100.00, 'EUR')
             ->build();
 
@@ -434,7 +619,12 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
         // 2 items × 50.00 = 100.00 = declaredValue
         $request = $this->minimalDomesticBuilder()
             ->withIsCustomsDeclarable(true)
-            ->withExportDeclaration(new ExportDeclaration(
+            ->addExportDeclaration(new ExportDeclaration(
+                invoice: new ExportInvoice(
+                    number: 'INV-001',
+                    date: new DateTimeImmutable('2026-05-01'),
+                    function: InvoiceFunction::Export,
+                ),
                 lineItems: [
                     new ExportLineItem(
                         number: 1,
@@ -457,7 +647,12 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
         // 1 item × 80.00 ≠ 100.00 → error
         $builder = $this->minimalDomesticBuilder()
             ->withIsCustomsDeclarable(true)
-            ->withExportDeclaration(new ExportDeclaration(
+            ->addExportDeclaration(new ExportDeclaration(
+                invoice: new ExportInvoice(
+                    number: 'INV-001',
+                    date: new DateTimeImmutable('2026-05-01'),
+                    function: InvoiceFunction::Export,
+                ),
                 lineItems: [
                     new ExportLineItem(
                         number: 1,
@@ -476,7 +671,7 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
             self::fail('Expected InvalidRequestException');
         } catch (InvalidRequestException $exception) {
             $fields = array_column($exception->errors(), 'field');
-            self::assertContains('content.exportDeclaration.lineItems', $fields);
+            self::assertContains('content.exportDeclarations.lineItems', $fields);
         }
     }
 
@@ -485,7 +680,12 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
         // floating-point arithmetic: 3 × 33.33 = 99.99, declared 100.00 → diff 0.01 (within tolerance)
         $request = $this->minimalDomesticBuilder()
             ->withIsCustomsDeclarable(true)
-            ->withExportDeclaration(new ExportDeclaration(
+            ->addExportDeclaration(new ExportDeclaration(
+                invoice: new ExportInvoice(
+                    number: 'INV-001',
+                    date: new DateTimeImmutable('2026-05-01'),
+                    function: InvoiceFunction::Export,
+                ),
                 lineItems: [
                     new ExportLineItem(
                         number: 1,
@@ -519,7 +719,7 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
         // exportDeclaration set, but no declaredValue → no reconciliation
         $request = $this->minimalDomesticBuilder()
             ->withIsCustomsDeclarable(true)
-            ->withExportDeclaration($this->makeExportDeclaration())
+            ->addExportDeclaration($this->makeExportDeclaration())
             ->build();
 
         self::assertNull($request->content->declaredValue);
@@ -573,20 +773,73 @@ final class CreateShipmentBuilderCustomsValidationTest extends TestCase
 
     // ----- helpers -----
 
-    private function makeExportDeclaration(): ExportDeclaration
-    {
+    private function makeExportDeclaration(
+        string $invoiceNumber = 'INV-001',
+        ?Incoterm $incoterm = null,
+        float $price = 100.00,
+    ): ExportDeclaration {
         return new ExportDeclaration(
+            invoice: new ExportInvoice(
+                number: $invoiceNumber,
+                date: new DateTimeImmutable('2026-05-01'),
+                function: InvoiceFunction::Export,
+            ),
             lineItems: [
                 new ExportLineItem(
                     number: 1,
                     description: 'Test product',
-                    price: 100.00,
+                    price: $price,
                     quantity: new LineItemQuantity(1, LineItemQuantityUnit::PCS),
                     manufacturerCountry: 'CZ',
                     weight: new LineItemWeight(netValue: 1.0, grossValue: 1.2),
                 ),
             ],
+            incoterm: $incoterm,
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function buildErrorFields(CreateShipmentBuilder $builder): array
+    {
+        try {
+            $builder->build();
+        } catch (InvalidRequestException $exception) {
+            return array_column($exception->errors(), 'field');
+        }
+        self::fail('Expected InvalidRequestException');
+    }
+
+    private function minimalDomesticBuilderWithoutIncoterm(): CreateShipmentBuilder
+    {
+        return (new CreateShipmentBuilder())
+            ->withShipper(new ContactAddress(
+                countryCode: new CountryCode('CZ'),
+                postalCode: new PostalCode('14800'),
+                cityName: 'Prague',
+                addressLine1: 'Vaclavske namesti 1',
+                phone: new PhoneNumber('+420 222 333 444'),
+                companyName: 'Alfa Trading s.r.o.',
+                fullName: 'Jan Nowak',
+            ))
+            ->withReceiver(new ContactAddress(
+                countryCode: new CountryCode('CZ'),
+                postalCode: new PostalCode('60200'),
+                cityName: 'Brno',
+                addressLine1: 'Namesti Svobody 10',
+                phone: new PhoneNumber('+420 555 666 777'),
+                companyName: 'Receiver s.r.o.',
+                fullName: 'Receiver Name',
+            ))
+            ->withPlannedShippingDate(new DateTimeImmutable('2026-06-01T13:00:00+00:00'))
+            ->withProductCode('N')
+            ->withPickup(new Pickup(false))
+            ->withIsCustomsDeclarable(false)
+            ->withContentDescription('Books')
+            ->withUnitSystem(UnitSystem::Metric)
+            ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber('123456789')))
+            ->withPackage(new Package(weight: new Weight(1.0, WeightUnit::KG)));
     }
 
     private function minimalCrossBorderBuilder(string $shipperCountry, string $receiverCountry): CreateShipmentBuilder

@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Mode of transport for a landed-cost calculation.
  *
  * Source: `supermodelIoLogisticsExpressLandedCostRequest.transportationMode`
- * in `specs/dhl/dhl_openapi.yaml`.
+ * in `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`.
  */
 enum TransportationMode: string
 {

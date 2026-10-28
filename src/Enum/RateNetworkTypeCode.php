@@ -9,7 +9,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Time Definite (TD) network.
  *
  * Source: `supermodelIoLogisticsExpressRates.products[].networkTypeCode`
- * in `specs/dhl/dhl_openapi.yaml`.
+ * in `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`.
  */
 enum RateNetworkTypeCode: string
 {

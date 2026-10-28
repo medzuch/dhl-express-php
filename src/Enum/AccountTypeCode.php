@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Role a DHL Express account plays in a rate or shipment request.
  *
  * Source: `supermodelIoLogisticsExpressAccount.typeCode` enum in
- * `specs/dhl/dhl_openapi.yaml`. The `duties-taxes` wire value carries
+ * `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`. The `duties-taxes` wire value carries
  * a hyphen, so the case name uses camelCase to stay valid PHP.
  */
 enum AccountTypeCode: string

@@ -80,5 +80,44 @@ final class ExportLineItemTest extends TestCase
         self::assertArrayNotHasKey('customerReferences', $result);
         self::assertArrayNotHasKey('customsDocuments', $result);
         self::assertArrayNotHasKey('preCalculatedLineItemTotalValue', $result);
+        self::assertArrayNotHasKey('additionalInformation', $result);
+    }
+
+    public function testAdditionalInformationIsSerialized(): void
+    {
+        $item = $this->itemWithAdditionalInformation(['Made of cotton']);
+
+        self::assertSame(['Made of cotton'], $item->toArray()['additionalInformation']);
+    }
+
+    public function testAdditionalInformationAcceptsEightEntries(): void
+    {
+        $item = $this->itemWithAdditionalInformation(array_fill(0, 8, 'info'));
+
+        self::assertCount(8, $item->additionalInformation);
+    }
+
+    public function testAdditionalInformationRejectsMoreThanEightEntries(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('additionalInformation');
+
+        $this->itemWithAdditionalInformation(array_fill(0, 9, 'info'));
+    }
+
+    /**
+     * @param list<string> $additionalInformation
+     */
+    private function itemWithAdditionalInformation(array $additionalInformation): ExportLineItem
+    {
+        return new ExportLineItem(
+            number: 1,
+            description: 'Test product',
+            price: 100.00,
+            quantity: new LineItemQuantity(5, LineItemQuantityUnit::PCS),
+            manufacturerCountry: 'CZ',
+            weight: new LineItemWeight(netValue: 1.0),
+            additionalInformation: $additionalInformation,
+        );
     }
 }

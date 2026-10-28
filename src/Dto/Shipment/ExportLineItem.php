@@ -16,7 +16,7 @@ use Medzuch\DhlExpress\Enum\ExportReasonType;
  * Optional fields: `exportReasonType`, `commodityCodes` (max 2),
  * `isTaxesPaid`, `customerReferences` (max 100),
  * `customsDocuments` (max 50),
- * `preCalculatedLineItemTotalValue`.
+ * `preCalculatedLineItemTotalValue`, `additionalInformation` (max 8).
  */
 final readonly class ExportLineItem
 {
@@ -24,6 +24,7 @@ final readonly class ExportLineItem
      * @param list<CommodityCode>          $commodityCodes
      * @param list<LineItemReference>      $customerReferences
      * @param list<LineItemCustomsDocument> $customsDocuments
+     * @param list<string>                 $additionalInformation
      */
     public function __construct(
         public int $number,
@@ -38,7 +39,13 @@ final readonly class ExportLineItem
         public array $customerReferences = [],
         public array $customsDocuments = [],
         public ?float $preCalculatedLineItemTotalValue = null,
+        public array $additionalInformation = [],
     ) {
+        if (count($additionalInformation) > 8) {
+            throw new \InvalidArgumentException(
+                'ExportLineItem additionalInformation accepts at most 8 entries.',
+            );
+        }
     }
 
     /**
@@ -81,6 +88,9 @@ final readonly class ExportLineItem
         }
         if ($this->preCalculatedLineItemTotalValue !== null) {
             $payload['preCalculatedLineItemTotalValue'] = $this->preCalculatedLineItemTotalValue;
+        }
+        if ($this->additionalInformation !== []) {
+            $payload['additionalInformation'] = $this->additionalInformation;
         }
 
         return $payload;

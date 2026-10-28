@@ -7,7 +7,7 @@ namespace Medzuch\DhlExpress\Enum;
 /**
  * DHL Express commodity category codes for landed-cost and export-declaration line items.
  *
- * Sourced from the `commodityCategory` sheet of `dhl_reference_data.xlsx`
+ * Sourced from the `commodityCategory` sheet of `ExpressReferenceData_2026-10-25.xlsx`
  * (108 codes). The backing value is the integer code used on the wire.
  *
  * Codes are grouped by category:

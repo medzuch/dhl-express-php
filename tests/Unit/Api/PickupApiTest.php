@@ -11,6 +11,7 @@ use Medzuch\DhlExpress\Api\PickupApi;
 use Medzuch\DhlExpress\Auth\Credentials;
 use Medzuch\DhlExpress\ClientConfig;
 use Medzuch\DhlExpress\Dto\Common\Account;
+use Medzuch\DhlExpress\Dto\Pickup\CancelPickupResponse;
 use Medzuch\DhlExpress\Dto\Pickup\CreatePickupRequest;
 use Medzuch\DhlExpress\Dto\Pickup\CreatePickupResponse;
 use Medzuch\DhlExpress\Dto\Pickup\PickupCustomerDetails;
@@ -24,6 +25,7 @@ use Medzuch\DhlExpress\Enum\ApiEnvironment;
 use Medzuch\DhlExpress\Enum\UnitSystem;
 use Medzuch\DhlExpress\Enum\WeightUnit;
 use Medzuch\DhlExpress\Exception\DhlErrorMapper;
+use Medzuch\DhlExpress\Exception\DhlNotFoundException;
 use Medzuch\DhlExpress\Http\HttpTransport;
 use Medzuch\DhlExpress\Http\MessageReferenceGenerator;
 use Medzuch\DhlExpress\Http\RequestBuilder;
@@ -200,6 +202,52 @@ final class PickupApiTest extends TestCase
         self::assertStringContainsString('Brent', urldecode($uri));
         self::assertStringContainsString('reason=', $uri);
         self::assertStringContainsString('No longer needed', urldecode($uri));
+    }
+
+    public function testCancelReturnsOutcomeFromBody(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse($factory->createResponse(200)->withBody($factory->createStream(
+            '{"instance":"/expressapi/pickups/PRG211126000382","message":"Successfully cancelled.","status":"200","title":"Cancelled","detail":"Pickup cancelled"}',
+        )));
+
+        $result = $this->makeApi($mockClient, $factory)->cancel('PRG211126000382', 'Fred Brent', 'No longer needed');
+
+        self::assertInstanceOf(CancelPickupResponse::class, $result);
+        self::assertSame('Successfully cancelled.', $result->message);
+        self::assertSame('/expressapi/pickups/PRG211126000382', $result->instance);
+        self::assertSame('200', $result->status);
+        self::assertSame('Cancelled', $result->title);
+        self::assertSame('Pickup cancelled', $result->detail);
+    }
+
+    public function testCancelWithEmptyBodyReturnsEmptyResult(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse($factory->createResponse(200));
+
+        $result = $this->makeApi($mockClient, $factory)->cancel('PRG211126000382', 'Fred Brent', 'No longer needed');
+
+        self::assertNull($result->status);
+        self::assertNull($result->title);
+        self::assertNull($result->detail);
+        self::assertNull($result->instance);
+        self::assertNull($result->message);
+    }
+
+    public function testCancelUnknownPickupThrowsNotFound(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse($factory->createResponse(404)->withBody($factory->createStream(
+            '{"instance":"/expressapi/pickups/XXX","detail":"Pickup not found","status":"404"}',
+        )));
+
+        $this->expectException(DhlNotFoundException::class);
+
+        $this->makeApi($mockClient, $factory)->cancel('XXX', 'Fred Brent', 'No longer needed');
     }
 
     private function minimalCreateRequest(): CreatePickupRequest

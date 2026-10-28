@@ -263,6 +263,7 @@ final class TrackingApiTest extends TestCase
             trackingView: TrackingView::AllCheckpointsWithRemarks,
             levelOfDetail: TrackingLevelOfDetail::All,
             requestControlledAccessDataCodes: true,
+            requestGMTOffsetPerEvent: true,
         );
 
         $sent = $mockClient->getLastRequest();
@@ -271,6 +272,47 @@ final class TrackingApiTest extends TestCase
         self::assertStringContainsString('trackingView=all-checkpoints-with-remarks', $uri);
         self::assertStringContainsString('levelOfDetail=all', $uri);
         self::assertStringContainsString('requestControlledAccessDataCodes=true', $uri);
+        self::assertStringContainsString('requestGMTOffsetPerEvent=true', $uri);
+    }
+
+    public function testGetManyOmitsRequestGMTOffsetPerEventWhenUnset(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('multi-shipment.json')),
+            ),
+        );
+
+        $this->makeApi($mockClient, $factory)->getMany([new TrackingNumber('9356579890')]);
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        self::assertStringNotContainsString('requestGMTOffsetPerEvent', (string) $sent->getUri());
+    }
+
+    public function testGetManyByReferenceEmitsRequestGMTOffsetPerEvent(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('multi-shipment.json')),
+            ),
+        );
+
+        $this->makeApi($mockClient, $factory)->getManyByReference(
+            shipmentReference: 'CustomerReference1',
+            dateRangeFrom: new DateTimeImmutable('2026-05-01'),
+            dateRangeTo: new DateTimeImmutable('2026-06-01'),
+            shipperAccountNumber: new AccountNumber('123456789'),
+            requestGMTOffsetPerEvent: false,
+        );
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        self::assertStringContainsString('requestGMTOffsetPerEvent=false', (string) $sent->getUri());
     }
 
     public function testGetManyByPieceIdEmitsRepeatedPieceTrackingNumberParameters(): void
@@ -284,7 +326,7 @@ final class TrackingApiTest extends TestCase
         );
 
         $api = $this->makeApi($mockClient, $factory);
-        $api->getManyByPieceId('JD014600004617230770', 'JD014600004617230779');
+        $api->getManyByPieceId(['JD014600004617230770', 'JD014600004617230779']);
 
         $sent = $mockClient->getLastRequest();
         self::assertInstanceOf(RequestInterface::class, $sent);
@@ -293,6 +335,32 @@ final class TrackingApiTest extends TestCase
         self::assertStringContainsString('pieceTrackingNumber=JD014600004617230770', $uri);
         self::assertStringContainsString('pieceTrackingNumber=JD014600004617230779', $uri);
         self::assertStringNotContainsString('pieceTrackingNumber%5B', $uri);
+        self::assertStringNotContainsString('requestGMTOffsetPerEvent', $uri);
+    }
+
+    public function testGetManyByPieceIdEmitsViewOptionsAndGMTOffsetPerEvent(): void
+    {
+        $factory = new Psr17Factory();
+        $mockClient = new MockClient();
+        $mockClient->addResponse(
+            $factory->createResponse(200)->withBody(
+                $factory->createStream($this->loadFixture('multi-shipment.json')),
+            ),
+        );
+
+        $this->makeApi($mockClient, $factory)->getManyByPieceId(
+            ['JD014600004617230770'],
+            trackingView: TrackingView::AllCheckpointsWithRemarks,
+            levelOfDetail: TrackingLevelOfDetail::Piece,
+            requestGMTOffsetPerEvent: true,
+        );
+
+        $sent = $mockClient->getLastRequest();
+        self::assertInstanceOf(RequestInterface::class, $sent);
+        $uri = (string) $sent->getUri();
+        self::assertStringContainsString('trackingView=all-checkpoints-with-remarks', $uri);
+        self::assertStringContainsString('levelOfDetail=piece', $uri);
+        self::assertStringContainsString('requestGMTOffsetPerEvent=true', $uri);
     }
 
     public function testGetManyByPieceIdRequiresAtLeastOnePieceId(): void
@@ -302,7 +370,7 @@ final class TrackingApiTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
 
-        $api->getManyByPieceId();
+        $api->getManyByPieceId([]);
     }
 
     public function testGetManyByPieceIdEnforcesMaxOf200(): void
@@ -312,7 +380,7 @@ final class TrackingApiTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
 
-        $api->getManyByPieceId(...array_fill(0, 201, 'JD0146000046172307'));
+        $api->getManyByPieceId(array_fill(0, 201, 'JD0146000046172307'));
     }
 
     public function testGetManyByReferenceEmitsAllRequiredParameters(): void
@@ -347,6 +415,7 @@ final class TrackingApiTest extends TestCase
         self::assertStringContainsString('shipmentReferenceType=CU', $uri);
         self::assertStringContainsString('trackingView=shipment-details-only', $uri);
         self::assertStringContainsString('levelOfDetail=shipment', $uri);
+        self::assertStringNotContainsString('requestGMTOffsetPerEvent', $uri);
     }
 
     public function testGetManyByReferenceAcceptsPayerAccountInsteadOfShipper(): void

@@ -9,9 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class RegistrationNumberTypeCodeTest extends TestCase
 {
-    public function testCoversTwentyFiveRegistrationCodes(): void
+    public function testCoversTwentySixRegistrationCodes(): void
     {
-        self::assertCount(25, RegistrationNumberTypeCode::cases());
+        self::assertCount(26, RegistrationNumberTypeCode::cases());
     }
 
     public function testRepresentativeCodesResolveToTheirBackingValues(): void
@@ -22,6 +22,7 @@ final class RegistrationNumberTypeCodeTest extends TestCase
         self::assertSame('CNP', RegistrationNumberTypeCode::CNP->value);
         self::assertSame('DUT', RegistrationNumberTypeCode::DUT->value);
         self::assertSame('SUB', RegistrationNumberTypeCode::SUB->value);
+        self::assertSame('FSR', RegistrationNumberTypeCode::FSR->value);
     }
 
     public function testFromCanResolveKnownCode(): void

@@ -9,7 +9,7 @@ use InvalidArgumentException;
 /**
  * Name + version pair identifying a 3PV plugin or platform.
  *
- * Length limits come from `dhl_openapi.yaml`: Plugin/Shipping-System/
+ * Length limits come from `dpdhl-express-api-3.4.0_9.yaml`: Plugin/Shipping-System/
  * Webstore platform name headers cap at 20 characters and version
  * headers cap at 15 characters.
  */

@@ -39,7 +39,7 @@ final class RequestBuilderTest extends TestCase
         self::assertSame('application/json', $request->getHeaderLine('Accept'));
         self::assertSame('eng', $request->getHeaderLine('Accept-Language'));
         self::assertSame(self::FIXED_REFERENCE, $request->getHeaderLine('Message-Reference'));
-        self::assertSame('3.2.0', $request->getHeaderLine('x-version'));
+        self::assertSame('3.4.0', $request->getHeaderLine('x-version'));
     }
 
     public function testOmitsThreePartyHeadersWhenIntegrationProfileIsNull(): void

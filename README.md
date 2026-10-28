@@ -1,6 +1,6 @@
 # medzuch/dhl-express-php
 
-A clean, framework-agnostic PHP 8.3 library for the **DHL Express MyDHL API 3.2.2**.
+A clean, framework-agnostic PHP 8.3 library for the **DHL Express MyDHL API 3.4.0** (`x-version: 3.4.0`).
 
 [![CI](https://github.com/medzuch/dhl-express-php/actions/workflows/ci.yml/badge.svg)](https://github.com/medzuch/dhl-express-php/actions/workflows/ci.yml)
 [![PHP](https://img.shields.io/badge/php-8.3%2B-blue)](https://www.php.net/)
@@ -206,25 +206,47 @@ foreach ($response->documents as $doc) {
 
 ### Cross-border Shipment with Customs Declaration
 
+MyDHL API 3.4.0 sends export declarations as a list (`content.exportDeclarations`, 1–100 per shipment; DHL's account default limit is 5). Each declaration needs line items, an invoice and an incoterm. A declaration without its own incoterm inherits the shipment-level one set with `withIncoterm()`. Invoice numbers must be unique across declarations.
+
 ```php
 use Medzuch\DhlExpress\Dto\Shipment\ExportDeclaration;
+use Medzuch\DhlExpress\Dto\Shipment\ExportInvoice;
 use Medzuch\DhlExpress\Dto\Shipment\ExportLineItem;
 use Medzuch\DhlExpress\Dto\Shipment\LineItemQuantity;
 use Medzuch\DhlExpress\Dto\Shipment\LineItemWeight;
+use Medzuch\DhlExpress\Enum\Incoterm;
 use Medzuch\DhlExpress\Enum\LineItemQuantityUnit;
 
 $request = (new CreateShipmentBuilder())
-    ->withShipper(/* ContactAddress */)
-    ->withReceiver(/* ContactAddress */)
+    ->withShipper(new ContactAddress(
+        countryCode: new CountryCode('CZ'),
+        postalCode: new PostalCode('14800'),
+        cityName: 'Prague',
+        addressLine1: 'Vaclavske namesti 1',
+        phone: new PhoneNumber('+420 222 333 444'),
+        companyName: 'Acme s.r.o.',
+        fullName: 'Jan Novak',
+    ))
+    ->withReceiver(new ContactAddress(
+        countryCode: new CountryCode('US'),
+        postalCode: new PostalCode('10001'),
+        cityName: 'New York',
+        addressLine1: '350 Fifth Avenue',
+        phone: new PhoneNumber('+1 212 555 0100'),
+        companyName: 'Receiver Inc.',
+        fullName: 'John Smith',
+    ))
     ->withPlannedShippingDate(new DateTimeImmutable('+1 day'))
     ->withProductCode('P')
     ->withPickup(new Pickup(isRequested: false))
     ->withIsCustomsDeclarable(true)
     ->withContentDescription('Electronics')
     ->withUnitSystem(UnitSystem::Metric)
+    ->withIncoterm(Incoterm::DAP) // default for declarations without their own incoterm
     ->withAccount(new Account(AccountTypeCode::Shipper, new AccountNumber('123456789')))
-    ->withPackage(new Package(weight: new Weight(1.5, WeightUnit::KG)))
-    ->withExportDeclaration(new ExportDeclaration(
+    ->withPackage(new Package(weight: new Weight(2.5, WeightUnit::KG)))
+    // Inherits DAP; the invoice is signed so DHL can print a signed paperless-trade invoice.
+    ->addExportDeclaration(new ExportDeclaration(
         lineItems: [
             new ExportLineItem(
                 number: 1,
@@ -235,10 +257,45 @@ $request = (new CreateShipmentBuilder())
                 weight: new LineItemWeight(netValue: 1.5, grossValue: 1.8),
             ),
         ],
+        invoice: new ExportInvoice(
+            number: 'INV-2026-001',
+            date: new DateTimeImmutable('today'),
+            signatureName: 'Jan Novak',
+            signatureTitle: 'Export Manager',
+            signatureImage: base64_encode('...signature PNG bytes...'),
+        ),
     ))
-    ->withDeclaredValue(800.00, 'EUR')
+    // Explicit incoterm on the declaration wins over the shipment-level default.
+    ->addExportDeclaration(new ExportDeclaration(
+        lineItems: [
+            new ExportLineItem(
+                number: 1,
+                description: 'Laptop bag',
+                price: 50.00,
+                quantity: new LineItemQuantity(2, LineItemQuantityUnit::PCS),
+                manufacturerCountry: 'CZ',
+                weight: new LineItemWeight(netValue: 0.4),
+            ),
+        ],
+        invoice: new ExportInvoice(number: 'INV-2026-002', date: new DateTimeImmutable('today')),
+        incoterm: Incoterm::EXW,
+    ))
+    ->withDeclaredValue(900.00, 'EUR') // must equal Σ price × quantity across all declarations
     ->build();
 ```
+
+> Create Shipment never sends `invoice.function` (its schema rejects it). The invoice-data upload endpoints (`shipments()->uploadInvoiceData()`, `invoices()->uploadInvoiceData()`) require `function` and an `incoterm` on every declaration, and reject the fields only Create Shipment accepts: the invoice signature and summary fields, `exportReason`, `declarationNotes`, `packageMarks`, `payerVATNumber` and line-item `additionalInformation`.
+
+#### DHL warnings the library does not enforce
+
+Some combinations are accepted by DHL with a **warning** rather than an error, so the library sends them unchanged. Avoid them if the effect below is not what you want:
+
+| DHL code | When | Effect |
+|---|---|---|
+| 7981 | `create(..., bypassLabelfreeError: true)` without the `PZ` (labelfree) value-added service | The flag is ignored |
+| 7978 | Export declarations on a shipment with the `PM` value-added service | The declarations are ignored |
+
+The library does reject, before sending, the combinations DHL always refuses: `bypassLabelfreeError` together with `bypassPLTError` (7183), duplicate invoice numbers across declarations (7188), and a content description made only of whitespace and `|` characters (7191).
 
 ### Book a Pickup
 
@@ -284,8 +341,10 @@ $response = $client->pickups()->create($request);
 $confirmationNumber = $response->dispatchConfirmationNumbers[0];
 echo 'Pickup booked: ' . $confirmationNumber . PHP_EOL;
 
-// Cancel later:
-// $client->pickups()->cancel($confirmationNumber, 'Jan Novak', 'Order cancelled');
+// Cancel later. DHL answers 200 whether the pickup was cancelled, was already
+// cancelled or had already been completed; the outcome text is in `message`.
+// $result = $client->pickups()->cancel($confirmationNumber, 'Jan Novak', 'Order cancelled');
+// echo $result->message; // e.g. "Successfully cancelled.
 ```
 
 ---
@@ -381,6 +440,18 @@ make install
 | `make cs-check` | Check style without modifying |
 | `make check` | Tests + full analysis + style check |
 | `make shell` | Shell inside container |
+
+### DHL Reference Sources
+
+Enums, DTO shapes and error mappings are cross-referenced against the DHL documents in `specs/dhl/`:
+
+1. `ExpressReferenceData_2026-10-25.xlsx` — reference data workbook, authoritative for code lists
+2. `dpdhl-express-api-3.4.0_9.yaml` — MyDHL API 3.4.0 OpenAPI spec, authoritative for request/response shapes
+3. `MyDHL API Reference data guide (3.4.0).pdf` — narrative reference guide
+
+`dhl_reference_data.xlsx`, `dhl_openapi.yaml` and `dhl_reference.pdf` are historical 3.2.2-era copies kept for reference.
+
+After DHL publishes a new workbook, `make shell` then `php tools/check-enums-against-workbook.php <path-to-xlsx>` lists every enum case missing from or extra to its workbook sheet.
 
 ### Integration Tests
 

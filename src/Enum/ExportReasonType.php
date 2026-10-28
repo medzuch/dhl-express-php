@@ -8,7 +8,7 @@ namespace Medzuch\DhlExpress\Enum;
  * Export reason type.
  *
  * Matches the `exportReasonType` field enum in
- * `specs/dhl/dhl_openapi.yaml`. Describes the reason a shipment is
+ * `specs/dhl/dpdhl-express-api-3.4.0_9.yaml`. Describes the reason a shipment is
  * being exported — whether it is a permanent transfer of ownership, a
  * temporary export for repair, a gift, a sample, and so on.
  */

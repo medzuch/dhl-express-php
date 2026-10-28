@@ -8,12 +8,13 @@ namespace Medzuch\DhlExpress\Enum;
  * Service code that DHL applies when a shipment carries dangerous
  * goods.
  *
- * The 16 unique service codes referenced from the `dangerousGoods`
- * sheet of `dhl_reference_data.xlsx` — each pairs with one or more
+ * The 17 unique service codes referenced from the `dangerousGoods`
+ * sheet of `ExpressReferenceData_2026-10-25.xlsx` — each pairs with one or more
  * {@see DangerousGoodsContentId} entries (e.g. HY covers biological
  * substances 650 and 651, HU is the umbrella for the various "not
  * restricted" classifications, HA/HB cover sodium-ion batteries,
- * YN covers the tail-lift truck service for EV battery shipments).
+ * YN covers the tail-lift truck service for EV battery shipments,
+ * H8 covers ADR Special Provision 188/400 content `A08`).
  */
 enum DangerousGoodsServiceCode: string
 {
@@ -33,4 +34,5 @@ enum DangerousGoodsServiceCode: string
     case HA = 'HA';
     case HB = 'HB';
     case YN = 'YN';
+    case H8 = 'H8';
 }

@@ -9,9 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class DangerousGoodsServiceCodeTest extends TestCase
 {
-    public function testCoversSixteenServiceCodes(): void
+    public function testCoversSeventeenServiceCodes(): void
     {
-        self::assertCount(16, DangerousGoodsServiceCode::cases());
+        self::assertCount(17, DangerousGoodsServiceCode::cases());
     }
 
     public function testRepresentativeCodesResolveToTheirBackingValues(): void
@@ -22,6 +22,7 @@ final class DangerousGoodsServiceCodeTest extends TestCase
         self::assertSame('HA', DangerousGoodsServiceCode::HA->value);
         self::assertSame('HB', DangerousGoodsServiceCode::HB->value);
         self::assertSame('YN', DangerousGoodsServiceCode::YN->value);
+        self::assertSame('H8', DangerousGoodsServiceCode::H8->value);
     }
 
     public function testFromCanResolveKnownCode(): void
@@ -29,10 +30,10 @@ final class DangerousGoodsServiceCodeTest extends TestCase
         self::assertSame(DangerousGoodsServiceCode::HY, DangerousGoodsServiceCode::from('HY'));
     }
 
-    public function testEachBackingValueIsTwoUppercaseLetters(): void
+    public function testEachBackingValueIsTwoUppercaseAlphanumerics(): void
     {
         foreach (DangerousGoodsServiceCode::cases() as $case) {
-            self::assertMatchesRegularExpression('/^[A-Z]{2}$/', $case->value);
+            self::assertMatchesRegularExpression('/^[A-Z][A-Z0-9]$/', $case->value);
         }
     }
 }
